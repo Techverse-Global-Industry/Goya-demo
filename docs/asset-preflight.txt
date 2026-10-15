@@ -1,0 +1,15 @@
+
+Asset preflight failed:
+  - Missing approved image: img1.jpg.
+  - Missing approved image: img2.jpg.
+  - Missing approved image: img3.jpg or img3.webp.
+  - Missing approved image: img4.jpg or img4.webp.
+  - Missing approved image: img5.jpg.
+  - Missing approved image: img6.jpg.
+  - Missing approved image: img7.jpg.
+  - Missing approved image: img8.jpg.
+  - Missing approved image: img9.jpg.
+  - Missing approved image: img10.jpg.
+  - Missing approved image: img11.jpg or img11.webp.
+
+Copy approved brand photographs into public/images/ before release.

@@ -1,0 +1,261 @@
+{
+  "algorithm": "sha256",
+  "note": "Lists all distributed project files other than this manifest itself.",
+  "files": [
+    {
+      "path": ".gitignore",
+      "bytes": 103,
+      "sha256": "8cdfb5a76fd96f8ab66ed33d1d77163d5a6a1c7c7fd9c1e660aed777ec76b049"
+    },
+    {
+      "path": ".npmrc",
+      "bytes": 27,
+      "sha256": "32c1d81147948533c075bfc6ba754f26b4f623ca9023baeae6187c18561cbecc"
+    },
+    {
+      "path": "README.md",
+      "bytes": 15146,
+      "sha256": "cd51118fe1d0995e100b503c9f051c69b60b291764b65a92fbcd5e1c455dda3d"
+    },
+    {
+      "path": "app/error.tsx",
+      "bytes": 528,
+      "sha256": "a39569a5800213713b7cb47eb4fe662d9ba96bce7dc70f8015452daefbd77f5b"
+    },
+    {
+      "path": "app/globals.css",
+      "bytes": 53097,
+      "sha256": "06b8d2b46ec8282349279232c5b092ee636e7eca22cf9a8e52bba89880a01f39"
+    },
+    {
+      "path": "app/icon.svg",
+      "bytes": 346,
+      "sha256": "049547894889ba66e38523e7165d3bb5b40cfa87c1b7badaabe010d08979ad45"
+    },
+    {
+      "path": "app/layout.tsx",
+      "bytes": 1243,
+      "sha256": "e7ecf54adfa244057233f0db813304c12269e116fcbfd9063be8f5b34c32391f"
+    },
+    {
+      "path": "app/loading.tsx",
+      "bytes": 295,
+      "sha256": "18d42c15f018c0c8589234dea908bb5f0ec33441e0b9d220901fe869cdd36df1"
+    },
+    {
+      "path": "app/not-found.tsx",
+      "bytes": 476,
+      "sha256": "d510f5fa6a82bcae0a63c0c86376c577f8263160552e1a73000c5d2969c639b7"
+    },
+    {
+      "path": "app/page.tsx",
+      "bytes": 549,
+      "sha256": "13d2233153039ea7214ceb8d8282ca18f4d891092e0ee81d6ac5827e86ef2585"
+    },
+    {
+      "path": "components/auth.tsx",
+      "bytes": 6678,
+      "sha256": "4a59921a1fd40ffa567f0920c17094cbb79e638c17124d15cea3ca74b3a9664b"
+    },
+    {
+      "path": "components/booking.tsx",
+      "bytes": 6045,
+      "sha256": "3637b46778aad34c900bfe63b591afd7e17becb644ab653e25d8dd200d2dfbf2"
+    },
+    {
+      "path": "components/cart.tsx",
+      "bytes": 7774,
+      "sha256": "4777e9b29447381f4d1a3d5a1733bfeb48258f8b737aacba20c9e513a3d8a856"
+    },
+    {
+      "path": "components/checkout.tsx",
+      "bytes": 9808,
+      "sha256": "c0ff3e399e2198a42720e1d213e17b70dc69695cc7d6bbde3c4aab9f803b8bf0"
+    },
+    {
+      "path": "components/collection.tsx",
+      "bytes": 5906,
+      "sha256": "51321364fb24a5d3d8d1de9f068e23e3211db36efb03196c86dbb74b8b0241d0"
+    },
+    {
+      "path": "components/controls.tsx",
+      "bytes": 4116,
+      "sha256": "1ccf01ac01abbe49c226071bc8aec42ec35ac4daf345493bef75eaedf24a6523"
+    },
+    {
+      "path": "components/editorial.tsx",
+      "bytes": 4508,
+      "sha256": "95eec05f32c8223ea1adcc879935091a691b96baebf0438cea28f7839d20eb3c"
+    },
+    {
+      "path": "components/header.tsx",
+      "bytes": 2886,
+      "sha256": "4392da47be620356fe19ed9300e58b54c7e2aacae3065a7da27f1c5a22b46298"
+    },
+    {
+      "path": "components/icon.tsx",
+      "bytes": 2528,
+      "sha256": "0b8fdd24a46e21008b77b4a67a1e21662de02868d01cc1c1e49f06818f460c75"
+    },
+    {
+      "path": "components/maison-image.tsx",
+      "bytes": 1240,
+      "sha256": "95b922b12c9d22471f3d35baea10755a955a2051f79d1650735eaaa1ea169768"
+    },
+    {
+      "path": "components/modal-shell.tsx",
+      "bytes": 3329,
+      "sha256": "9f977907f7f31dd2269645cb35edfb490fb3142cc757dc0d64ce29a6e1284364"
+    },
+    {
+      "path": "components/overlays.tsx",
+      "bytes": 2437,
+      "sha256": "67b453ac20235d7d4aa6c2550b9c3819fca8605cf7b158d14833b4bc82d62569"
+    },
+    {
+      "path": "components/search.tsx",
+      "bytes": 2750,
+      "sha256": "aa401672880b27d5a436054b2a8db466e5777d2a3aa8b52225fc593ded7567b8"
+    },
+    {
+      "path": "components/story.tsx",
+      "bytes": 7639,
+      "sha256": "ceeb065d9922691b7cb9d49b74a2a3ee45adcc27e32dd5a9ec577a7f88717951"
+    },
+    {
+      "path": "context/shop-context.tsx",
+      "bytes": 3246,
+      "sha256": "a8700248d02ffe6e77e7b08116e05f5f170a22986af8b789884f746f1a25e9ca"
+    },
+    {
+      "path": "docs/RELEASE.md",
+      "bytes": 4084,
+      "sha256": "2f024b90de2da21171dd0958ea99f315bc540bd3139bece594a26d53b660765b"
+    },
+    {
+      "path": "docs/VALIDATION.md",
+      "bytes": 4575,
+      "sha256": "bc44eb0477f623503b111fed397286d3eaeed5aeb51d8b85a27da2d0c5edb8b2"
+    },
+    {
+      "path": "docs/asset-preflight.txt",
+      "bytes": 554,
+      "sha256": "e3319e467f3324317105b16aff11c81b64eba1db22c8f5a948ce2c5bd8a4be82"
+    },
+    {
+      "path": "docs/unit-tests.tap",
+      "bytes": 7482,
+      "sha256": "6d3a06cd30bf653111071d90fa25e0ec48ff04ae78ad159b75eaed810ea6d16b"
+    },
+    {
+      "path": "docs/validation.json",
+      "bytes": 3229,
+      "sha256": "6e9c819cafc4f584d4cc0f1de7995c311824c3fa72aac6ca46e2086edc2357ed"
+    },
+    {
+      "path": "eslint.config.mjs",
+      "bytes": 702,
+      "sha256": "59f3f83f96bf84bbf93b9ee3b59ff4f051feeab35bf755b7f1b0946a5b738f9e"
+    },
+    {
+      "path": "lib/assets.ts",
+      "bytes": 544,
+      "sha256": "2736f71450e8c1dac9b286b0d94d3d0f0faabcfdd2fd76e70b4120bff584dd70"
+    },
+    {
+      "path": "lib/browser.ts",
+      "bytes": 2484,
+      "sha256": "13eef7281cffd4e8b80b35ab38d9d33b462f40837e4d5f792a791494ed215f5e"
+    },
+    {
+      "path": "lib/catalog.ts",
+      "bytes": 8038,
+      "sha256": "1b329fb17d4fa4979f78b731fe1889987d7449486b82ebbb6e564a5ac698056f"
+    },
+    {
+      "path": "lib/commerce.ts",
+      "bytes": 10383,
+      "sha256": "d4191219e0b32bc8dad44a8db578f956e6a015c889c9427413fe5f6f276f7f0f"
+    },
+    {
+      "path": "lib/gsap.ts",
+      "bytes": 260,
+      "sha256": "4cd7c9263a44c46fd68cfbf42ab495e4d193e1991c5568f72173b90836dbbc96"
+    },
+    {
+      "path": "lib/i18n.ts",
+      "bytes": 27591,
+      "sha256": "1929c92215e6880c67d2d789d05604199b9744cff9a9d7e877117cf78d6d2a2c"
+    },
+    {
+      "path": "lib/store.ts",
+      "bytes": 6399,
+      "sha256": "1ab54fc75b4bddfcac0f1ebfceefb1e308b8d952986e3dcb8b06c156d3c5bcd9"
+    },
+    {
+      "path": "lib/types.ts",
+      "bytes": 2086,
+      "sha256": "7072b6207e5bc7e15e5f56878089e25c128d3e48f737462a459c44d5182cfb68"
+    },
+    {
+      "path": "next-env.d.ts",
+      "bytes": 126,
+      "sha256": "2d57be41338b7df0fd6c42f6ca70909ef3ca6e04519406101706e220c1c85cf7"
+    },
+    {
+      "path": "next.config.ts",
+      "bytes": 633,
+      "sha256": "d08215b301c8c45541639a5d0f67b0522e620188f0a98f5f9e2280fad28032b2"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1220,
+      "sha256": "cc74c31a453e71281ca0780a7c9805cd1bd25a1fc09fdcb89f290e4354daff99"
+    },
+    {
+      "path": "playwright.config.ts",
+      "bytes": 773,
+      "sha256": "f56f503bfdc0d7bee5c89d20884a3020807005899a4d524a73256b620b9cbe03"
+    },
+    {
+      "path": "postcss.config.mjs",
+      "bytes": 60,
+      "sha256": "f50058e0d309cdb3e7c25a1123337338641fb71e988572607d57f47209db1fd1"
+    },
+    {
+      "path": "public/images/README.md",
+      "bytes": 2193,
+      "sha256": "e12f487fc3f7eda292f579203dc293b528a86f016af97a226e1e21702ada6d1e"
+    },
+    {
+      "path": "scripts/check-assets.mjs",
+      "bytes": 1541,
+      "sha256": "dbcdaae5f1e1434b7630b03a912255c9ddb2756d1e4f3d21c32e9fd7065cb827"
+    },
+    {
+      "path": "scripts/offline-validate.cjs",
+      "bytes": 3192,
+      "sha256": "68ebc39630cfb8555e5ee83d27e5ddcf9f64054368f04c7dec1dab8af82024f1"
+    },
+    {
+      "path": "tests/commerce.test.ts",
+      "bytes": 13897,
+      "sha256": "b11ddd0e7a640cb83f9e9e08d4d764d0e061993ed85e8bdb1309be98d603fd98"
+    },
+    {
+      "path": "tests/e2e/storefront.spec.ts",
+      "bytes": 8847,
+      "sha256": "bc0fa8f231b1ca6b6e8785d600cd2a41164e76fc21b516a46522fb438206072d"
+    },
+    {
+      "path": "tests/i18n.test.ts",
+      "bytes": 1909,
+      "sha256": "d6a7074320fc2169849adc9a5e0cfbcd7f0180eebb6c63f10aa871421ddbf51e"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 591,
+      "sha256": "42e5282ba3b219a97feea772bb9b03f8f4128bdf6c87f84fe9b503d705f00ee0"
+    }
+  ]
+}

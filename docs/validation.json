@@ -1,0 +1,98 @@
+{
+  "delivery_date": "2026-10-15",
+  "project": "Maison Goya",
+  "scope": "Complete source implementation of the requested simulated frontend; not a verified production deployment.",
+  "environment": {
+    "node": "22.16.0",
+    "validation_typescript": "5.8.3",
+    "css_parser_postcss": "8.5.6",
+    "package_install": "Blocked: npm registry DNS could not resolve."
+  },
+  "executed": {
+    "typescript_syntax": {
+      "status": "passed",
+      "files": 33,
+      "diagnostics": 0,
+      "method": "TypeScript transpileModule on all non-declaration TS/TSX files; not framework semantic checking."
+    },
+    "pure_domain_semantics": {
+      "status": "passed",
+      "modules": 7,
+      "diagnostics": 0,
+      "strict": true
+    },
+    "unit_tests": {
+      "status": "passed",
+      "total": 39,
+      "passed": 39,
+      "failed": 0,
+      "skipped": 0,
+      "method": "Transpile domain/test files to temporary CommonJS, then execute node --test."
+    },
+    "translation_keys": {
+      "status": "passed",
+      "en": 244,
+      "fr": 244,
+      "checks": [
+        "Matching keys",
+        "Nonempty values",
+        "Interpolation-token parity",
+        "Product and narrative copy coverage"
+      ]
+    },
+    "css_syntax": {
+      "status": "passed",
+      "rules": 577,
+      "declarations": 1807,
+      "method": "PostCSS parse; no Tailwind compilation or visual evaluation."
+    },
+    "local_import_resolution": {
+      "status": "passed",
+      "imports": 130,
+      "unresolved": 0,
+      "method": "Static source-path resolution; does not resolve external dependencies."
+    },
+    "javascript_config_syntax": {
+      "status": "passed",
+      "files": 4,
+      "method": "node --check"
+    },
+    "asset_preflight": {
+      "status": "failed_expected_missing_inputs",
+      "required_slots": 11,
+      "missing_slots": 11,
+      "reason": "Original brand/product photographs were not supplied."
+    }
+  },
+  "not_executed": [
+    "npm dependency installation",
+    "Full framework TypeScript check (npm run typecheck)",
+    "ESLint (npm run lint)",
+    "Tailwind compilation",
+    "Next.js production build",
+    "Playwright browser tests",
+    "Visual/browser/a11y audit",
+    "Deployment"
+  ],
+  "included_not_executed": {
+    "playwright_scenarios": 9,
+    "projects": [
+      "Desktop Chromium",
+      "Mobile Chromium"
+    ]
+  },
+  "release_blockers": [
+    "Supply approved original photographs.",
+    "Install and resolve dependencies in a networked environment; inspect and commit the generated lockfile.",
+    "Run full lint, framework typecheck, tests, production build, and Playwright browser suite.",
+    "Review in real browsers at mobile and desktop sizes, EN and FR, all currencies, reduced motion and normal motion."
+  ],
+  "simulation_boundaries": [
+    "No actual OAuth or authentication server.",
+    "No payment processing, wallet authorization, actual invoice, carrier tracking, or merchant order submission.",
+    "No real atelier reservation.",
+    "Prices, quantities and opening schedules are illustrative.",
+    "Profiles, orders, bookings and demo stock live only in React memory.",
+    "Local storage only contains sanitized cart selections and locale/currency preferences."
+  ]
+}

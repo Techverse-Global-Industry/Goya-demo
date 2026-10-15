@@ -1,0 +1,244 @@
+TAP version 13
+# Subtest: exact narrative and catalog image assignments
+ok 1 - exact narrative and catalog image assignments
+  ---
+  duration_ms: 2.327102
+  type: 'test'
+  ...
+# Subtest: JPEG routing is canonical; only specified slots support WebP
+ok 2 - JPEG routing is canonical; only specified slots support WebP
+  ---
+  duration_ms: 0.607347
+  type: 'test'
+  ...
+# Subtest: all prices are positive integers in their currency minor units
+ok 3 - all prices are positive integers in their currency minor units
+  ---
+  duration_ms: 0.281124
+  type: 'test'
+  ...
+# Subtest: footwear uses all eight EU sizes; bags use one size; belts use centimetres
+ok 4 - footwear uses all eight EU sizes; bags use one size; belts use centimetres
+  ---
+  duration_ms: 0.609179
+  type: 'test'
+  ...
+# Subtest: cart sanitizer merges variants and caps stock
+ok 5 - cart sanitizer merges variants and caps stock
+  ---
+  duration_ms: 0.359102
+  type: 'test'
+  ...
+# Subtest: cart sanitizer rejects malformed and unknown entries
+ok 6 - cart sanitizer rejects malformed and unknown entries
+  ---
+  duration_ms: 2.64315
+  type: 'test'
+  ...
+# Subtest: prototype keys never become purchasable sizes
+ok 7 - prototype keys never become purchasable sizes
+  ---
+  duration_ms: 0.200272
+  type: 'test'
+  ...
+# Subtest: stock uses completed sales and current bag quantities independently
+ok 8 - stock uses completed sales and current bag quantities independently
+  ---
+  duration_ms: 0.175906
+  type: 'test'
+  ...
+# Subtest: preferences handle unavailable, corrupted, outdated and oversized storage
+ok 9 - preferences handle unavailable, corrupted, outdated and oversized storage
+  ---
+  duration_ms: 0.570912
+  type: 'test'
+  ...
+# Subtest: restored preferences validate locale, currency, and cart
+ok 10 - restored preferences validate locale, currency, and cart
+  ---
+  duration_ms: 0.554067
+  type: 'test'
+  ...
+# Subtest: money formatting respects minor units and zero-decimal XOF
+ok 11 - money formatting respects minor units and zero-decimal XOF
+  ---
+  duration_ms: 20.473851
+  type: 'test'
+  ...
+# Subtest: subtotal uses selected price book, not a currency conversion
+ok 12 - subtotal uses selected price book, not a currency conversion
+  ---
+  duration_ms: 0.227543
+  type: 'test'
+  ...
+# Subtest: shipping thresholds, empty bags and boutique pickup
+ok 13 - shipping thresholds, empty bags and boutique pickup
+  ---
+  duration_ms: 0.096225
+  type: 'test'
+  ...
+# Subtest: country-specific payment availability
+ok 14 - country-specific payment availability
+  ---
+  duration_ms: 0.153292
+  type: 'test'
+  ...
+# Subtest: shipping validation returns translation keys, not captured English messages
+ok 15 - shipping validation returns translation keys, not captured English messages
+  ---
+  duration_ms: 0.247443
+  type: 'test'
+  ...
+# Subtest: orders capture immutable monetary snapshots and explicitly simulated tracking
+ok 16 - orders capture immutable monetary snapshots and explicitly simulated tracking
+  ---
+  duration_ms: 0.286082
+  type: 'test'
+  ...
+# Subtest: pickup orders have no carrier tracking or delivery fee
+ok 17 - pickup orders have no carrier tracking or delivery fee
+  ---
+  duration_ms: 0.126031
+  type: 'test'
+  ...
+# Subtest: empty, malformed, oversold, or incompatible orders cannot complete
+ok 18 - empty, malformed, oversold, or incompatible orders cannot complete
+  ---
+  duration_ms: 0.374435
+  type: 'test'
+  ...
+# Subtest: invoice is localized and never represents a fiscal document or receipt
+ok 19 - invoice is localized and never represents a fiscal document or receipt
+  ---
+  duration_ms: 5.135151
+  type: 'test'
+  ...
+# Subtest: search folds accents and case
+ok 20 - search folds accents and case
+  ---
+  duration_ms: 0.169255
+  type: 'test'
+  ...
+# Subtest: local dates and times are boutique-specific
+ok 21 - local dates and times are boutique-specific
+  ---
+  duration_ms: 0.717223
+  type: 'test'
+  ...
+# Subtest: date ranges span 90 calendar days without date-only timezone drift
+ok 22 - date ranges span 90 calendar days without date-only timezone drift
+  ---
+  duration_ms: 0.435437
+  type: 'test'
+  ...
+# Subtest: valid future booking is accepted
+ok 23 - valid future booking is accepted
+  ---
+  duration_ms: 0.536229
+  type: 'test'
+  ...
+# Subtest: past, impossible, Sunday and out-of-range dates are rejected
+ok 24 - past, impossible, Sunday and out-of-range dates are rejected
+  ---
+  duration_ms: 1.083866
+  type: 'test'
+  ...
+# Subtest: same-day elapsed times and duplicate local slots are rejected
+ok 25 - same-day elapsed times and duplicate local slots are rejected
+  ---
+  duration_ms: 0.438712
+  type: 'test'
+  ...
+# Subtest: cart actions remain inert until hydration completes
+ok 26 - cart actions remain inert until hydration completes
+  ---
+  duration_ms: 0.521096
+  type: 'test'
+  ...
+# Subtest: cart additions merge, open the drawer and stop at stock
+ok 27 - cart additions merge, open the drawer and stop at stock
+  ---
+  duration_ms: 0.297088
+  type: 'test'
+  ...
+# Subtest: quantity updates clamp and zero removes the line
+ok 28 - quantity updates clamp and zero removes the line
+  ---
+  duration_ms: 0.30474
+  type: 'test'
+  ...
+# Subtest: locale and currency changes preserve the current cart and overlay
+ok 29 - locale and currency changes preserve the current cart and overlay
+  ---
+  duration_ms: 0.124958
+  type: 'test'
+  ...
+# Subtest: completion is atomic: clear bag, allocate stock, add history, show confirmation
+ok 30 - completion is atomic: clear bag, allocate stock, add history, show confirmation
+  ---
+  duration_ms: 0.584702
+  type: 'test'
+  ...
+# Subtest: restored carts are clamped against sales already completed in the tab
+ok 31 - restored carts are clamped against sales already completed in the tab
+  ---
+  duration_ms: 0.210899
+  type: 'test'
+  ...
+# Subtest: unknown quick-view products cannot open a broken modal
+ok 32 - unknown quick-view products cannot open a broken modal
+  ---
+  duration_ms: 0.124738
+  type: 'test'
+  ...
+# Subtest: atelier completion is atomic and prevents duplicate slot allocation
+ok 33 - atelier completion is atomic and prevents duplicate slot allocation
+  ---
+  duration_ms: 0.852797
+  type: 'test'
+  ...
+# Subtest: sign out removes the simulated user and closes the overlay
+ok 34 - sign out removes the simulated user and closes the overlay
+  ---
+  duration_ms: 0.165269
+  type: 'test'
+  ...
+# Subtest: English and French have identical key coverage
+ok 35 - English and French have identical key coverage
+  ---
+  duration_ms: 1.717232
+  type: 'test'
+  ...
+# Subtest: all strings are nonempty and preserve interpolation tokens across languages
+ok 36 - all strings are nonempty and preserve interpolation tokens across languages
+  ---
+  duration_ms: 3.949501
+  type: 'test'
+  ...
+# Subtest: interpolation is reactive and accepts numbers without treating them as markup
+ok 37 - interpolation is reactive and accepts numbers without treating them as markup
+  ---
+  duration_ms: 0.259362
+  type: 'test'
+  ...
+# Subtest: all product names, descriptions, materials and colors have both languages
+ok 38 - all product names, descriptions, materials and colors have both languages
+  ---
+  duration_ms: 0.308746
+  type: 'test'
+  ...
+# Subtest: all four narrative panels are fully translated
+ok 39 - all four narrative panels are fully translated
+  ---
+  duration_ms: 0.424471
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 160.122913
