@@ -22,7 +22,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
-    <body className="bg-obsidian text-ivory antialiased">
+    <body suppressHydrationWarning className="bg-obsidian text-ivory antialiased">
       <ShopProvider><PwaProvider>{children}<ConnectionNotice /></PwaProvider></ShopProvider>
     </body>
   </html>;

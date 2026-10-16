@@ -20,6 +20,23 @@ export function Story() {
     if (!section) return;
     const panels = gsap.utils.toArray<HTMLElement>('.story-panel', section);
     const media = gsap.matchMedia();
+    media.add('(max-width: 899px) and (prefers-reduced-motion: no-preference)', () => {
+      const heroPanel = panels[0];
+      const heroCopy = heroPanel?.querySelector<HTMLElement>('.story-copy');
+      if (!heroPanel || !heroCopy) return;
+      const fade = gsap.to(heroCopy, {
+        opacity: 0,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroPanel,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+          invalidateOnRefresh: true,
+        },
+      });
+      return () => fade.scrollTrigger?.kill();
+    });
     media.add('(min-width: 900px) and (min-height: 620px) and (prefers-reduced-motion: no-preference)', () => {
       section.dataset.motion = 'horizontal';
       let activeIndex = 0;
