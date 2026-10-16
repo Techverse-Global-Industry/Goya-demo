@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import type { FormEvent, KeyboardEvent } from 'react';
+import type { FormEvent } from 'react';
 import { useShop } from '@/context/shop-context';
 import { formatDate, validEmail } from '@/lib/commerce';
 import { downloadInvoice } from '@/lib/browser';
@@ -13,14 +13,14 @@ import { Icon } from './icon';
 export function Auth() {
   const { state, dispatch, t, money } = useShop();
   const root = useRef<HTMLDivElement>(null);
-  const [tab, setTab] = useState<'social' | 'email'>('social');
+  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: TranslationKey; password?: TranslationKey }>({});
 
   useGSAP(() => {
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) gsap.fromTo('.auth-stage', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' });
-  }, { scope: root, dependencies: [tab, !!state.user], revertOnUpdate: true });
+  }, { scope: root, dependencies: [mode, !!state.user], revertOnUpdate: true });
 
   const oauth = (provider: 'google' | 'apple') => {
     dispatch({ type: 'signIn', user: { id: `demo-${provider}`, name: 'Alex', email: `guest.${provider}@example.test`, provider } });
@@ -39,13 +39,6 @@ export function Auth() {
     // No credential object is persisted or sent. The password never leaves this input state.
     setPassword('');
     dispatch({ type: 'signIn', user: { id: `demo-email:${normalized}`, name: normalized.split('@')[0], email: normalized, provider: 'email' } });
-  };
-  const onTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-    event.preventDefault();
-    const next = event.key === 'Home' ? 'social' : event.key === 'End' ? 'email' : tab === 'social' ? 'email' : 'social';
-    setTab(next);
-    document.getElementById(`auth-tab-${next}`)?.focus();
   };
   const user = state.user;
   const orders = state.orders.filter((order) => order.customerId === user?.id);
@@ -73,18 +66,21 @@ export function Auth() {
       <DemoNote />
     </div> : <>
       <div className="auth-heading"><div className="auth-monogram" aria-hidden="true">MG</div><p className="eyebrow">{t('authEyebrow')}</p><h2 className="modal-display-title">{t('authTitle')}</h2><p className="modal-intro">{t('authIntro')}</p></div>
-      <div className="auth-tabs" role="tablist" aria-label={t('account')}>
-        {(['social', 'email'] as const).map((value) => <button type="button" role="tab" id={`auth-tab-${value}`} key={value} aria-controls={`auth-panel-${value}`} aria-selected={tab === value} tabIndex={tab === value ? 0 : -1} onClick={() => setTab(value)} onKeyDown={onTabKey}>{t(value === 'social' ? 'socialTab' : 'emailTab')}</button>)}
+      <div className="auth-tabs" role="group" aria-label={t('account')}>
+        <button type="button" aria-pressed={mode === 'signIn'} onClick={() => { setMode('signIn'); setErrors({}); }}>{t('signInTab')}</button>
+        <button type="button" aria-pressed={mode === 'signUp'} onClick={() => { setMode('signUp'); setErrors({}); }}>{t('signUpTab')}</button>
       </div>
-      <div className="auth-stage" key={tab} id={`auth-panel-${tab}`} role="tabpanel" aria-labelledby={`auth-tab-${tab}`}>
-        {tab === 'social' ? <div className="oauth-buttons">
+      <div className="auth-stage" key={mode}>
+        <form className="email-login" noValidate onSubmit={submitEmail}>
+          <TextField id="auth-email" label={t('email')} type="email" name="email" autoComplete="username" maxLength={254} required value={email} error={errors.email} onChange={(event) => { setEmail(event.target.value); setErrors((current) => ({ ...current, email: undefined })); }} />
+          <TextField id="auth-password" label={t('password')} type="password" name="password" autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'} minLength={8} maxLength={128} required hint={t('passwordHint')} value={password} error={errors.password} onChange={(event) => { setPassword(event.target.value); setErrors((current) => ({ ...current, password: undefined })); }} />
+          <button type="submit" className="button button-gold button-full">{t(mode === 'signIn' ? 'signIn' : 'createAccount')}<Icon name="arrow-right" /></button>
+        </form>
+        <div className="auth-divider"><span>{t('authOr')}</span></div>
+        <div className="oauth-buttons">
           <button type="button" className="button button-outline button-full" onClick={() => oauth('google')}><span className="provider-letter" aria-hidden="true">G</span>{t('continueGoogle')}<Icon name="arrow-right" width={16} height={16} /></button>
           <button type="button" className="button button-outline button-full" onClick={() => oauth('apple')}><Icon name="phone" />{t('continueApple')}<Icon name="arrow-right" width={16} height={16} /></button>
-        </div> : <form className="email-login" noValidate onSubmit={submitEmail}>
-          <TextField id="auth-email" label={t('email')} type="email" name="email" autoComplete="username" maxLength={254} required value={email} error={errors.email} onChange={(event) => { setEmail(event.target.value); setErrors((current) => ({ ...current, email: undefined })); }} />
-          <TextField id="auth-password" label={t('password')} type="password" name="password" autoComplete="off" minLength={8} maxLength={128} required hint={t('passwordHint')} value={password} error={errors.password} onChange={(event) => { setPassword(event.target.value); setErrors((current) => ({ ...current, password: undefined })); }} />
-          <button type="submit" className="button button-gold button-full">{t('signIn')}<Icon name="arrow-right" /></button>
-        </form>}
+        </div>
       </div>
       <DemoNote variant="authDemo" />
     </>}

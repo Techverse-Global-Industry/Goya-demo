@@ -17,7 +17,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" suppressHydrationWarning>
-    <body className={`${inter.variable} ${playfair.variable} bg-obsidian text-ivory antialiased`}>
+    <body suppressHydrationWarning className={`${inter.variable} ${playfair.variable} bg-obsidian text-ivory antialiased`}>
       <ShopProvider>{children}</ShopProvider>
     </body>
   </html>;
