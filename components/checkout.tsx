@@ -1,34 +1,41 @@
 'use client';
 
+import Link from 'next/link';
+import { useSectionNavigation } from '@/lib/use-section-navigation';
+
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useShop } from '@/context/shop-context';
-import { COUNTRIES, PAYMENT_METHODS, PRODUCT_BY_ID } from '@/lib/catalog';
+import { COUNTRIES, PAYMENT_METHODS } from '@/lib/catalog';
 import { isPaymentAvailable, shippingCost, validateShipping } from '@/lib/commerce';
 import type { FieldErrors } from '@/lib/commerce';
 import type { Country, Order, PaymentMethod, ShippingDetails } from '@/lib/types';
 import type { TranslationKey } from '@/lib/i18n';
-import { createDemoId, downloadInvoice } from '@/lib/browser';
+import { downloadInvoice } from '@/lib/browser';
+import { RequestError, shopRequest } from '@/lib/api';
 import { gsap, useGSAP } from '@/lib/gsap';
 import { DemoNote, InlineNotice, SelectField, TextField } from './controls';
 import { MaisonImage } from './maison-image';
 import { Icon } from './icon';
 import type { IconName } from './icon';
+import { Auth } from './auth';
+import { DemoPayment } from './demo-payment';
+import { OrderJourney } from './order-journey';
 
 const PAYMENT_ICONS: Record<PaymentMethod, IconName> = { card: 'card', apple: 'phone', mobile: 'phone', pickup: 'store' };
 
 function OrderSummary({ order, payment }: { order?: Order; payment?: PaymentMethod }) {
-  const { state, t, money, cartSubtotal } = useShop();
+  const { state, t, money, cartSubtotal, productById } = useShop();
   const currency = order?.currency ?? state.currency;
-  const lines = order?.lines ?? state.cart.map((line) => ({ ...line, unitPrice: PRODUCT_BY_ID.get(line.productId)!.prices[currency] }));
+  const lines = order?.lines ?? state.cart.map((line) => ({ ...line, unitPrice: productById.get(line.productId)!.prices[currency], product: productById.get(line.productId) }));
   const amount = order?.subtotal ?? cartSubtotal;
   const delivery = order?.shipping ?? shippingCost(amount, currency, payment);
   return <aside className="order-summary">
     <h3 className="eyebrow">{t('orderSummary')}</h3>
     <ul>{lines.map((line) => {
-      const product = PRODUCT_BY_ID.get(line.productId)!;
+      const product = line.product ?? productById.get(line.productId)!;
       return <li key={`${line.productId}:${line.size}`}>
-        <div className="summary-thumbnail"><MaisonImage index={product.image} alt={product.name[state.locale]} sizes="64px" className="object-cover" /></div>
+        <div className="summary-thumbnail"><MaisonImage index={product.image} sources={product.images} alt={product.name[state.locale]} sizes="64px" className="object-cover" /></div>
         <div><p>{product.name[state.locale]}</p><small>{line.size === 'OS' ? t('oneSize') : `${t('size')} ${line.size}`} · ×{line.quantity}</small></div>
         <span>{money(line.unitPrice * line.quantity, currency)}</span>
       </li>;
@@ -43,12 +50,18 @@ function OrderSummary({ order, payment }: { order?: Order; payment?: PaymentMeth
 }
 
 export function Checkout({ close }: { close: () => void }) {
-  const { state, dispatch, t } = useShop();
+  const navigate = useSectionNavigation();
+  const { state, dispatch, t, refresh, cartSubtotal } = useShop();
   const root = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<1 | 2>(1);
   const [shipping, setShipping] = useState<ShippingDetails>({ name: state.user?.name ?? '', email: state.user?.email ?? '', address: '', city: '', country: 'BJ' });
   const [errors, setErrors] = useState<FieldErrors<ShippingDetails>>({});
   const [payment, setPayment] = useState<PaymentMethod>('card');
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const checkoutKey = useRef<string | null>(null);
+  const submitting = useRef(false);
   const orderId = state.overlay?.kind === 'checkout' ? state.overlay.orderId : undefined;
   const order = state.orders.find((value) => value.id === orderId);
   const step = order ? 3 : view;
@@ -74,13 +87,27 @@ export function Checkout({ close }: { close: () => void }) {
     if (firstError) { document.getElementById(`shipping-${firstError}`)?.focus(); return; }
     setView(2);
   };
+  const completeOrder = async () => {
+    if (submitting.current || !isPaymentAvailable(payment, shipping.country)) return;
+    submitting.current = true; setBusy(true); setError('');
+    checkoutKey.current ??= crypto.randomUUID();
+    try {
+      const { order } = await shopRequest<{ order: Order }>('order', { cart: state.cart, currency: state.currency, recipient: shipping, payment, idempotencyKey: checkoutKey.current });
+      dispatch({ type: 'orderComplete', order });
+      await refresh();
+    } catch (error) {
+      setError(t(error instanceof RequestError && error.code === 'stockChanged' ? 'stockChanged' : 'requestFailed'));
+      await refresh();
+    } finally { submitting.current = false; setBusy(false); }
+  };
   const placeOrder = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!isPaymentAvailable(payment, shipping.country)) return;
-    dispatch({ type: 'order', id: createDemoId('MG'), createdAt: new Date().toISOString(), recipient: shipping, payment });
+    event.preventDefault(); setError('');
+    if (payment === 'pickup') void completeOrder();
+    else setPaymentOpen(true);
   };
 
-  if (!order && state.cart.length === 0) return <div className="empty-state"><Icon name="bag" width={36} height={36} /><h2>{t('emptyCheckout')}</h2><button type="button" className="button button-gold" onClick={close}>{t('continueShopping')}</button></div>;
+  if (!state.user) return <Auth checkout />;
+  if (!order && state.cart.length === 0) return <div className="empty-state"><Icon name="bag" width={36} height={36} /><h2>{t('emptyCheckout')}</h2><button type="button" className="button button-gold" onClick={() => { close(); navigate('collection'); }}>{t('continueShopping')}</button></div>;
 
   return <div className="checkout-root" ref={root}>
     <ol className="checkout-steps" aria-label={t('checkout')}>
@@ -94,13 +121,16 @@ export function Checkout({ close }: { close: () => void }) {
         <p className="confirmation-intro">{t('orderConfirmedText')}</p>
         <div className="confirmation-references"><div><span>{t('orderNumber')}</span><strong>{order.id}</strong></div><div><span>{t('tracking')}</span><strong>{order.tracking ?? t('pickupTracking')}</strong></div></div>
         <OrderSummary order={order} />
-        <div className="confirmation-actions"><button type="button" className="button button-outline" onClick={() => downloadInvoice(order, state.locale)}>{t('invoice')}<Icon name="download" /></button><button type="button" className="button button-gold" onClick={close}>{t('returnToMaison')}<Icon name="arrow-up-right" /></button></div>
+        <OrderJourney order={order} />
+        {order.paymentReference && <p className="payment-reference">{t('demoPaymentReference')}: {order.paymentReference}</p>}
+        <div className="confirmation-actions"><button type="button" className="button button-outline" onClick={() => downloadInvoice(order, state.locale)}>{t('invoice')}<Icon name="download" /></button><Link href="/app/orders" className="button button-gold" onClick={close}>{t('viewOrders')}<Icon name="arrow-up-right" /></Link></div>
         <DemoNote variant="paymentDemo" />
       </div> : <div className="checkout-layout">
         <div className="checkout-main">
           <p className="eyebrow">{t('checkoutEyebrow')}</p>
           <h2 className="modal-display-title" tabIndex={-1} data-step-heading>{t(view === 1 ? 'shippingTitle' : 'paymentTitle')}</h2>
           <p className="modal-intro">{t(view === 1 ? 'shippingDescription' : 'paymentDescription')}</p>
+          {error && <p className="field-error checkout-error" role="alert">{error}</p>}
           {view === 1 ? <form noValidate onSubmit={next} className="shipping-form">
             <TextField id="shipping-name" label={t('name')} name="name" autoComplete="name" required maxLength={100} value={shipping.name} onChange={(event) => update('name', event.target.value)} error={errors.name} data-initial-focus />
             <TextField id="shipping-email" label={t('email')} name="email" type="email" autoComplete="email" required maxLength={254} value={shipping.email} onChange={(event) => update('email', event.target.value)} error={errors.email} />
@@ -112,7 +142,7 @@ export function Checkout({ close }: { close: () => void }) {
               </SelectField>
             </div>
             <button type="submit" className="button button-gold button-full">{t('next')}<Icon name="arrow-right" /></button>
-          </form> : <form onSubmit={placeOrder}>
+          </form> : paymentOpen ? <DemoPayment method={payment} country={shipping.country} total={cartSubtotal + shippingCost(cartSubtotal, state.currency, payment)} busy={busy} onApprove={() => void completeOrder()} onBack={() => setPaymentOpen(false)} /> : <form onSubmit={placeOrder}>
             <fieldset className="payment-options"><legend className="sr-only">{t('payment')}</legend>
               {PAYMENT_METHODS.map((method) => {
                 const available = isPaymentAvailable(method, shipping.country);
@@ -124,7 +154,7 @@ export function Checkout({ close }: { close: () => void }) {
               })}
             </fieldset>
             <DemoNote variant="paymentDemo" /><InlineNotice />
-            <button type="submit" className="button button-gold button-full" disabled={!state.cart.length || !isPaymentAvailable(payment, shipping.country)}>{t('placeOrder')}<Icon name="shield" /></button>
+            <button type="submit" className="button button-gold button-full" disabled={busy || !state.cart.length || !isPaymentAvailable(payment, shipping.country)}>{t(busy ? 'saving' : 'placeOrder')}<Icon name="shield" /></button>
             <button type="button" className="text-link centered-link" onClick={() => setView(1)}>{t('back')}</button>
           </form>}
         </div>

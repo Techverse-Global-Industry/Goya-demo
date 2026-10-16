@@ -1,5 +1,7 @@
 # Release boundaries
 
+> Historical frontend-only checklist from 15 October 2026. The connected demo now has persistent accounts, inventory, orders and uploads. Use [DEMO-HOSTING.md](DEMO-HOSTING.md) for the current setup and hosting instructions. The real-commerce boundaries below still apply to payments, fulfillment and production operations.
+
 ## Deploying the demonstration
 
 Install dependencies in a networked Node.js 22+ environment. Review and commit the generated lockfile. Supply the eleven approved images, run the asset preflight, then run lint, the full TypeScript check, unit tests, a production build and the browser suite. Validate the built app at desktop, tablet and phone sizes with both languages and all three currencies.

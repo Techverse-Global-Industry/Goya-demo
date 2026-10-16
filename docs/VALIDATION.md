@@ -1,5 +1,7 @@
 # Delivery validation
 
+> Historical report for the original frontend delivery. The connected ecommerce demo was subsequently built and tested on 16 October 2026. See [CONNECTED-VALIDATION.md](CONNECTED-VALIDATION.md) for current results.
+
 Delivery: 15 October 2026. These results describe checks actually performed on this source package. They are not an assertion that the Next.js application was built, visually reviewed, or tested in a browser.
 
 ## Executed checks

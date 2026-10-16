@@ -1,5 +1,5 @@
 import { COUNTRIES, LOCATION_TIMEZONES, LOCATIONS, PAYMENT_METHODS, PRODUCT_BY_ID, SERVICES, TIME_SLOTS } from './catalog';
-import type { AtelierLocation, Booking, BookingDetails, CartLine, Country, Currency, Locale, Order, PaymentMethod, PriceBook, ShippingDetails } from './types';
+import type { AtelierLocation, Booking, BookingDetails, CartLine, Country, Currency, Locale, Order, PaymentMethod, PriceBook, Product, ShippingDetails } from './types';
 import type { TranslationKey } from './i18n';
 
 export const SHIPPING_THRESHOLD: PriceBook = { EUR: 60000, USD: 65000, XOF: 395000 };
@@ -22,8 +22,8 @@ export function variantKey(productId: string, size: string): string {
   return `${productId}:${size}`;
 }
 
-export function availableStock(productId: string, size: string, used: StockUsed = {}): number {
-  const product = PRODUCT_BY_ID.get(productId);
+export function availableStock(productId: string, size: string, used: StockUsed = {}, catalog: ReadonlyMap<string, Product> = PRODUCT_BY_ID): number {
+  const product = catalog.get(productId);
   if (!product || !Object.prototype.hasOwnProperty.call(product.stock, size)) return 0;
   const total = product.stock[size];
   const consumed = used[variantKey(productId, size)] ?? 0;
@@ -34,8 +34,8 @@ export function cartQuantity(cart: readonly CartLine[], productId: string, size:
   return cart.find((line) => line.productId === productId && line.size === size)?.quantity ?? 0;
 }
 
-export function remainingStock(cart: readonly CartLine[], used: StockUsed, productId: string, size: string): number {
-  return Math.max(0, availableStock(productId, size, used) - cartQuantity(cart, productId, size));
+export function remainingStock(cart: readonly CartLine[], used: StockUsed, productId: string, size: string, catalog: ReadonlyMap<string, Product> = PRODUCT_BY_ID): number {
+  return Math.max(0, availableStock(productId, size, used, catalog) - cartQuantity(cart, productId, size));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -43,7 +43,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** Treat local storage as untrusted. Unknown IDs, variants, negative values and NaN never reach state. */
-export function sanitizeCart(raw: unknown, used: StockUsed = {}): CartLine[] {
+export function sanitizeCart(raw: unknown, used: StockUsed = {}, catalog: ReadonlyMap<string, Product> = PRODUCT_BY_ID): CartLine[] {
   if (!Array.isArray(raw)) return [];
   const merged = new Map<string, CartLine>();
   for (const value of raw.slice(0, 128)) {
@@ -52,7 +52,7 @@ export function sanitizeCart(raw: unknown, used: StockUsed = {}): CartLine[] {
     if (typeof productId !== 'string' || typeof size !== 'string' || !Number.isSafeInteger(quantity)) continue;
     const amount = quantity as number;
     if (amount < 1) continue;
-    const limit = availableStock(productId, size, used);
+    const limit = availableStock(productId, size, used, catalog);
     if (!limit) continue;
     const key = variantKey(productId, size);
     const existing = merged.get(key)?.quantity ?? 0;
@@ -61,7 +61,7 @@ export function sanitizeCart(raw: unknown, used: StockUsed = {}): CartLine[] {
   return [...merged.values()];
 }
 
-export function readPreferences(raw: string | null): { locale: Locale; currency: Currency; cart: CartLine[] } {
+export function readPreferences(raw: string | null, catalog: ReadonlyMap<string, Product> = PRODUCT_BY_ID): { locale: Locale; currency: Currency; cart: CartLine[] } {
   const defaults = { locale: 'en' as Locale, currency: 'EUR' as Currency, cart: [] as CartLine[] };
   if (!raw || raw.length > 100_000) return defaults;
   try {
@@ -70,15 +70,15 @@ export function readPreferences(raw: string | null): { locale: Locale; currency:
     return {
       locale: parsed.locale === 'fr' ? 'fr' : 'en',
       currency: CURRENCIES.includes(parsed.currency as Currency) ? parsed.currency as Currency : 'EUR',
-      cart: sanitizeCart(parsed.cart),
+      cart: sanitizeCart(parsed.cart, {}, catalog),
     };
   } catch {
     return defaults;
   }
 }
 
-export function subtotal(cart: readonly CartLine[], currency: Currency): number {
-  return cart.reduce((sum, line) => sum + (PRODUCT_BY_ID.get(line.productId)?.prices[currency] ?? 0) * line.quantity, 0);
+export function subtotal(cart: readonly CartLine[], currency: Currency, catalog: ReadonlyMap<string, Product> = PRODUCT_BY_ID): number {
+  return cart.reduce((sum, line) => sum + (catalog.get(line.productId)?.prices[currency] ?? 0) * line.quantity, 0);
 }
 
 export function shippingCost(amount: number, currency: Currency, payment?: PaymentMethod): number {
@@ -143,6 +143,14 @@ export function normalizeSearch(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
+export function matchesProduct(product: Product, query: string): boolean {
+  const words = normalizeSearch(query).split(/\s+/).filter(Boolean);
+  const category = { men: 'men homme hommes', women: 'women femme femmes', accessories: 'accessories accessoires' }[product.category];
+  const kinds = { footwear: 'shoe shoes chaussure chaussures soulier souliers', bag: 'bag bags sac sacs', belt: 'belt belts ceinture ceintures' }[product.kind];
+  const text = normalizeSearch([product.id, category, kinds, ...Object.values(product.name), ...Object.values(product.description), ...Object.values(product.material), ...Object.values(product.color)].join(' '));
+  return words.every((word) => text.includes(word));
+}
+
 export function localDateTime(now: Date, timeZone: string): { date: string; time: string } {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
@@ -168,14 +176,14 @@ function isCalendarDate(date: string): boolean {
   return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === date;
 }
 
-export function isTimeAvailable(details: Pick<BookingDetails, 'date' | 'time' | 'location'>, bookings: readonly Booking[], now = new Date()): boolean {
+export function isTimeAvailable(details: Pick<BookingDetails, 'date' | 'time' | 'location'>, bookings: readonly Pick<Booking, 'date' | 'time' | 'location'>[], now = new Date()): boolean {
   if (!LOCATIONS.includes(details.location) || !TIME_SLOTS.some((time) => time === details.time)) return false;
   const localNow = localDateTime(now, LOCATION_TIMEZONES[details.location]);
   if (details.date < localNow.date || (details.date === localNow.date && details.time <= localNow.time)) return false;
   return !bookings.some((booking) => booking.location === details.location && booking.date === details.date && booking.time === details.time);
 }
 
-export function validateBooking(value: BookingDetails, bookings: readonly Booking[] = [], now = new Date()): FieldErrors<BookingDetails> {
+export function validateBooking(value: BookingDetails, bookings: readonly Pick<Booking, 'date' | 'time' | 'location'>[] = [], now = new Date()): FieldErrors<BookingDetails> {
   const errors: FieldErrors<BookingDetails> = {};
   if (value.name.trim().length < 2 || value.name.length > 100) errors.name = 'invalidName';
   if (!validEmail(value.email)) errors.email = 'invalidEmail';

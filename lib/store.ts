@@ -1,10 +1,16 @@
-import { PRODUCT_BY_ID } from './catalog';
+import { PRODUCTS } from './catalog';
 import { availableStock, createOrder, readPreferences, remainingStock, sanitizeCart, validateBooking, variantKey } from './commerce';
 import type { StockUsed } from './commerce';
 import type { TranslationKey } from './i18n';
-import type { Booking, BookingDetails, CartLine, Category, Currency, DemoUser, Locale, Order, Overlay, PaymentMethod, ShippingDetails } from './types';
+import type { Booking, BookingDetails, CartLine, Category, Currency, DemoUser, Locale, Order, Overlay, PaymentMethod, ShippingDetails, StoreSnapshot } from './types';
 
 export interface ShopState {
+  products: StoreSnapshot['products'];
+  announcements: StoreSnapshot['announcements'];
+  notifications: StoreSnapshot['notifications'];
+  bookedSlots: StoreSnapshot['bookedSlots'];
+  connected: boolean;
+  pushPublicKey: string | null;
   locale: Locale;
   currency: Currency;
   cart: CartLine[];
@@ -21,12 +27,17 @@ export interface ShopState {
 }
 
 export const INITIAL_STATE: ShopState = {
+  products: [...PRODUCTS], announcements: [], notifications: [], bookedSlots: [], connected: false, pushPublicKey: null,
   locale: 'en', currency: 'EUR', cart: [], stockUsed: {}, user: null,
   orders: [], bookings: [], overlay: null, filter: 'all', query: '',
   ready: false, notice: null, noticeSerial: 0,
 };
 
 export type ShopAction =
+  | { type: 'sync'; snapshot: StoreSnapshot }
+  | { type: 'connection'; connected: boolean }
+  | { type: 'orderComplete'; order: Order }
+  | { type: 'bookingComplete'; booking: Booking }
   | { type: 'hydrate'; raw: string | null }
   | { type: 'locale'; locale: Locale }
   | { type: 'currency'; currency: Currency }
@@ -52,15 +63,24 @@ function notify(state: ShopState, key: TranslationKey): ShopState {
 }
 
 export function shopReducer(state: ShopState, action: ShopAction): ShopState {
+  const catalog = new Map(state.products.map((product) => [product.id, product]));
   switch (action.type) {
+    case 'sync': {
+      const catalog = new Map(action.snapshot.products.map((product) => [product.id, product]));
+      const cart = state.user?.id === action.snapshot.user?.id ? sanitizeCart(state.cart, {}, catalog) : [];
+      return { ...state, ...action.snapshot, cart, stockUsed: {}, connected: true };
+    }
+    case 'connection': return { ...state, connected: action.connected };
+    case 'orderComplete': return { ...state, cart: [], orders: [action.order, ...state.orders.filter((order) => order.id !== action.order.id)], overlay: { kind: 'checkout', orderId: action.order.id }, notice: null };
+    case 'bookingComplete': return { ...state, bookings: [...state.bookings.filter((booking) => booking.id !== action.booking.id), action.booking], overlay: { kind: 'booking', bookingId: action.booking.id } };
     case 'hydrate': {
-      const prefs = readPreferences(action.raw);
-      return { ...state, ...prefs, cart: sanitizeCart(prefs.cart, state.stockUsed), ready: true };
+      const prefs = readPreferences(action.raw, catalog);
+      return { ...state, ...prefs, cart: sanitizeCart(prefs.cart, state.stockUsed, catalog), ready: true };
     }
     case 'locale': return { ...state, locale: action.locale };
     case 'currency': return { ...state, currency: action.currency };
     case 'open': {
-      if (action.overlay.kind === 'quick' && !PRODUCT_BY_ID.has(action.overlay.productId)) return state;
+      if (action.overlay.kind === 'quick' && !catalog.has(action.overlay.productId)) return state;
       return { ...state, overlay: action.overlay, notice: null };
     }
     case 'close': return { ...state, overlay: null };
@@ -69,7 +89,7 @@ export function shopReducer(state: ShopState, action: ShopAction): ShopState {
     case 'resetFilters': return { ...state, filter: 'all', query: '' };
     case 'add': {
       if (!state.ready) return state;
-      if (!remainingStock(state.cart, state.stockUsed, action.productId, action.size)) return notify(state, 'stockLimit');
+      if (!remainingStock(state.cart, state.stockUsed, action.productId, action.size, catalog)) return notify(state, 'stockLimit');
       const key = variantKey(action.productId, action.size);
       const exists = state.cart.some((line) => variantKey(line.productId, line.size) === key);
       const cart = exists
@@ -80,14 +100,14 @@ export function shopReducer(state: ShopState, action: ShopAction): ShopState {
     case 'quantity': {
       if (!Number.isSafeInteger(action.quantity)) return state;
       if (action.quantity <= 0) return shopReducer(state, { type: 'remove', productId: action.productId, size: action.size });
-      const max = availableStock(action.productId, action.size, state.stockUsed);
+      const max = availableStock(action.productId, action.size, state.stockUsed, catalog);
       const cart = state.cart.map((line) => line.productId === action.productId && line.size === action.size
         ? { ...line, quantity: Math.min(action.quantity, max) } : line).filter((line) => line.quantity > 0);
       return action.quantity > max ? notify({ ...state, cart }, 'stockLimit') : { ...state, cart };
     }
     case 'remove': return notify({ ...state, cart: state.cart.filter((line) => !(line.productId === action.productId && line.size === action.size)) }, 'removed');
     case 'signIn': return notify({ ...state, user: action.user }, 'signedIn');
-    case 'signOut': return notify({ ...state, user: null, overlay: null }, 'loggedOut');
+    case 'signOut': return notify({ ...state, user: null, overlay: null, cart: [], products: [], orders: [], bookings: [], notifications: [] }, 'loggedOut');
     case 'order': {
       // Atomic completion also makes repeated clicks idempotent.
       if (state.overlay?.kind !== 'checkout' || state.overlay.orderId) return state;

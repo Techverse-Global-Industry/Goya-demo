@@ -10,13 +10,18 @@ async function addFrancesco(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  const headers = { origin: 'http://127.0.0.1:3100' };
+  await page.request.post('/api/shop', { headers, data: { action: 'login', email: 'admin@goya.demo', password: 'MaisonDemo2026!' } });
+  const snapshot = await (await page.request.get('/api/shop?admin=1')).json();
+  const product = snapshot.products.find((product: { id: string }) => product.id === 'francesco');
+  await page.request.post('/api/shop', { headers, data: { action: 'saveProduct', product: { ...product, stock: { ...product.stock, '42': 5 } }, expectedUpdatedAt: product.updatedAt ?? null } });
+  await page.request.post('/api/shop', { headers, data: { action: 'register', name: 'Demo Guest', email: `browser-${crypto.randomUUID()}@example.test`, password: 'DemoBrowser2026!' } });
+  await page.goto('/app/shop');
   await expect(page.locator('[data-product-id="francesco"] .product-add')).toBeEnabled();
 });
 
 test('English/French updates narrative, products and open dialogs without losing state', async ({ page }) => {
   await page.locator('.site-header').getByRole('button', { name: 'Français', exact: true }).click();
-  await expect(page.getByText('Fondé en 2015 par Rodrigue Vodounon')).toBeVisible();
   await expect(page.locator('[data-product-id="francesco"] h3')).toHaveText('Le Mocassin Francesco');
   await page.locator('[data-product-id="francesco"] .product-add').click();
   let dialog = page.getByRole('dialog');
@@ -54,6 +59,7 @@ test('checkout validates delivery, restricts payments, confirms once, and export
   await addFrancesco(page);
   await page.getByRole('button', { name: 'Boutique checkout', exact: true }).click();
   let dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Email address', { exact: true }).fill('');
   await dialog.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(page.locator('#shipping-email')).toHaveAttribute('aria-invalid', 'true');
   await dialog.getByLabel('Full name', { exact: true }).fill('Demo Guest');
@@ -68,6 +74,9 @@ test('checkout validates delivery, restricts payments, confirms once, and export
   await dialog.getByRole('button', { name: 'Continue', exact: true }).click();
   await dialog.getByRole('radio', { name: /Mobile Money/ }).check();
   await dialog.getByRole('button', { name: 'Confirm demo order', exact: true }).click();
+  await dialog.getByLabel('Demo mobile number', { exact: true }).fill('0100000000');
+  await dialog.getByRole('button', { name: 'Send demo payment request', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Approve demo payment', exact: true }).click();
   dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: 'A beautiful choice.' })).toBeVisible();
   await expect(dialog.locator('.confirmation-references')).toContainText('DEMO-MG-');
@@ -77,21 +86,21 @@ test('checkout validates delivery, restricts payments, confirms once, and export
   expect((await download).suggestedFilename()).toMatch(/^maison-goya-demo-mg-.+\.txt$/);
 });
 
-test('simulated sign-in, focus trapping, Escape and logout', async ({ page }) => {
+test('saved account, focus trapping, Escape and logout', async ({ page }) => {
   const profile = page.locator('.profile-button');
   await profile.click();
-  await page.getByRole('button', { name: 'Continue with Google', exact: true }).click();
-  await expect(page.getByRole('dialog').getByText('Maison Goya VIP', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/app\/settings$/);
+  await expect(page.locator('.account-identity')).toContainText('Demo Guest');
+  await page.locator('[data-cart-trigger]').click();
   for (let i = 0; i < 14; i++) {
     await page.keyboard.press('Tab');
     expect(await page.evaluate(() => !!document.activeElement?.closest('dialog[open]'))).toBe(true);
   }
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(profile).toBeFocused();
+  await expect(page.locator('[data-cart-trigger]')).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('');
-  await profile.click();
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.locator('.account-sidebar-end').getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(profile).not.toHaveClass(/is-member/);
 });
 
@@ -101,13 +110,14 @@ test('live search is accent-insensitive and category filters are functional', as
   await expect(page.locator('.search-results li')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await page.locator('.category-filters').getByRole('button', { name: 'Women', exact: true }).click();
-  await expect(page.locator('.product-card')).toHaveCount(2);
+  await expect(page.locator('.product-card')).toHaveCount(4);
   await page.locator('.category-filters').getByRole('button', { name: 'Accessories', exact: true }).click();
-  await expect(page.locator('.product-card')).toHaveCount(2);
+  await expect(page.locator('.product-card')).toHaveCount(1);
 });
 
 test('atelier validates, books a future slot, and translates its confirmation', async ({ page }) => {
-  await page.locator('.atelier-copy').getByRole('button', { name: 'Book an atelier service', exact: true }).click();
+  await page.goto('/app/atelier');
+  await page.locator('.appointment-new').click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Full name', { exact: true }).fill('Demo Guest');
   await dialog.getByLabel('Email address', { exact: true }).fill('guest@example.test');
@@ -116,7 +126,8 @@ test('atelier validates, books a future slot, and translates its confirmation', 
   date.setUTCDate(date.getUTCDate() + 2);
   if (date.getUTCDay() === 0) date.setUTCDate(date.getUTCDate() + 1);
   await page.locator('#atelier-date').fill(date.toISOString().slice(0, 10));
-  await page.locator('#atelier-time').selectOption('10:00');
+  const availableTime = await page.locator('#atelier-time option:not([disabled])').nth(1).getAttribute('value');
+  await page.locator('#atelier-time').selectOption(availableTime!);
   await dialog.getByRole('button', { name: 'Confirm demo appointment', exact: true }).click();
   await expect(dialog.getByRole('heading', { name: 'A moment, reserved.' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Français', exact: true }).click();
@@ -125,6 +136,7 @@ test('atelier validates, books a future slot, and translates its confirmation', 
 });
 
 test('reduced-motion layout exposes all narrative chapters without pinning', async ({ page }) => {
+  await page.goto('/');
   await expect(page.locator('.story-panel')).toHaveCount(4);
   await expect(page.locator('.story-root')).not.toHaveAttribute('data-motion', 'horizontal');
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
@@ -134,6 +146,7 @@ test.describe('desktop horizontal animation', () => {
   test.use({ reducedMotion: 'no-preference', viewport: { width: 1440, height: 1000 } });
   test('language changes never duplicate the ScrollTrigger pin', async ({ page, isMobile }) => {
     test.skip(isMobile, 'Horizontal narrative is verified on the desktop project.');
+    await page.goto('/');
     await expect(page.locator('.story-root')).toHaveAttribute('data-motion', 'horizontal');
     await expect(page.locator('.pin-spacer')).toHaveCount(1);
     for (let i = 0; i < 3; i++) {

@@ -2,8 +2,7 @@
 
 import { useMemo, useRef } from 'react';
 import { useShop } from '@/context/shop-context';
-import { PRODUCTS } from '@/lib/catalog';
-import { normalizeSearch } from '@/lib/commerce';
+import { matchesProduct } from '@/lib/commerce';
 import type { Category, Product } from '@/lib/types';
 import { gsap, ScrollTrigger, useGSAP } from '@/lib/gsap';
 import { MaisonImage } from './maison-image';
@@ -22,7 +21,7 @@ export function ProductCard({ product, index }: { product: Product; index: numbe
   return <article className="product-card" data-product-id={product.id}>
     <div className="product-visual">
       <button type="button" className="product-image-button" aria-label={t('viewProduct', { name })} onClick={quickView}>
-        <MaisonImage index={product.image} alt={name} sizes="(min-width: 1400px) 25vw, (min-width: 900px) 33vw, (min-width: 540px) 50vw, 100vw" className="product-photo" />
+        <MaisonImage key={product.images?.join()} index={product.image} sources={product.images} alt={name} sizes="(min-width: 1400px) 25vw, (min-width: 900px) 33vw, (min-width: 540px) 50vw, 100vw" className="product-photo" />
       </button>
       <span className="product-badge">{t(product.badge)}</span>
       <span className="product-index" aria-hidden="true">N° {String(index + 1).padStart(2, '0')}</span>
@@ -41,13 +40,11 @@ export function ProductCard({ product, index }: { product: Product; index: numbe
 }
 
 export function Collection() {
-  const { state, dispatch, t } = useShop();
+  const { state, dispatch, t, products: catalog } = useShop();
   const root = useRef<HTMLElement>(null);
   const products = useMemo(() => {
-    const query = normalizeSearch(state.query);
-    return PRODUCTS.filter((product) => (state.filter === 'all' || product.category === state.filter)
-      && (!query || normalizeSearch(`${product.name[state.locale]} ${product.description[state.locale]} ${product.material[state.locale]} ${t(product.category)}`).includes(query)));
-  }, [state.filter, state.query, state.locale, t]);
+    return catalog.filter((product) => (state.filter === 'all' || product.category === state.filter) && matchesProduct(product, state.query));
+  }, [state.filter, state.query, catalog]);
 
   useGSAP(() => {
     const media = gsap.matchMedia();
@@ -74,6 +71,8 @@ export function Collection() {
         <div className="section-intro"><p>{t('collectionIntro')}</p><span className="edition-label">Maison Goya · {t('collectionSeason')}</span></div>
       </div>
     </div>
+    {state.announcements[0] && <div className="arrival-banner"><span className="eyebrow">{t('newArrivals')}</span><div><strong>{state.announcements[0].title[state.locale]}</strong><p>{state.announcements[0].body[state.locale]}</p></div>{state.announcements[0].productId && <button className="text-link" onClick={() => dispatch({ type: 'open', overlay: { kind: 'quick', productId: state.announcements[0].productId! } })}>{t('quickView')}<Icon name="arrow-right" /></button>}</div>}
+    <label className="workspace-search"><Icon name="search" /><span className="sr-only">{t('search')}</span><input type="search" value={state.query} onChange={(event) => dispatch({ type: 'query', query: event.target.value })} placeholder={state.locale === 'fr' ? 'Rechercher en français ou en anglais?' : 'Search in English or French?'} /></label>
     <div className="collection-toolbar">
       <div className="category-filters" role="group" aria-label={t('collection')}>
         {(['all', 'men', 'women', 'accessories'] as Category[]).map((category) => <button type="button" key={category} aria-pressed={state.filter === category} onClick={() => dispatch({ type: 'filter', filter: category })}>{t(category)}</button>)}
@@ -82,7 +81,7 @@ export function Collection() {
     </div>
     {state.query && <div className="active-search"><span>{t('search')}: “{state.query}”</span><button type="button" onClick={() => dispatch({ type: 'query', query: '' })} aria-label={t('clearSearch')}><Icon name="close" width={14} height={14} /></button></div>}
     <div className="product-grid">
-      {products.map((product) => <ProductCard key={product.id} product={product} index={PRODUCTS.indexOf(product)} />)}
+      {products.map((product) => <ProductCard key={product.id} product={product} index={catalog.indexOf(product)} />)}
     </div>
     {products.length === 0 && <div className="empty-state"><Icon name="search" width={30} height={30} /><h3>{t('noResults')}</h3><p>{t('noResultsText')}</p><button type="button" className="button button-outline" onClick={() => dispatch({ type: 'resetFilters' })}>{t('clearFilters')}</button></div>}
     <p className="catalog-disclaimer">{t('productNote')}</p>

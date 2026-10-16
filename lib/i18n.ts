@@ -1,6 +1,8 @@
 import type { Locale } from './types';
+import { appEnglish, appFrench } from './copy';
+import { accountEnglish, accountFrench } from './account-copy';
 
-const en = {
+const baseEnglish = {
   story: 'Story', collection: 'Collection', atelier: 'Atelier Cotonou',
   search: 'Search', account: 'Your Maison', cart: 'Shopping bag', menu: 'Navigation',
   close: 'Close', back: 'Back', next: 'Continue', cancel: 'Cancel',
@@ -92,7 +94,7 @@ const en = {
   noResultsText: 'Try another material or silhouette, or return to the full collection.',
   clearFilters: 'Reset the collection', clearSearch: 'Clear search', searchCollection: 'Search the collection',
   storyEyebrow: 'A dialogue between worlds', chapter: 'Chapter', chapters: 'Explore the four chapters',
-  storySubtitle1: 'Established 2015 by Rodrigue Vodounon',
+  storySubtitle1: 'Founded by Rodrigue Vodounou',
   storyTitle1: 'L’Héritage', storyAccent1: 'Croisé',
   storyBody1: 'Maison Goya is a journey across continents. We are the bridge where European luxury craftsmanship meets the vibrant pulse of African heritage. An expression of identity, made to move with you.',
   storySubtitle2: 'The technical heart of every pair',
@@ -131,9 +133,11 @@ const en = {
   home: 'Return home', loading: 'Preparing the Maison',
 } as const;
 
+const en = { ...baseEnglish, ...appEnglish, ...accountEnglish };
+
 export type TranslationKey = keyof typeof en;
 
-const fr: Record<TranslationKey, string> = {
+const baseFrench: Record<keyof typeof baseEnglish, string> = {
   story: 'Notre histoire', collection: 'La collection', atelier: 'Atelier Cotonou',
   search: 'Rechercher', account: 'Votre Maison', cart: 'Panier', menu: 'Navigation',
   close: 'Fermer', back: 'Retour', next: 'Continuer', cancel: 'Annuler',
@@ -225,7 +229,7 @@ const fr: Record<TranslationKey, string> = {
   noResultsText: 'Essayez une autre matière ou silhouette, ou retrouvez la collection complète.',
   clearFilters: 'Réinitialiser la collection', clearSearch: 'Effacer la recherche', searchCollection: 'Rechercher dans la collection',
   storyEyebrow: 'Un dialogue entre les mondes', chapter: 'Chapitre', chapters: 'Explorer les quatre chapitres',
-  storySubtitle1: 'Fondé en 2015 par Rodrigue Vodounon',
+  storySubtitle1: 'Fondée par Rodrigue Vodounou',
   storyTitle1: 'L’Héritage', storyAccent1: 'Croisé',
   storyBody1: 'Maison Goya est un voyage à travers les continents. Le pont où le savoir-faire du luxe européen rencontre l’âme de l’artisanat africain. Une expression d’identité, pensée pour vous accompagner.',
   storySubtitle2: 'Le cœur technique de chaque création',
@@ -264,6 +268,7 @@ const fr: Record<TranslationKey, string> = {
   home: 'Retour à l’accueil', loading: 'La Maison se prépare',
 };
 
+const fr = { ...baseFrench, ...appFrench, ...accountFrench };
 export const dictionary: Record<Locale, Record<TranslationKey, string>> = { en, fr };
 export type Translate = (key: TranslationKey, values?: Record<string, string | number>) => string;
 

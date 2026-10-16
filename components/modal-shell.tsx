@@ -49,7 +49,10 @@ export function ModalShell({ title, drawer = false, wide = false, children }: Mo
     };
   }, { scope: dialog });
 
-  const close = () => setCloseRequested(true);
+  const close = () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) dispatch({ type: 'close' });
+    else setCloseRequested(true);
+  };
 
   useGSAP(() => {
     if (!closeRequested) return;
@@ -64,6 +67,15 @@ export function ModalShell({ title, drawer = false, wide = false, children }: Mo
   }, { scope: dialog, dependencies: [closeRequested] });
 
   return <dialog ref={dialog} aria-labelledby={titleId} className={`maison-dialog ${drawer ? 'maison-dialog--drawer' : ''} ${wide ? 'maison-dialog--wide' : ''}`}
+    onKeyDown={(event) => {
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return; }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')).filter((element) => element.getClientRects().length && !element.closest('[inert]'));
+      const first = controls[0], last = controls[controls.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }}
     onCancel={(event) => { event.preventDefault(); close(); }}>
     <div className="dialog-positioner" onPointerDown={(event) => { if (event.target === event.currentTarget) close(); }}>
       <div className="dialog-panel" ref={panel}>

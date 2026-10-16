@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-16",
+  "build": "passed",
+  "typecheck": "passed",
+  "lint": { "errors": 0, "warnings": 1 },
+  "unit_tests": { "passed": 53, "failed": 0 },
+  "asset_slots": { "passed": 11, "failed": 0 },
+  "browser_checks": {
+    "configured": 20,
+    "applicable_verified_across_runs": 19,
+    "expected_mobile_skip": 1,
+    "last_full_run": { "passed": 18, "failed": 1, "skipped": 1 },
+    "remaining_mobile_journey_rerun": "passed after explicitly awaiting registration response"
+  },
+  "production_dependency_vulnerabilities": 0,
+  "hosted_neon_netlify": "not configured; user selected local-first development",
+  "physical_device_push_install": "requires deployed HTTPS verification"
+}

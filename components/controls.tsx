@@ -22,7 +22,7 @@ export function CurrencySelect() {
   const { state, dispatch, t } = useShop();
   return <label className="currency-select">
     <span className="sr-only">{t('currency')}</span>
-    <select value={state.currency} onChange={(event) => dispatch({ type: 'currency', currency: event.target.value as Currency })}>
+    <select aria-label={t('currency')} value={state.currency} onChange={(event) => dispatch({ type: 'currency', currency: event.target.value as Currency })}>
       {CURRENCIES.map((currency) => <option key={currency} value={currency}>{currency}</option>)}
     </select>
     <Icon name="chevron" width={13} height={13} />

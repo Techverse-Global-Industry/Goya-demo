@@ -3,9 +3,10 @@
 import { Header } from '@/components/header';
 import { Story } from '@/components/story';
 import { Manifesto, Atelier, Footer } from '@/components/editorial';
-import { Collection } from '@/components/collection';
+import { BrandCollection } from '@/components/brand-collection';
 import { Overlays } from '@/components/overlays';
 import { Toast } from '@/components/controls';
+import { InstallPanel } from '@/components/pwa';
 
 export default function MaisonGoyaPage() {
   return <>
@@ -13,9 +14,10 @@ export default function MaisonGoyaPage() {
     <main>
       <Story />
       <Manifesto />
-      <Collection />
+      <BrandCollection />
       <Atelier />
     </main>
+    <InstallPanel />
     <Footer />
     <Overlays />
     <Toast />

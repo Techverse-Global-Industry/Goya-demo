@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import Link from 'next/link';
 import { useShop } from '@/context/shop-context';
 import { SERVICES } from '@/lib/catalog';
 import { gsap, useGSAP } from '@/lib/gsap';
@@ -28,7 +29,7 @@ export function Manifesto() {
 }
 
 export function Atelier() {
-  const { state, dispatch, t } = useShop();
+  const { t } = useShop();
   const root = useRef<HTMLElement>(null);
   useGSAP(() => {
     const media = gsap.matchMedia();
@@ -55,7 +56,7 @@ export function Atelier() {
           <Icon name="plus" width={16} height={16} />
         </div>)}
       </div>
-      <button type="button" className="button button-gold" onClick={() => dispatch({ type: 'open', overlay: { kind: 'booking' } })} disabled={!state.ready}>{t('bookService')}<Icon name="arrow-up-right" /></button>
+      <Link href="/app/atelier" className="button button-gold">{t('bookService')}<Icon name="arrow-up-right" /></Link>
       <p className="atelier-location-note"><Icon name="pin" width={14} height={14} />{t('atelierLocations')}</p>
     </div>
   </section>;
@@ -64,12 +65,13 @@ export function Atelier() {
 export function Footer() {
   const { dispatch, t } = useShop();
   return <footer className="site-footer section-pad">
-    <div className="footer-top"><div><a className="footer-wordmark" href="#story">MAISON GOYA<span>.</span></a><p>{t('footerLine')}</p></div>
+    <div className="footer-top"><div><Link className="footer-wordmark" href="/#story">MAISON GOYA<span>.</span></Link><p>{t('footerLine')}</p></div>
       <span className="footer-monogram" aria-hidden="true">MG</span>
     </div>
     <div className="footer-bottom">
       <p suppressHydrationWarning>{t('footerCopyright', { year: new Date().getFullYear() })}</p>
       <nav aria-label={t('maison')}>
+        <Link href="/app">{t('myMaison')}</Link>
         <button type="button" onClick={() => dispatch({ type: 'open', overlay: { kind: 'info', topic: 'shipping' } })}>{t('shippingInfo')}</button>
         <button type="button" onClick={() => dispatch({ type: 'open', overlay: { kind: 'info', topic: 'care' } })}>{t('careInfo')}</button>
         <button type="button" onClick={() => dispatch({ type: 'open', overlay: { kind: 'info', topic: 'privacy' } })}>{t('privacyInfo')}</button>

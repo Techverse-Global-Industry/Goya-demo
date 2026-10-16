@@ -15,6 +15,9 @@ export interface Product {
   material: Localized;
   color: Localized;
   image: number;
+  images?: string[];
+  published?: boolean;
+  updatedAt?: string;
   category: Exclude<Category, 'all'>;
   kind: 'footwear' | 'bag' | 'belt';
   badge: 'signature' | 'limited' | 'atelierEdition';
@@ -38,7 +41,11 @@ export interface ShippingDetails {
 
 export interface OrderLine extends CartLine {
   unitPrice: number;
+  product?: Product;
 }
+
+export type OrderStatus = 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
+export interface OrderEvent { status: OrderStatus; at: string }
 
 export interface Order {
   id: string;
@@ -52,6 +59,9 @@ export interface Order {
   total: number;
   payment: PaymentMethod;
   recipient: ShippingDetails;
+  status?: OrderStatus;
+  events?: OrderEvent[];
+  paymentReference?: string;
 }
 
 export interface DemoUser {
@@ -59,6 +69,21 @@ export interface DemoUser {
   name: string;
   email: string;
   provider: 'google' | 'apple' | 'email';
+  role?: 'customer' | 'admin';
+}
+
+export interface Announcement { id: string; title: Localized; body: Localized; createdAt: string; productId?: string }
+export interface ShopNotification { id: string; userId: string; title: Localized; body: Localized; url: string; createdAt: string; read: boolean }
+export interface StoreSnapshot {
+  products: Product[];
+  user: DemoUser | null;
+  orders: Order[];
+  bookings: Booking[];
+  bookedSlots: Pick<Booking, 'date' | 'time' | 'location'>[];
+  announcements: Announcement[];
+  notifications: ShopNotification[];
+  revision: number;
+  pushPublicKey: string | null;
 }
 
 export interface BookingDetails {

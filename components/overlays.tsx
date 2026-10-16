@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useShop } from '@/context/shop-context';
 import { ModalShell } from './modal-shell';
 import { CartDrawer, QuickView } from './cart';
@@ -12,8 +13,10 @@ import { DemoNote, InlineNotice } from './controls';
 
 export function Overlays() {
   const { state, dispatch, t } = useShop();
+  const pathname = usePathname();
   const overlay = state.overlay;
   if (!overlay) return null;
+  if (!['info', 'menu'].includes(overlay.kind) && (!pathname.startsWith('/app') || state.user?.role !== 'customer')) return null;
   // A single discriminated union guarantees only one native modal at a time.
   switch (overlay.kind) {
     case 'cart': return <ModalShell key="cart" title={t('cart')} drawer>{(close) => <CartDrawer close={close} />}</ModalShell>;

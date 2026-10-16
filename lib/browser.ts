@@ -21,7 +21,7 @@ export function invoiceText(order: Order, locale: Locale): string {
   const money = (amount: number) => formatMoney(amount, order.currency, locale);
   const countryKey = `country${order.recipient.country}` as TranslationKey;
   const lines = order.lines.map((line) => {
-    const product = PRODUCT_BY_ID.get(line.productId)!;
+    const product = line.product ?? PRODUCT_BY_ID.get(line.productId)!;
     const size = line.size === 'OS' ? t('oneSize') : line.size;
     return `${product.name[locale]} | ${t('size')}: ${size} | ${t('quantity')}: ${line.quantity} | ${money(line.unitPrice * line.quantity)}`;
   });

@@ -7,16 +7,20 @@ import { LOCATIONS, SERVICES, TIME_SLOTS } from '@/lib/catalog';
 import { bookingDateRange, formatDate, isTimeAvailable, validateBooking } from '@/lib/commerce';
 import type { FieldErrors } from '@/lib/commerce';
 import type { AtelierLocation, AtelierService, BookingDetails } from '@/lib/types';
-import { createDemoId } from '@/lib/browser';
+import { shopRequest } from '@/lib/api';
+import type { Booking } from '@/lib/types';
+import { Auth } from './auth';
 import { gsap, useGSAP } from '@/lib/gsap';
 import { DemoNote, InlineNotice, SelectField, TextField } from './controls';
 import { Icon } from './icon';
 
 export function BookingModal({ close }: { close: () => void }) {
-  const { state, dispatch, t } = useShop();
+  const { state, dispatch, t, refresh } = useShop();
   const root = useRef<HTMLDivElement>(null);
   const [details, setDetails] = useState<BookingDetails>({ name: state.user?.name ?? '', email: state.user?.email ?? '', service: 'polish', location: 'cotonou', date: '', time: '' });
   const [errors, setErrors] = useState<FieldErrors<BookingDetails>>({});
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   const bookingId = state.overlay?.kind === 'booking' ? state.overlay.bookingId : undefined;
   const booking = state.bookings.find((value) => value.id === bookingId);
   const range = bookingDateRange(details.location);
@@ -31,17 +35,25 @@ export function BookingModal({ close }: { close: () => void }) {
     setDetails((current) => ({ ...current, [key]: value, ...(key === 'location' || key === 'date' ? { time: '' } : {}) }));
     setErrors((current) => ({ ...current, [key]: undefined, ...(key === 'location' || key === 'date' ? { time: undefined } : {}) }));
   };
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const now = new Date();
-    const validation = validateBooking(details, state.bookings, now);
+    const validation = validateBooking(details, state.bookedSlots, now);
     setErrors(validation);
     const firstError = Object.keys(validation)[0];
     if (firstError) { document.getElementById(`atelier-${firstError}`)?.focus(); return; }
-    dispatch({ type: 'book', id: createDemoId('AT'), details, now: now.toISOString() });
+    if (busy) return;
+    setBusy(true); setError('');
+    try {
+      const { booking } = await shopRequest<{ booking: Booking }>('book', { details });
+      dispatch({ type: 'bookingComplete', booking }); await refresh();
+    } catch { setError(t('slotTaken')); }
+    finally { setBusy(false); }
   };
 
+  if (!state.user) return <Auth />;
   return <div className="booking-root" ref={root}>
+    {error && <p className="field-error" role="alert">{error}</p>}
     {booking ? <div className="booking-confirmed confirmation">
       <div className="confirmation-mark"><Icon name="calendar" width={28} height={28} /></div>
       <p className="eyebrow">L’Atelier · {t('demoLabel')}</p>
@@ -54,7 +66,7 @@ export function BookingModal({ close }: { close: () => void }) {
         <div><dt>{t('date')}</dt><dd>{formatDate(booking.date, state.locale, true)} · {booking.time}</dd></div>
         <div><dt>{t('name')}</dt><dd>{booking.name}</dd></div>
       </dl>
-      <button type="button" className="button button-gold button-full" onClick={close}>{t('returnToMaison')}<Icon name="arrow-up-right" /></button>
+      <button type="button" className="button button-gold button-full" onClick={close}>{t('myAppointments')}<Icon name="arrow-up-right" /></button>
       <DemoNote variant="bookingDemo" />
     </div> : <>
       <p className="eyebrow">{t('atelierEyebrow')}</p>
@@ -70,11 +82,11 @@ export function BookingModal({ close }: { close: () => void }) {
         <div className="form-row"><TextField id="atelier-date" label={t('appointmentDate')} type="date" name="date" required min={range.min} max={range.max} value={details.date} error={errors.date} onChange={(event) => update('date', event.target.value)} />
           <SelectField id="atelier-time" label={t('appointmentTime')} value={details.time} error={errors.time} onChange={(event) => update('time', event.target.value)} required>
             <option value="">{t('selectTime')}</option>
-            {TIME_SLOTS.map((time) => <option key={time} value={time} disabled={!details.date || !isTimeAvailable({ ...details, time }, state.bookings)}>{time}</option>)}
+            {TIME_SLOTS.map((time) => <option key={time} value={time} disabled={!details.date || !isTimeAvailable({ ...details, time }, state.bookedSlots)}>{time}</option>)}
           </SelectField>
         </div>
         <p className="fine-print">{t('bookingDateHint')}</p><InlineNotice />
-        <button type="submit" className="button button-gold button-full">{t('reserve')}<Icon name="calendar" /></button>
+        <button type="submit" className="button button-gold button-full" disabled={busy}>{t(busy ? 'saving' : 'reserve')}<Icon name="calendar" /></button>
       </form>
       <DemoNote variant="bookingDemo" />
     </>}

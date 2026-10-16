@@ -17,14 +17,14 @@ const hydrated = () => shopReducer(INITIAL_STATE, { type: 'hydrate', raw: null }
 
 test('exact narrative and catalog image assignments', () => {
   assert.deepEqual(STORY_IMAGES, [1, 2, 3, 4]);
-  assert.deepEqual(PRODUCT_IMAGES, [4, 5, 6, 7, 8, 9, 10, 11]);
+  assert.deepEqual(PRODUCT_IMAGES, [3, 7, 6, 5, 9, 10, 8, 11]);
   assert.deepEqual(PRODUCTS.map((product) => product.image), [...PRODUCT_IMAGES]);
   assert.equal(PRODUCTS.length, 8);
 });
 
-test('JPEG routing is canonical; only specified slots support WebP', () => {
-  for (let i = 1; i <= 11; i++) assert.equal(imageSources(i)[0], `/images/img${i}.jpg`);
-  for (const i of [3, 4, 11]) assert.equal(imageSources(i)[1], `/images/img${i}.webp`);
+test('routing matches supplied WebP slots and preserves JPEG alternatives', () => {
+  for (const i of [1, 2, 5, 6, 7, 8, 9, 10]) assert.equal(imageSources(i)[0], `/images/img${i}.jpg`);
+  for (const i of [3, 4, 11]) assert.deepEqual(imageSources(i), [`/images/img${i}.webp`, `/images/img${i}.jpg`]);
   for (const i of [1, 2, 5, 6, 7, 8, 9, 10]) assert.equal(imageSources(i).length, 1);
   assert.throws(() => imageSources(0), RangeError);
   assert.throws(() => imageSources(12), RangeError);
