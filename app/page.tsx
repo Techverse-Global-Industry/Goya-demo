@@ -2,7 +2,7 @@
 
 import { Header } from '@/components/header';
 import { Story } from '@/components/story';
-import { Manifesto, MaisonStory, Atelier, Footer } from '@/components/editorial';
+import { Manifesto, MaisonStory, Atelier, Footer, CraftCampaign } from '@/components/editorial';
 import { BrandCollection } from '@/components/brand-collection';
 import { Overlays } from '@/components/overlays';
 import { Toast } from '@/components/controls';
@@ -13,8 +13,9 @@ export default function MaisonGoyaPage() {
     <Header />
     <main className="maison-public">
       <Story />
-      <Manifesto />
       <BrandCollection />
+      <CraftCampaign />
+      <Manifesto />
       <MaisonStory />
       <Atelier />
     </main>

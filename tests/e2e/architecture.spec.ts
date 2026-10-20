@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test('brand website is informational and every customer route requires login', async ({ page, isMobile }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('A world ofcharacter.');
-  await expect(page.locator('.brand-category-grid article')).toHaveCount(3);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Made to move you');
+  await expect(page.locator('.brand-category-grid article')).toHaveCount(4);
   await expect(page.locator('.product-card')).toHaveCount(0);
   await expect(page.locator('[data-cart-trigger]')).toHaveCount(0);
   await expect(page.locator('.site-header').getByRole('button', { name: 'Search', exact: true })).toHaveCount(0);

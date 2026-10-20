@@ -6,6 +6,7 @@ import './globals.css';
 import './commerce.css';
 import './account.css';
 import './maison-design.css';
+import './fashion-design.css';
 
 const inter = localFont({ src: '../public/fonts/inter-normal-100-900.woff2', variable: '--font-inter', display: 'swap', weight: '100 900', style: 'normal' });
 const playfair = localFont({ src: [
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   // This is a demonstration storefront, not an authorized live commercial site.
   robots: { index: false, follow: false },
 };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#f8f6f1', colorScheme: 'light' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#ffffff', colorScheme: 'light' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>

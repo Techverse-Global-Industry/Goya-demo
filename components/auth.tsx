@@ -10,10 +10,10 @@ import type { DemoUser } from '@/lib/types';
 import { DemoNote, TextField } from './controls';
 import { Icon } from './icon';
 
-export function Auth({ checkout = false, destination = '/app', admin = false }: { checkout?: boolean; destination?: string; admin?: boolean }) {
+export function Auth({ checkout = false, destination = '/app', admin = false, initialMode = 'login' }: { checkout?: boolean; destination?: string; admin?: boolean; initialMode?: 'login' | 'register' }) {
   const router = useRouter();
   const { state, dispatch, t, refresh } = useShop();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');

@@ -1,28 +1,37 @@
 # Maison Goya presentation
 
-The October 2026 redesign takes its presentation cues from the Santoni reference in the client discussion: campaign photography, a centered masthead, generous space, editorial collection tiles and a substantial footer. It expresses Goya through its woven shoe detail, warm stone, olive ink and the meeting of European and African influences. No Santoni artwork, photography, logos or code is included.
+The presentation follows the structure of the client’s [Santoni reference](https://www.santonishoes.com/int-en/): a left-aligned wordmark and collection navigation, a full-screen campaign film, four footwear category photographs, paired men’s and women’s campaigns, a second craft film, a concise brand statement, a horizontally browsable editorial journal, and a compact white service footer. The copy, identity and imagery are Goya’s. No Santoni photography, film, logo or code is included.
 
-## Visual system
+## Presentation and interaction
 
-- Ivory paper (`#f8f6f1`), charcoal olive text (`#29281f`), bronze details (`#796446`) and a dark olive footer (`#30392f`).
-- Cormorant Garamond for display typography; Inter for controls and reading. Both are self hosted with their OFL licenses in `public/fonts/`.
-- A wide desktop campaign and a separate portrait composition for phones. The browser selects the appropriate optimized source through `picture` and Next.js `getImageProps`.
-- Normal vertical scrolling, gentle entrance motion and reduced-motion support.
-- Consistent materials and hierarchy across public pages, account access, the private customer application, dialogs and administration.
-- A five-item phone navigation dock, with the personal overview accessible through the Goya wordmark or menu.
+- White surfaces, black type, understated controls, small uppercase sans-serif campaign captions and full-bleed imagery. The Goya wordmark retains its serif character.
+- English and French copy is in `lib/fashion-copy.ts`; the public layout and shared header styles are in `app/fashion-design.css`. Existing private account and commerce surfaces remain integrated with `app/maison-design.css`.
+- Desktop category menus support pointer, click, keyboard and Escape. Phone navigation uses the existing accessible dialog.
+- Silent, inline, looping MP4 films have image posters and visible play/pause controls. Playback stops outside the viewport and in hidden tabs. Reduced-motion and data-saving preferences start with a static image; explicit play is available.
+- Videos load only when visible and automatic playback is permitted, or when the visitor presses play. They are not added to the service-worker cache.
+- The journal supports native touch/trackpad scrolling, scroll snapping, keyboard focus and previous/next buttons.
+- Category links enter the protected customer collection; account creation and all commerce activities stay within the customer application. The public site exposes no live inventory or guest checkout.
+- The footer invitation opens the existing registration form directly. It does not simulate a mailing-list subscription.
 
-`app/maison-design.css` contains the presentation system. English and French presentation strings are in `lib/presentation-copy.ts`. Commerce, authentication and persistence continue to use their existing contracts.
+## Media provenance
 
-## Campaign assets
+The customer catalog continues to show the supplied Goya product photographs. Campaign images are AI-generated editorial concepts based on those supplied references, rather than evidence of a commissioned shoot or exact production details.
 
-The images in `public/images/campaign/` are AI-generated editorial concepts created from the supplied Goya footwear references. They are presentation imagery, not evidence of a commissioned photographic shoot or exact production product details. The actual customer catalog continues to show the supplied brand/product photographs.
+| Asset | Reference / source |
+| --- | --- |
+| `goya-movement-men.webp` | Supplied `img3.webp`: black loafer with a colourful woven strap, shown with charcoal tailoring |
+| `goya-movement-women.webp` | Supplied `img4.webp`: midnight-blue sculptural woven heels, shown with an ivory skirt |
+| `goya-sneakers.webp` | Supplied `img7.jpg`: geometric-pattern lace-up sneaker |
+| `goya-boots.webp` | Supplied `img9.jpg`: cream and black ankle boots |
+| `goya-signature.webp`, `goya-signature-mobile.webp` | Earlier editorial still-life concepts based on `img3.webp`, retained for existing account surfaces |
+| `goya-sculpture.webp` | Earlier editorial still life based on `img4.webp` |
+| `public/videos/goya-movement.mp4` | [Ron Lach, Pexels #9464485](https://www.pexels.com/video/people-wearing-shoes-while-walking-9464485/) — footwear in motion |
+| `public/videos/goya-craft.mp4` | [Rachel Claire, Pexels #7724737](https://www.pexels.com/video/male-shoemaker-working-7724737/) — footwear finishing |
 
-- `goya-signature.webp`: wide black loafer still life, based on supplied `img3.webp`.
-- `goya-signature-mobile.webp`: portrait variant of that campaign, with space for mobile typography.
-- `goya-sculpture.webp`: women's editorial still life, based on supplied `img4.webp`.
+Both films are licensed stock concepts used for the demonstration, not footage of Goya products, employees or premises. They were resized, stripped of audio and compressed for direct delivery. Their poster images are extracted frames. The [Pexels license](https://www.pexels.com/license/) permits free use and modification. Source files remain outside the deployed application.
 
-The source client discussion PDF is kept out of version control because it contains account credentials.
+Inter and Cormorant Garamond are self hosted, with OFL license files in `public/fonts/`. The private source discussion PDF remains excluded from version control because it contains account credentials.
 
-## Review
+## Verification
 
-The local visual review covers public presentation in both languages, account access, collection, product sizes, bag, delivery, demo MoMo approval, order confirmation/history, appointment form and the admin product editor at desktop and phone widths. Test data uses a separate local store. Release check results are reported with the completed change.
+Review covers desktop, tablet and phone presentation, both languages, responsive overflow and image loading, campaign playback/pause, reduced-motion behaviour, menu keyboard access and editorial browsing. Commerce checks use a separate local demo store and exercise account access, product sizes, ordering, simulated MoMo payment, order history, appointments and administration. No live database is used for local test writes.
