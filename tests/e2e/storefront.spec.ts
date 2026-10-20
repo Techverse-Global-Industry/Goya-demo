@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { changeLanguage } from './navigation';
 
 async function addFrancesco(page: Page) {
   await page.locator('[data-product-id="francesco"] .product-add').click();
@@ -21,7 +22,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('English/French updates narrative, products and open dialogs without losing state', async ({ page }) => {
-  await page.locator('.site-header').getByRole('button', { name: 'Français', exact: true }).click();
+  await changeLanguage(page, 'Français');
   await expect(page.locator('[data-product-id="francesco"] h3')).toHaveText('Le Mocassin Francesco');
   await page.locator('[data-product-id="francesco"] .product-add').click();
   let dialog = page.getByRole('dialog');
@@ -88,7 +89,7 @@ test('checkout validates delivery, restricts payments, confirms once, and export
 
 test('saved account, focus trapping, Escape and logout', async ({ page }) => {
   const profile = page.locator('.profile-button');
-  await profile.click();
+  await page.locator('.account-sidebar nav').getByRole('button', { name: 'My details', exact: true }).click();
   await expect(page).toHaveURL(/\/app\/settings$/);
   await expect(page.locator('.account-identity')).toContainText('Demo Guest');
   await page.locator('[data-cart-trigger]').click();
@@ -107,7 +108,10 @@ test('saved account, focus trapping, Escape and logout', async ({ page }) => {
 test('live search is accent-insensitive and category filters are functional', async ({ page }) => {
   await page.locator('.site-header').getByRole('button', { name: 'Search', exact: true }).click();
   await page.locator('#maison-search').fill('decontracte');
-  await expect(page.locator('.search-results li')).toHaveCount(1);
+  await expect(page.locator('.search-results li').first()).toBeVisible();
+  const unaccentedResults = await page.locator('.search-results h3').allTextContents();
+  await page.locator('#maison-search').fill('DÉCONTRACTÉ');
+  await expect(page.locator('.search-results h3')).toHaveText(unaccentedResults);
   await page.keyboard.press('Escape');
   await page.locator('.category-filters').getByRole('button', { name: 'Women', exact: true }).click();
   await expect(page.locator('.product-card')).toHaveCount(4);
@@ -135,26 +139,26 @@ test('atelier validates, books a future slot, and translates its confirmation', 
   await expect(dialog.locator('.booking-summary')).toContainText('DEMO-AT-');
 });
 
-test('reduced-motion layout exposes all narrative chapters without pinning', async ({ page }) => {
+test('reduced-motion presentation keeps the campaign and collection accessible', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.story-panel')).toHaveCount(4);
-  await expect(page.locator('.story-root')).not.toHaveAttribute('data-motion', 'horizontal');
+  await expect(page.locator('.campaign-hero')).toBeVisible();
+  await page.locator('.campaign-copy a').click();
+  await expect(page.locator('.brand-category-grid')).toBeInViewport();
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
 });
 
-test.describe('desktop horizontal animation', () => {
+test.describe('desktop campaign animation', () => {
   test.use({ reducedMotion: 'no-preference', viewport: { width: 1440, height: 1000 } });
-  test('language changes never duplicate the ScrollTrigger pin', async ({ page, isMobile }) => {
-    test.skip(isMobile, 'Horizontal narrative is verified on the desktop project.');
+  test('language changes preserve normal scrolling and the campaign', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Campaign animation is verified on the desktop project.');
     await page.goto('/');
-    await expect(page.locator('.story-root')).toHaveAttribute('data-motion', 'horizontal');
-    await expect(page.locator('.pin-spacer')).toHaveCount(1);
+    await expect(page.locator('.campaign-hero')).toBeVisible();
     for (let i = 0; i < 3; i++) {
       await page.locator('.site-header').getByRole('button', { name: 'Français', exact: true }).click();
       await page.locator('.site-header').getByRole('button', { name: 'English', exact: true }).click();
     }
-    await expect(page.locator('.pin-spacer')).toHaveCount(1);
-    await page.evaluate(() => window.scrollTo(0, window.innerWidth * 1.85));
-    await expect(page.locator('.timeline-index')).toHaveText('03');
+    await expect(page.locator('.pin-spacer')).toHaveCount(0);
+    await page.locator('.campaign-copy a').click();
+    await expect(page.locator('.brand-category-grid')).toBeInViewport();
   });
 });

@@ -16,5 +16,5 @@ export default defineConfig([
     files: ['scripts/**/*.cjs'],
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
-  globalIgnores(['.next/**', 'out/**', 'playwright-report/**', 'test-results/**', 'next-env.d.ts']),
+  globalIgnores(['.next/**', '.data/**', 'out/**', 'playwright-report/**', 'test-results/**', 'next-env.d.ts']),
 ]);

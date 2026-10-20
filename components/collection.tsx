@@ -8,6 +8,7 @@ import { gsap, ScrollTrigger, useGSAP } from '@/lib/gsap';
 import { MaisonImage } from './maison-image';
 import { CurrencySelect } from './controls';
 import { Icon } from './icon';
+import { presentationCopy } from '@/lib/presentation-copy';
 
 export function ProductCard({ product, index }: { product: Product; index: number }) {
   const { state, dispatch, t, money, remaining } = useShop();
@@ -41,6 +42,7 @@ export function ProductCard({ product, index }: { product: Product; index: numbe
 
 export function Collection() {
   const { state, dispatch, t, products: catalog } = useShop();
+  const copy = presentationCopy[state.locale];
   const root = useRef<HTMLElement>(null);
   const products = useMemo(() => {
     return catalog.filter((product) => (state.filter === 'all' || product.category === state.filter) && matchesProduct(product, state.query));
@@ -66,13 +68,13 @@ export function Collection() {
 
   return <section id="collection" className="collection-section section-pad" ref={root} tabIndex={-1}>
     <div className="collection-heading">
-      <p className="eyebrow"><span className="tiny-rule" />{t('collectionEyebrow')}</p>
-      <div className="section-heading-row"><h2 className="display-heading">{t('collectionTitle')}<em>{t('collectionEmphasis')}</em></h2>
-        <div className="section-intro"><p>{t('collectionIntro')}</p><span className="edition-label">Maison Goya · {t('collectionSeason')}</span></div>
+      <p className="eyebrow"><span className="tiny-rule" />{copy.collectionAppEyebrow}</p>
+      <div className="section-heading-row"><h1 className="display-heading">{copy.collectionAppTitle}</h1>
+        <div className="section-intro"><p>{copy.collectionAppIntro}</p></div>
       </div>
     </div>
     {state.announcements[0] && <div className="arrival-banner"><span className="eyebrow">{t('newArrivals')}</span><div><strong>{state.announcements[0].title[state.locale]}</strong><p>{state.announcements[0].body[state.locale]}</p></div>{state.announcements[0].productId && <button className="text-link" onClick={() => dispatch({ type: 'open', overlay: { kind: 'quick', productId: state.announcements[0].productId! } })}>{t('quickView')}<Icon name="arrow-right" /></button>}</div>}
-    <label className="workspace-search"><Icon name="search" /><span className="sr-only">{t('search')}</span><input type="search" value={state.query} onChange={(event) => dispatch({ type: 'query', query: event.target.value })} placeholder={state.locale === 'fr' ? 'Rechercher en français ou en anglais?' : 'Search in English or French?'} /></label>
+    <label className="workspace-search"><Icon name="search" /><span className="sr-only">{t('search')}</span><input type="search" value={state.query} onChange={(event) => dispatch({ type: 'query', query: event.target.value })} placeholder={copy.searchPlaceholder} /></label>
     <div className="collection-toolbar">
       <div className="category-filters" role="group" aria-label={t('collection')}>
         {(['all', 'men', 'women', 'accessories'] as Category[]).map((category) => <button type="button" key={category} aria-pressed={state.filter === category} onClick={() => dispatch({ type: 'filter', filter: category })}>{t(category)}</button>)}

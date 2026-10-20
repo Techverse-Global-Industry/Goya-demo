@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { changeLanguage } from './navigation';
 
 test('customer account has a responsive sign-up, personal dashboard, saved details, orders and updates', async ({ page, isMobile }) => {
   test.setTimeout(120000);
@@ -6,6 +7,7 @@ test('customer account has a responsive sign-up, personal dashboard, saved detai
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/account');
+  await page.waitForURL(/\/login\?next=%2Fapp$/, { waitUntil: 'domcontentloaded', timeout: 45000 });
   await expect(page.locator('.account-entry')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'A place that feels like you.' })).toBeVisible();
   await expect.poll(() => page.locator('.account-entry-editorial img').evaluate((element) => (element as HTMLImageElement).complete && (element as HTMLImageElement).naturalWidth > 0), { timeout: 45000 }).toBe(true);
@@ -40,15 +42,15 @@ test('customer account has a responsive sign-up, personal dashboard, saved detai
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download demo invoice', exact: true }).click();
   expect((await download).suggestedFilename()).toContain(order.id.toLowerCase());
-  await page.locator('.site-header').getByRole('button', { name: 'Français', exact: true }).click();
+  await changeLanguage(page, 'Français');
   await expect(page.getByRole('heading', { name: 'Mes commandes', exact: true })).toBeVisible();
   await expect(page.locator('.customer-order')).toContainText(order.id);
-  await page.locator('.site-header').getByRole('button', { name: 'English', exact: true }).click();
+  await changeLanguage(page, 'English');
   await page.locator('.account-sidebar nav').getByRole('button', { name: /^My updates/ }).click();
   await expect(page.getByRole('heading', { name: 'Your order is confirmed', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Mark all as read', exact: true }).click();
   await expect(page.locator('.account-updates .is-unread')).toHaveCount(0);
-  await page.locator('.account-sidebar nav').getByRole('button', { name: 'Your Maison', exact: true }).click();
+  await page.locator('.site-header .wordmark').click();
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `test-results/customer-dashboard-${isMobile ? 'mobile' : 'desktop'}.png`, fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

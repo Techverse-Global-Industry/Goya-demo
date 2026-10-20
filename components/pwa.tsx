@@ -6,6 +6,7 @@ import { useShop } from '@/context/shop-context';
 import { shopRequest } from '@/lib/api';
 import { Icon } from './icon';
 import { usePathname, useRouter } from 'next/navigation';
+import { presentationCopy } from '@/lib/presentation-copy';
 
 interface InstallPrompt extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
 const PwaContext = createContext<{ install: () => Promise<void>; installed: boolean; help: boolean; setHelp: (value: boolean) => void; ios: boolean }>({ install: async () => {}, installed: false, help: false, setHelp: () => {}, ios: false });
@@ -36,9 +37,10 @@ export function PwaProvider({ children }: { children: ReactNode }) {
 }
 
 export function InstallPanel() {
-  const { t } = useShop();
+  const { state, t } = useShop();
+  const copy = presentationCopy[state.locale];
   const { install, installed, help, setHelp, ios } = useContext(PwaContext);
-  return <section className="install-panel section-pad"><div className="install-mark" aria-hidden="true">MG</div><div><p className="eyebrow">Maison Goya</p><h2>{t('appTitle')}</h2><p>{t('installDescription')}</p>{help && <p className="install-help" role="status">{t(ios ? 'installIOS' : 'installOther')} <button className="quiet-link" onClick={() => setHelp(false)}>{t('close')}</button></p>}</div><button type="button" className="button button-outline" onClick={install} disabled={installed}>{t(installed ? 'installed' : 'installApp')}<Icon name="download" /></button></section>;
+  return <section className="install-panel section-pad"><div className="install-mark" aria-hidden="true">G</div><div><p className="eyebrow">{copy.installEyebrow}</p><h2>{copy.installTitle}</h2><p>{copy.installBody}</p>{help && <p className="install-help" role="status">{t(ios ? 'installIOS' : 'installOther')} <button className="quiet-link" onClick={() => setHelp(false)}>{t('close')}</button></p>}</div><button type="button" className="button button-outline" onClick={install} disabled={installed}>{t(installed ? 'installed' : 'installApp')}<Icon name="download" /></button></section>;
 }
 
 function applicationKey(value: string): Uint8Array<ArrayBuffer> {

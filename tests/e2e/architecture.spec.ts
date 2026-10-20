@@ -2,14 +2,14 @@ import { test, expect } from '@playwright/test';
 
 test('brand website is informational and every customer route requires login', async ({ page, isMobile }) => {
   await page.goto('/');
-  await expect(page.locator('.story-panel')).toHaveCount(4);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('A world ofcharacter.');
   await expect(page.locator('.brand-category-grid article')).toHaveCount(3);
   await expect(page.locator('.product-card')).toHaveCount(0);
   await expect(page.locator('[data-cart-trigger]')).toHaveCount(0);
   await expect(page.locator('.site-header').getByRole('button', { name: 'Search', exact: true })).toHaveCount(0);
   const guest = await (await page.request.get('/api/shop')).json();
   expect(guest.products).toEqual([]);
-  await page.locator('.brand-shop-invitation a').click();
+  await page.locator('.collection-editorial a').first().click();
   await expect(page).toHaveURL(/\/login\?next=%2Fapp%2Fshop$/);
   await expect(page.locator('.account-entry')).toBeVisible();
   await page.screenshot({ path: `test-results/new-login-${isMobile ? 'mobile' : 'desktop'}.png`, fullPage: true });

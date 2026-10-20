@@ -1,13 +1,17 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
+import localFont from 'next/font/local';
 import { ShopProvider } from '@/context/shop-context';
 import { PwaProvider, ConnectionNotice } from '@/components/pwa';
 import './globals.css';
 import './commerce.css';
 import './account.css';
+import './maison-design.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
-const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair', display: 'swap', style: ['normal', 'italic'] });
+const inter = localFont({ src: '../public/fonts/inter-normal-100-900.woff2', variable: '--font-inter', display: 'swap', weight: '100 900', style: 'normal' });
+const playfair = localFont({ src: [
+  { path: '../public/fonts/cormorant-normal-300-700.woff2', weight: '300 700', style: 'normal' },
+  { path: '../public/fonts/cormorant-italic-300-700.woff2', weight: '300 700', style: 'italic' },
+], variable: '--font-playfair', display: 'swap', fallback: ['Georgia', 'serif'] });
 
 export const metadata: Metadata = {
   title: 'Maison Goya — L’Héritage Croisé',
@@ -18,7 +22,7 @@ export const metadata: Metadata = {
   // This is a demonstration storefront, not an authorized live commercial site.
   robots: { index: false, follow: false },
 };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0A0A0B', colorScheme: 'dark' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#f8f6f1', colorScheme: 'light' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
