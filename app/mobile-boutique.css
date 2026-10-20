@@ -1,0 +1,136 @@
+/* The same Goya campaign language, shaped for the signed-in boutique. */
+.customer-account .text-link { color: #171717; border-color: #171717; }
+.customer-account .eyebrow { color: #686868; }
+.account-breadcrumb { color: #777; margin-bottom: 24px; }
+.account-grid { gap: 38px; }
+.account-avatar { color: #171717; background: #f1f1ee; border-color: #ddd; }
+.account-sidebar nav button { color: #666; }
+.account-sidebar nav button[aria-current=page] { color: #171717; background: #f0f0ed; }
+.account-sidebar nav button[aria-current=page]::before { background: #171717; }
+.account-hero { padding: 8px 0 28px; min-height: 0; background: #fff; }
+.account-hero::after { display: none; }
+.account-hero-copy { max-width: 100%; }
+.account-hero h1 { font: 500 clamp(27px,3vw,43px)/1.14 var(--sans); letter-spacing: -.045em; margin: 13px 0; }
+.account-hero-copy > p:not(.eyebrow) { font-size: 12px; color: #666; max-width: 580px; }
+.account-hero .text-link { font-size: 10px; margin-top: 15px; }
+.member-collections { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.member-collections > a { position: relative; isolation: isolate; height: clamp(220px,24vw,380px); overflow: hidden; color: #fff; background: #aaa; }
+.member-collections img { object-fit: cover; z-index: -2; transition: scale .8s cubic-bezier(.2,.6,.2,1); }
+.member-collections a::after { content: ''; position: absolute; inset: 30% 0 0; z-index: -1; background: linear-gradient(transparent,#00000085); }
+.member-collections a:hover img { scale: 1.04; }
+.member-collections a > span { position: absolute; left: 23px; bottom: 20px; right: 23px; }
+.member-collections strong { font: 500 22px/1.2 var(--sans); text-transform: uppercase; letter-spacing: -.03em; }
+.member-collections a > span > span { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 8px; font-size: 9px; text-transform: uppercase; }
+.account-stat-grid { margin: 16px 0 30px; gap: 10px; }
+.account-stat-grid > button { padding: 18px; min-height: 110px; background: #f6f6f4; border: 0; }
+.account-stat-grid > button:hover { background: #ededeb; }
+.account-stat-grid strong { font: 400 28px/1 var(--sans); color: #171717; }
+.account-stat-grid span { font-size: 10px; color: #666; }
+.account-stat-grid > button > svg:first-child { width: 18px; color: #171717; }
+.account-section-heading h2 { font: 500 22px/1.3 var(--sans); letter-spacing: -.035em; }
+.account-empty { background: #fafaf8; padding: 38px 25px; }
+.account-empty h2 { font: 500 28px/1.25 var(--sans); letter-spacing: -.04em; }
+.account-empty-symbol { background: #f1f1ed; border-color: #ddd; color: #171717; }
+.account-bottom-grid .account-atelier-card, .account-bottom-grid .device-settings { background: #f7f7f4; border: 0; }
+.account-atelier-card h2, .device-settings h2 { font: 500 24px/1.25 var(--sans); letter-spacing: -.035em; }
+.customer-app-footer { background: #f3f3f1; color: #777; }
+.account-details-form, .account-preferences, .customer-order, .account-updates article, .account-bookings article { background: #fff; }
+.account-details-form h2, .account-bookings h2 { font-family: var(--sans); font-size: 23px; letter-spacing: -.035em; }
+.account-details-form input { background: #fafafa; border-color: #d5d5d5; }
+.customer-order-label h3 { font: 400 18px/1.4 var(--sans); letter-spacing: -.025em; }
+.customer-order-price strong { font: 400 23px/1.3 var(--sans); }
+.account-entry-caption h1 { font: 500 clamp(34px,4vw,66px)/1.08 var(--sans); letter-spacing: -.05em; }
+.account-entry-caption > p { font-size: 13px; }
+.account-entry-form .field input { background: #fff; border-color: #ccc; }
+.account-entry-form .auth-tabs { border-color: #ddd; }
+.account-entry-form .auth-tabs button { color: #777; }
+.account-entry-form .auth-tabs button.is-selected { color: #171717; border-color: #171717; }
+.account-entry-form .field label, .account-entry-form .field-hint, .account-entry-form .field input { color: #555; }
+.customer-account .collection-heading { min-height: 160px; padding: 25px 30px; }
+.customer-account .collection-heading::after { opacity: .42; }
+.customer-account .collection-heading[data-audience=women]::after { background-image: linear-gradient(90deg,#f1f1ef,transparent 80%),url('/images/campaign/goya-movement-women.webp'); background-position: center, center 58%; }
+.customer-account .collection-heading[data-audience=accessories]::after { background-image: linear-gradient(90deg,#f1f1ef,transparent 80%),url('/images/img11.webp'); }
+.customer-account .collection-heading .display-heading { font-size: clamp(30px,3.3vw,48px); }
+.customer-account .collection-heading .eyebrow { margin-bottom: 11px; }
+.customer-account .section-intro { margin-top: 11px; }
+.workspace-search { margin: 20px 0 0; border: 1px solid #ccc; padding: 9px 15px; min-height: 48px; }
+.workspace-search input { font-size: 13px; min-height: 28px; }
+.customer-account .collection-toolbar { padding: 14px 0; margin-bottom: 17px; border-bottom-color: #ddd; }
+.customer-account .category-filters { gap: 26px; }
+.customer-account .category-filters button { font-size: 12px; min-height: 34px; color: #777; }
+.customer-account .category-filters button[aria-pressed=true] { color: #171717; }
+.customer-account .category-filters button::after { background: #171717; }
+.shop-type-rail { display: flex; gap: 15px; overflow-x: auto; padding: 0 0 10px; margin: 0 0 24px; scrollbar-width: none; scroll-snap-type: x proximity; }
+.shop-type-rail::-webkit-scrollbar { display: none; }
+.shop-type-rail > button { flex: 0 0 112px; display: flex; flex-direction: column; gap: 9px; text-align: center; align-items: stretch; font-size: 10px; line-height: 1.5; color: #777; padding: 0 0 5px; background: transparent; border: 0; border-bottom: 1px solid transparent; scroll-snap-align: start; }
+.shop-type-rail > button[aria-pressed=true] { color: #171717; border-bottom-color: #171717; }
+.shop-type-image { position: relative; display: block; width: 100%; height: 80px; overflow: hidden; background: #eee; }
+.shop-type-image img { object-fit: cover; transition: scale .5s; }
+.shop-type-rail button:hover img { scale: 1.05; }
+.shop-type-all > span { display: grid; place-items: center; height: 80px; width: 100%; background: #f0f0ed; color: #171717; font: 400 40px/1 var(--serif); }
+.product-visual { background: #f4f4f1; }
+.product-visual .product-image-button { transition: transform .6s; }
+.product-visual:hover .product-image-button { transform: scale(1.025); }
+.customer-account .product-category { color: #777; }
+.customer-account .product-add { color: #171717; border-color: #bbb; }
+.customer-account .product-price { color: #171717; }
+.mobile-shoe-navigation { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 23px 0; border-bottom: 1px solid #ddd; }
+.mobile-shoe-navigation > div { display: flex; flex-direction: column; align-items: flex-start; }
+.mobile-shoe-navigation a { display: flex; align-items: center; gap: 20px; font: 400 12px/1.4 var(--sans); min-height: 36px; color: #666; }
+.mobile-shoe-navigation a:first-child { font-size: 19px; color: #171717; margin-bottom: 9px; }
+@media(max-width:1023px) {
+  .account-sidebar { top: auto; }
+  .account-sidebar-end { z-index: 3; }
+}
+@media(max-width:699px) {
+  .account-breadcrumb { display: none; }
+  .account-wrap { padding: 18px 20px 35px; }
+  .account-grid { gap: 20px; }
+  .account-identity { min-height: 42px; }
+  .account-identity strong { color: #171717; font-size: 11px; }
+  .account-identity span { font-size: 7px; }
+  .account-sidebar-end > button { font-size: 9px; min-height: 42px; }
+  .account-hero { padding: 0 0 24px; min-height: 0; }
+  .account-hero h1 { font-size: 29px; margin: 10px 0 13px; }
+  .account-hero-copy > p:not(.eyebrow) { font-size: 11px; max-width: 300px; }
+  .account-hero .text-link { font-size: 9px; margin-top: 12px; }
+  .member-collections { gap: 5px; margin: 0 -20px; }
+  .member-collections > a { height: 60vw; min-height: 215px; max-height: 340px; }
+  .member-collections a > span { left: 18px; right: 15px; bottom: 20px; }
+  .member-collections strong { font-size: 22px; }
+  .member-collections a > span > span { font-size: 8px; margin-top: 9px; gap: 7px; }
+  .account-stat-grid { margin: 15px 0 30px; gap: 7px; }
+  .account-stat-grid > button { min-height: 103px; padding: 15px 11px; gap: 9px; }
+  .account-stat-grid strong { font-size: 24px; }
+  .account-stat-grid span { font-size: 8px; }
+  .account-section-heading h2 { font-size: 20px; }
+  .account-empty { padding: 30px 20px; }
+  .account-empty h2 { font-size: 25px; }
+  .account-empty p { font-size: 11px; }
+  .account-entry-caption h1 { font-size: 40px; max-width: 310px; }
+  .account-entry-caption > p { font-size: 11px; }
+  .customer-account .collection-heading { margin: 0 -20px; min-height: 150px; padding: 24px 20px; }
+  .customer-account .collection-heading .display-heading { font-size: 32px; }
+  .customer-account .section-intro { max-width: 75%; }
+  .workspace-search { margin-top: 18px; padding: 9px 13px; }
+  .workspace-search input { font-size: 16px; }
+  .customer-account .collection-toolbar { flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .customer-account .category-filters { gap: 25px; width: 100%; flex-wrap: nowrap; }
+  .customer-account .category-filters button { font-size: 12px; white-space: nowrap; }
+  .customer-account .catalog-controls { padding: 2px 0; }
+  .shop-type-rail { gap: 12px; margin: 0 -20px 20px; padding: 0 20px 10px; scroll-padding: 20px; }
+  .shop-type-rail > button { flex-basis: 94px; font-size: 11px; }
+  .shop-type-image, .shop-type-all > span { height: 74px; }
+  .customer-account .product-grid { gap: 27px 12px; }
+  .customer-account .product-add { font-size: 11px; min-height: 44px; }
+  .product-info h3 { min-height: 38px; }
+  .customer-order-label h3 { font-size: 15px; }
+  .customer-order-price strong { font-size: 20px; }
+  .account-sidebar nav button[aria-current=page] { color: #171717; }
+  .account-sidebar nav button[aria-current=page]::before { background: #171717; }
+}
+@media(prefers-reduced-motion:no-preference) {
+  .member-collections > a { animation: member-collection-in .8s ease-out both; }
+  .member-collections > a:nth-child(2) { animation-delay: .1s; }
+  @keyframes member-collection-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+}

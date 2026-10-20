@@ -11,7 +11,7 @@ import { InstallPanel } from '@/components/pwa';
 export default function MaisonGoyaPage() {
   return <>
     <Header />
-    <main className="maison-public">
+    <main id="public-content" className="maison-public">
       <Story />
       <BrandCollection />
       <CraftCampaign />

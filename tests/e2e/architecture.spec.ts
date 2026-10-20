@@ -9,6 +9,12 @@ test('brand website is informational and every customer route requires login', a
   await expect(page.locator('.site-header').getByRole('button', { name: 'Search', exact: true })).toHaveCount(0);
   const guest = await (await page.request.get('/api/shop')).json();
   expect(guest.products).toEqual([]);
+  for (const route of ['collections', 'men', 'women', 'maison', 'shoe-care', 'accessories']) {
+    await page.goto(`/${route}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.locator('.product-card')).toHaveCount(0);
+  }
+  await page.goto('/');
   await page.locator('.collection-editorial a').first().click();
   await expect(page).toHaveURL(/\/login\?next=%2Fapp%2Fshop$/);
   await expect(page.locator('.account-entry')).toBeVisible();
@@ -31,6 +37,11 @@ test('customer shop, search, empty bag, navigation and sign-out stay in their wo
   await page.locator('form').getByRole('button', { name: 'Create an account', exact: true }).click();
   await expect(page).toHaveURL(/\/app\/shop$/);
   await expect(page.locator('.product-card').first()).toBeVisible();
+  await page.locator('.category-filters').getByRole('button', { name: 'Women', exact: true }).click();
+  await page.getByRole('group', { name: 'Shoe styles', exact: true }).getByRole('button', { name: 'Ankle boots', exact: true }).click();
+  await expect(page.locator('[data-product-id="calfskin-belt"]')).toBeVisible();
+  await expect(page.locator('.product-card')).toHaveCount(1);
+  await page.locator('.category-filters').getByRole('button', { name: 'All', exact: true }).click();
   await page.locator('.workspace-search input').fill('mocassin');
   await expect(page.locator('.product-card').first()).toBeVisible();
   expect(await page.locator('.product-card').count()).toBeGreaterThan(0);

@@ -1,6 +1,7 @@
 export type Locale = 'en' | 'fr';
 export type Currency = 'EUR' | 'USD' | 'XOF';
 export type Category = 'all' | 'men' | 'women' | 'accessories';
+export type ShoeType = 'all' | 'loafers' | 'sneakers' | 'heels' | 'boots';
 export type Country = 'BJ' | 'FR' | 'SN' | 'US' | 'GB';
 export type PaymentMethod = 'card' | 'apple' | 'mobile' | 'pickup';
 export type AtelierLocation = 'cotonou' | 'paris' | 'dakar';

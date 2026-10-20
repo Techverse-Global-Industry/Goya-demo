@@ -6,23 +6,28 @@ import { useRef } from 'react';
 import { useShop } from '@/context/shop-context';
 import { fashionCopy, shoeCategories } from '@/lib/fashion-copy';
 import { gsap, useGSAP } from '@/lib/gsap';
+import type { ShoeType } from '@/lib/types';
 
 export function BrandCollection() {
   const { state, dispatch } = useShop();
   const copy = fashionCopy[state.locale];
   const root = useRef<HTMLElement>(null);
-  const choose = (filter: 'men' | 'women', query = '') => { dispatch({ type: 'filter', filter }); dispatch({ type: 'query', query }); };
+  const choose = (filter: 'men' | 'women', shoeType: ShoeType = 'all') => { dispatch({ type: 'filter', filter }); dispatch({ type: 'query', query: '' }); dispatch({ type: 'shoeType', shoeType }); };
   useGSAP(() => {
     const media = gsap.matchMedia();
     media.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.from('.fashion-category', { y: 32, opacity: 0, duration: .9, stagger: .09, ease: 'power2.out', scrollTrigger: { trigger: '.fashion-category-grid', start: 'top 88%', once: true } });
       gsap.utils.toArray<HTMLElement>('.fashion-pair-photo').forEach(photo => {
         gsap.fromTo(photo, { yPercent: -3 }, { yPercent: 3, ease: 'none', scrollTrigger: { trigger: photo.parentElement, start: 'top bottom', end: 'bottom top', scrub: 1 } });
+      });
+      gsap.utils.toArray<HTMLElement>('.fashion-pair-caption').forEach(caption => {
+        gsap.from(caption, { y: 24, opacity: 0, duration: 1, ease: 'power2.out', scrollTrigger: { trigger: caption, start: 'top 88%', once: true } });
       });
     });
     return () => media.revert();
   }, { scope: root });
   return <section id="collection" className="fashion-collection" ref={root} tabIndex={-1} aria-label={copy.new}>
-    <div className="fashion-category-grid brand-category-grid">{shoeCategories.map(category => <article key={category.id} className={`fashion-category fashion-category--${category.id}`}><Link href="/app/shop" onClick={() => choose(category.filter, category.query)}>
+    <div className="fashion-category-grid brand-category-grid">{shoeCategories.map(category => <article key={category.id} className={`fashion-category fashion-category--${category.id}`}><Link href="/app/shop" onClick={() => choose(category.filter, category.id)}>
       <Image src={category.image} alt={category.label[state.locale]} fill sizes={category.id === 'loafers' ? '(min-width: 700px) 60vw, 140vw' : '(min-width: 700px) 25vw, 50vw'} style={{ objectPosition: category.position }} />
       <h2><span>{category.label[state.locale]}</span></h2>
     </Link></article>)}</div>

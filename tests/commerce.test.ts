@@ -5,6 +5,7 @@ import { PRODUCTS } from '../lib/catalog';
 import { addDays, availableStock, bookingDateRange, createOrder, formatDate, formatMoney, isPaymentAvailable, isTimeAvailable, localDateTime, normalizeSearch, readPreferences, remainingStock, sanitizeCart, shippingCost, subtotal, validateBooking, validateShipping } from '../lib/commerce';
 import { invoiceText } from '../lib/browser';
 import { INITIAL_STATE, shopReducer } from '../lib/store';
+import { shoeTypeOf } from '../lib/merchandising';
 import type { Booking, BookingDetails, CartLine, ShippingDetails } from '../lib/types';
 
 const shipping: ShippingDetails = { name: 'Demo Guest', email: 'guest@example.test', address: '12 Demo Avenue', city: 'Cotonou', country: 'BJ' };
@@ -14,6 +15,16 @@ const booking: BookingDetails = { name: 'Demo Guest', email: 'guest@example.test
 const savedBooking: Booking = { ...booking, id: 'DEMO-AT-TEST0001', customerId: null };
 const orderOptions = { id: 'DEMO-MG-TEST0001', createdAt: now.toISOString(), cart, currency: 'EUR' as const, recipient: shipping, payment: 'card' as const, customerId: null };
 const hydrated = () => shopReducer(INITIAL_STATE, { type: 'hydrate', raw: null });
+
+test('shoe navigation separates loafers, sneakers, heels and boots without treating bags as shoes', () => {
+  assert.deepEqual(PRODUCTS.map(shoeTypeOf), ['loafers', 'sneakers', 'heels', 'heels', 'boots', 'loafers', 'heels', null]);
+});
+
+test('changing the collection clears its previous shoe style and reset clears the presentation filters', () => {
+  const selected = shopReducer(INITIAL_STATE, { type: 'shoeType', shoeType: 'loafers' });
+  assert.equal(shopReducer(selected, { type: 'filter', filter: 'women' }).shoeType, 'all');
+  assert.equal(shopReducer(selected, { type: 'resetFilters' }).shoeType, 'all');
+});
 
 test('exact narrative and catalog image assignments', () => {
   assert.deepEqual(STORY_IMAGES, [1, 2, 3, 4]);

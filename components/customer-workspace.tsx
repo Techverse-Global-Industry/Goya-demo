@@ -6,6 +6,7 @@ import { useShop } from '@/context/shop-context';
 import { useRouter } from 'next/navigation';
 import { Collection } from '@/components/collection';
 import { Header } from '@/components/header';
+import { MemberCollections } from '@/components/member-collections';
 
 import { Overlays } from '@/components/overlays';
 import { CurrencySelect, LanguageSwitch, Toast } from '@/components/controls';
@@ -56,7 +57,7 @@ export default function CustomerWorkspace({ section }: { section: Section }) {
   return <>
     <Header workspace />
     <main id="account-content" className="customer-account" tabIndex={-1}>
-      {!state.ready || !user ? <div className="account-loading" role="status"><span className="account-loading-mark">MG</span><p>{t('accountLoading')}</p></div> : <div className="account-wrap">
+      {!state.ready || !user ? <div className="account-loading" role="status"><span className="account-loading-mark">MG</span><p>{t('accountLoading')}</p></div> : <div className="account-wrap" data-section={section}>
         <div className="account-breadcrumb"><Link href="/app">Maison Goya</Link><span>/</span><span>{t('myMaison')}</span></div>
         <div className="account-grid">
           <aside className="account-sidebar">
@@ -69,6 +70,7 @@ export default function CustomerWorkspace({ section }: { section: Section }) {
             {section === 'collection' && <Collection />}
             {section === 'accountOverview' && <>
               <header className="account-hero"><div className="account-hero-copy"><p className="eyebrow">{t('myMaison')}</p><h1>{t('accountGreeting', { name: firstName })}</h1><p>{t('accountIntro')}</p><Link href="/app/shop" className="text-link">{t('accountShopLink')}<Icon name="arrow-up-right" /></Link></div><span className="account-hero-monogram" aria-hidden="true">MG</span><span className="account-hero-orbit" aria-hidden="true" /></header>
+              <MemberCollections />
               <div className="account-stat-grid">{[{ label: 'ordersCount' as const, count: orders.length, icon: 'bag' as const, target: 'myOrders' as const }, { label: 'onTheWayCount' as const, count: activeOrders.length, icon: 'truck' as const, target: 'myOrders' as const }, { label: 'unreadCount' as const, count: unread, icon: 'spark' as const, target: 'myUpdates' as const }].map((stat) => <button type="button" key={stat.label} onClick={() => setSection(stat.target)}><Icon name={stat.icon} width={21} /><strong>{String(stat.count).padStart(2, '0')}</strong><span>{t(stat.label)}</span><Icon name="arrow-up-right" className="account-stat-arrow" width={15} /></button>)}</div>
               <section className="account-section"><div className="account-section-heading"><h2>{t('accountLatest')}</h2>{orders.length > 0 && <button type="button" className="text-link" onClick={() => setSection('myOrders')}>{t('viewOrders')}<Icon name="arrow-right" width={15} /></button>}</div>{orders.length ? <CustomerOrder key={orders[0].id} order={orders[0]} /> : <AccountEmpty icon="bag" title="accountEmptyTitle" body="accountEmptyBody" />}</section>
               <div className="account-bottom-grid"><section className="account-atelier-card"><p className="eyebrow">{t('atelier')}</p><h2>{t('accountAtelier')}</h2><p>{t('accountAtelierBody')}</p><button type="button" className="text-link" onClick={() => setSection('myAppointments')}>{t('bookService')}<Icon name="arrow-up-right" width={16} /></button><Icon name="spark" className="account-atelier-watermark" width={100} height={100} /></section><DeviceSettings /></div>

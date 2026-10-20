@@ -2,7 +2,7 @@ import { PRODUCTS } from './catalog';
 import { availableStock, createOrder, readPreferences, remainingStock, sanitizeCart, validateBooking, variantKey } from './commerce';
 import type { StockUsed } from './commerce';
 import type { TranslationKey } from './i18n';
-import type { Booking, BookingDetails, CartLine, Category, Currency, DemoUser, Locale, Order, Overlay, PaymentMethod, ShippingDetails, StoreSnapshot } from './types';
+import type { Booking, BookingDetails, CartLine, Category, Currency, DemoUser, Locale, Order, Overlay, PaymentMethod, ShippingDetails, StoreSnapshot, ShoeType } from './types';
 
 export interface ShopState {
   products: StoreSnapshot['products'];
@@ -20,6 +20,7 @@ export interface ShopState {
   bookings: Booking[];
   overlay: Overlay;
   filter: Category;
+  shoeType: ShoeType;
   query: string;
   ready: boolean;
   notice: { id: number; key: TranslationKey } | null;
@@ -29,7 +30,7 @@ export interface ShopState {
 export const INITIAL_STATE: ShopState = {
   products: [...PRODUCTS], announcements: [], notifications: [], bookedSlots: [], connected: false, pushPublicKey: null,
   locale: 'en', currency: 'EUR', cart: [], stockUsed: {}, user: null,
-  orders: [], bookings: [], overlay: null, filter: 'all', query: '',
+  orders: [], bookings: [], overlay: null, filter: 'all', shoeType: 'all', query: '',
   ready: false, notice: null, noticeSerial: 0,
 };
 
@@ -44,6 +45,7 @@ export type ShopAction =
   | { type: 'open'; overlay: Exclude<Overlay, null> }
   | { type: 'close' }
   | { type: 'filter'; filter: Category }
+  | { type: 'shoeType'; shoeType: ShoeType }
   | { type: 'query'; query: string }
   | { type: 'resetFilters' }
   | { type: 'add'; productId: string; size: string }
@@ -84,9 +86,10 @@ export function shopReducer(state: ShopState, action: ShopAction): ShopState {
       return { ...state, overlay: action.overlay, notice: null };
     }
     case 'close': return { ...state, overlay: null };
-    case 'filter': return { ...state, filter: action.filter };
+    case 'filter': return { ...state, filter: action.filter, shoeType: 'all' };
+    case 'shoeType': return { ...state, shoeType: action.shoeType };
     case 'query': return { ...state, query: action.query.slice(0, 120) };
-    case 'resetFilters': return { ...state, filter: 'all', query: '' };
+    case 'resetFilters': return { ...state, filter: 'all', shoeType: 'all', query: '' };
     case 'add': {
       if (!state.ready) return state;
       if (!remainingStock(state.cart, state.stockUsed, action.productId, action.size, catalog)) return notify(state, 'stockLimit');

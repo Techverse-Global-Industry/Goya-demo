@@ -7,6 +7,8 @@ import './commerce.css';
 import './account.css';
 import './maison-design.css';
 import './fashion-design.css';
+import './mobile-boutique.css';
+import './brand-pages.css';
 
 const inter = localFont({ src: '../public/fonts/inter-normal-100-900.woff2', variable: '--font-inter', display: 'swap', weight: '100 900', style: 'normal' });
 const playfair = localFont({ src: [
@@ -26,7 +28,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#ffffff', colorScheme: 'light' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
+  return <html lang="en" className={`${inter.variable} ${playfair.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
     <body suppressHydrationWarning className="bg-obsidian text-ivory antialiased">
       <ShopProvider><PwaProvider>{children}<ConnectionNotice /></PwaProvider></ShopProvider>
     </body>

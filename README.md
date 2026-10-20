@@ -30,6 +30,8 @@ Use fictitious personal details and a unique demo password. Passwords are salted
 
 The public website tells the brand story and introduces its creations and services. It has no shopping controls. `/login` opens a protected customer workspace at `/app`: overview, orders with delivery progress and invoice downloads, atelier appointments, updates, and saved personal details. It is separate from the protected owner workspace. Each customer sees only their own account data.
 
+Public pages include `/collections`, `/men`, `/women`, `/maison`, `/shoe-care` and `/accessories`. The customer boutique groups men’s and women’s footwear by style, with a responsive image-led home and phone navigation dock. Public lookbooks lead to the protected collection for availability and ordering.
+
 - Full-screen campaign films, four footwear categories, paired fashion stories, a browsable brand journal and a responsive customer shop.
 - English/French interface and catalog content; search across both languages.
 - EUR/USD/XOF demonstration price books.

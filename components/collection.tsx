@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
+import Image from 'next/image';
 import { useShop } from '@/context/shop-context';
 import { matchesProduct } from '@/lib/commerce';
 import type { Category, Product } from '@/lib/types';
@@ -9,6 +10,8 @@ import { MaisonImage } from './maison-image';
 import { CurrencySelect } from './controls';
 import { Icon } from './icon';
 import { presentationCopy } from '@/lib/presentation-copy';
+import { fashionCopy, shoeCategories } from '@/lib/fashion-copy';
+import { shoeTypeOf } from '@/lib/merchandising';
 
 export function ProductCard({ product, index }: { product: Product; index: number }) {
   const { state, dispatch, t, money, remaining } = useShop();
@@ -43,10 +46,11 @@ export function ProductCard({ product, index }: { product: Product; index: numbe
 export function Collection() {
   const { state, dispatch, t, products: catalog } = useShop();
   const copy = presentationCopy[state.locale];
+  const fashion = fashionCopy[state.locale];
   const root = useRef<HTMLElement>(null);
   const products = useMemo(() => {
-    return catalog.filter((product) => (state.filter === 'all' || product.category === state.filter) && matchesProduct(product, state.query));
-  }, [state.filter, state.query, catalog]);
+    return catalog.filter((product) => (state.filter === 'all' || product.category === state.filter) && (state.shoeType === 'all' || shoeTypeOf(product) === state.shoeType) && matchesProduct(product, state.query));
+  }, [state.filter, state.shoeType, state.query, catalog]);
 
   useGSAP(() => {
     const media = gsap.matchMedia();
@@ -64,12 +68,12 @@ export function Collection() {
     });
     const frame = requestAnimationFrame(() => ScrollTrigger.refresh());
     return () => { cancelAnimationFrame(frame); media.revert(); };
-  }, { scope: root, dependencies: [state.filter, state.query, state.locale], revertOnUpdate: true });
+  }, { scope: root, dependencies: [state.filter, state.shoeType, state.query, state.locale], revertOnUpdate: true });
 
   return <section id="collection" className="collection-section section-pad" ref={root} tabIndex={-1}>
-    <div className="collection-heading">
+    <div className="collection-heading" data-audience={state.filter}>
       <p className="eyebrow"><span className="tiny-rule" />{copy.collectionAppEyebrow}</p>
-      <div className="section-heading-row"><h1 className="display-heading">{copy.collectionAppTitle}</h1>
+      <div className="section-heading-row"><h1 className="display-heading">{state.filter === 'men' ? (state.locale === 'fr' ? 'Souliers homme' : 'Men’s shoes') : state.filter === 'women' ? (state.locale === 'fr' ? 'Souliers femme' : 'Women’s shoes') : state.filter === 'accessories' ? fashion.accessories : fashion.new}</h1>
         <div className="section-intro"><p>{copy.collectionAppIntro}</p></div>
       </div>
     </div>
@@ -81,8 +85,12 @@ export function Collection() {
       </div>
       <div className="catalog-controls"><span className="collection-count" role="status">{t('collectionCount', { count: products.length })}</span><CurrencySelect /></div>
     </div>
+    {state.filter !== 'accessories' && <div className="shop-type-rail" role="group" aria-label={state.locale === 'fr' ? 'Types de souliers' : 'Shoe styles'}>
+      <button type="button" className="shop-type-all" aria-pressed={state.shoeType === 'all'} onClick={() => dispatch({ type: 'shoeType', shoeType: 'all' })}><span>G</span>{fashion.all}</button>
+      {shoeCategories.filter(category => state.filter === 'all' || category.filter === state.filter).map(category => <button type="button" key={category.id} aria-pressed={state.shoeType === category.id} onClick={() => dispatch({ type: 'shoeType', shoeType: category.id })}><span className="shop-type-image"><Image src={category.image} alt="" fill sizes="150px" style={{ objectPosition: category.position }} /></span>{category.label[state.locale]}</button>)}
+    </div>}
     {state.query && <div className="active-search"><span>{t('search')}: “{state.query}”</span><button type="button" onClick={() => dispatch({ type: 'query', query: '' })} aria-label={t('clearSearch')}><Icon name="close" width={14} height={14} /></button></div>}
-    <div className="product-grid">
+    <div className="product-grid" id="available-shoes">
       {products.map((product) => <ProductCard key={product.id} product={product} index={catalog.indexOf(product)} />)}
     </div>
     {products.length === 0 && <div className="empty-state"><Icon name="search" width={30} height={30} /><h3>{t('noResults')}</h3><p>{t('noResultsText')}</p><button type="button" className="button button-outline" onClick={() => dispatch({ type: 'resetFilters' })}>{t('clearFilters')}</button></div>}

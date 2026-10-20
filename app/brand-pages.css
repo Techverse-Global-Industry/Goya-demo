@@ -1,0 +1,114 @@
+.brand-page { padding-top: 72px; background: #fff; }
+.brand-page h1, .brand-page h2 { font-family: var(--sans); letter-spacing: -.04em; }
+.brand-page-hero { position: relative; isolation: isolate; height: calc(100svh - 72px); min-height: 640px; max-height: 1100px; color: #fff; overflow: hidden; background: #888; }
+.brand-page-hero > img { object-fit: cover; z-index: -2; }
+.brand-page-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg,#00000010,#00000040 50%,#00000040); }
+.brand-page-hero-copy { position: absolute; left: 50%; top: 48%; transform: translate(-50%,-50%); width: calc(100% - 50px); text-align: center; }
+.brand-page-hero-copy > .fashion-kicker { font-size: 10px; margin-bottom: 20px; }
+.brand-page-hero h1 { font: 600 clamp(40px,5vw,76px)/1 var(--sans); text-transform: uppercase; }
+.brand-page-hero-copy > p { font-size: 14px; margin-top: 20px; }
+.brand-page-hero-copy > .fashion-link { margin-top: 15px; }
+.brand-page-intro { padding: 65px 5vw; display: grid; grid-template-columns: 1fr 1fr; gap: 8vw; align-items: center; }
+.brand-page-intro h2 { font: 500 clamp(24px,2.7vw,39px)/1.15 var(--sans); text-transform: uppercase; max-width: 440px; }
+.brand-page-intro p { font-size: 13px; line-height: 1.9; max-width: 550px; }
+.brand-style-section { display: grid; grid-template-columns: 1fr 1fr; background: #f2f2f0; margin-bottom: 4px; }
+.brand-style-photo { position: relative; height: 60vw; min-height: 600px; max-height: 950px; overflow: hidden; }
+.brand-style-photo img { object-fit: cover; transition: scale 1.2s; }
+.brand-style-section:hover img { scale: 1.025; }
+.brand-style-copy { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 10% 12%; }
+.brand-style-copy h1, .brand-style-copy h2 { font: 500 clamp(30px,3.3vw,52px)/1.08 var(--sans); text-transform: uppercase; margin: 26px 0; }
+.brand-style-copy > p { font-size: 13px; line-height: 1.9; max-width: 400px; }
+.brand-style-copy > .fashion-link { margin-top: 30px; font-size: 10px; }
+.brand-style-section--reverse .brand-style-photo { order: 2; }
+.brand-style-section--reverse { background: #fff; }
+.brand-next-world { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 80px 25px; }
+.brand-next-world h2 { font: 500 clamp(28px,3vw,44px)/1.15 var(--sans); text-transform: uppercase; margin: 25px 0; }
+.brand-title-block { padding: 65px 5vw; text-align: center; }
+.brand-title-block h1 { font: 600 clamp(36px,4.5vw,65px)/1.1 var(--sans); text-transform: uppercase; margin-top: 22px; }
+.brand-title-block > p { font-size: 13px; line-height: 1.8; margin-top: 22px; }
+.brand-title-block > div { display: flex; justify-content: center; gap: 40px; margin-top: 20px; }
+.brand-maison-opening { display: grid; grid-template-columns: 1fr 1fr; min-height: 800px; }
+.brand-maison-photo { position: relative; min-height: 800px; }
+.brand-maison-photo img { object-position: center 30%; }
+.brand-maison-copy { padding: 12% 12%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+.brand-maison-copy h1 { font: 500 clamp(32px,3.4vw,50px)/1.1 var(--sans); text-transform: uppercase; margin-top: 30px; }
+.brand-maison-copy h2 { font: 400 22px/1.3 var(--sans); margin: 25px 0; max-width: 350px; }
+.brand-maison-copy p { font-size: 13px; line-height: 1.9; margin-bottom: 18px; max-width: 440px; }
+.brand-maison-copy .fashion-link { margin-top: 18px; }
+.brand-workshop-story { display: grid; grid-template-columns: 1fr 1.1fr; background: #f2f2ef; }
+.brand-workshop-copy { padding: 100px 12%; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+.brand-workshop-copy h2 { font: 500 clamp(26px,2.8vw,42px)/1.15 var(--sans); text-transform: uppercase; margin: 25px 0; max-width: 350px; }
+.brand-workshop-copy p { font-size: 13px; line-height: 1.9; margin-bottom: 18px; max-width: 440px; }
+.brand-workshop-copy .fashion-link { margin-top: 15px; }
+.brand-workshop-photo { position: relative; min-height: 780px; }
+.brand-services { display: grid; grid-template-columns: 1fr 1fr; gap: 10vw; padding: 90px 6vw; }
+.brand-service-intro h2 { font: 500 clamp(26px,3vw,42px)/1.12 var(--sans); text-transform: uppercase; margin-top: 28px; max-width: 480px; }
+.brand-service-intro p { margin-top: 25px; font-size: 13px; line-height: 1.9; max-width: 450px; }
+.brand-service-intro .fashion-link { margin-top: 25px; }
+.brand-service-details details { border-bottom: 1px solid #ccc; }
+.brand-service-details details:first-child { border-top: 1px solid #ccc; }
+.brand-service-details summary { display: flex; align-items: center; gap: 20px; min-height: 95px; cursor: pointer; list-style: none; }
+.brand-service-details summary::-webkit-details-marker { display: none; }
+.brand-service-details summary > span { font-size: 9px; color: #777; }
+.brand-service-details summary > svg { margin-left: auto; transition: rotate .3s; }
+.brand-service-details details[open] summary > svg { rotate: 45deg; }
+.brand-service-details h3 { font: 400 20px/1.4 var(--sans); letter-spacing: -.025em; }
+.brand-service-details p { font-size: 12px; color: #555; line-height: 1.9; padding: 0 30px 25px; }
+.brand-accessories-opening { display: grid; grid-template-columns: 1.1fr 1fr; min-height: 750px; }
+.brand-accessories-photo { position: relative; min-height: 750px; background: #f1f0eb; }
+.brand-accessories-photo img { padding: 5%; mix-blend-mode: multiply; }
+@media(max-width:1023px) {
+  .brand-style-copy { padding: 10%; }
+  .brand-style-copy h1,.brand-style-copy h2 { font-size: 35px; }
+  .brand-maison-copy { padding: 10%; }
+  .brand-maison-copy h1 { font-size: 36px; }
+  .brand-maison-opening,.brand-maison-photo { min-height: 700px; }
+  .brand-workshop-photo { min-height: 650px; }
+}
+@media(max-width:699px) {
+  .brand-page { padding-top: 64px; }
+  .brand-page-hero { height: calc(92svh - 64px); min-height: 580px; max-height: 900px; }
+  .brand-page-hero h1 { font-size: 49px; }
+  .brand-page-hero-copy { top: 45%; }
+  .brand-page-hero-copy > .fashion-kicker { font-size: 8px; margin-bottom: 18px; }
+  .brand-page-hero-copy > p { font-size: 13px; }
+  .brand-page-hero-copy > .fashion-link { font-size: 9px; }
+  .brand-page-intro { padding: 36px 24px 40px; grid-template-columns: 1fr; gap: 20px; }
+  .brand-page-intro h2 { font-size: 28px; max-width: 300px; }
+  .brand-page-intro p { font-size: 12px; }
+  .brand-style-section { grid-template-columns: 1fr; }
+  .brand-style-photo { min-height: 0; height: 125vw; max-height: 750px; }
+  .brand-style-copy { padding: 40px 25px 45px; }
+  .brand-style-copy > .fashion-kicker { font-size: 8px; }
+  .brand-style-copy h1,.brand-style-copy h2 { font-size: 35px; margin: 20px 0; }
+  .brand-style-copy > p { font-size: 12px; }
+  .brand-style-copy > .fashion-link { margin-top: 25px; font-size: 9px; }
+  .brand-style-section--reverse .brand-style-photo { order: 0; }
+  .brand-next-world { padding: 50px 24px; }
+  .brand-next-world > .fashion-kicker { font-size: 8px; }
+  .brand-next-world h2 { font-size: 28px; margin: 22px 0; max-width: 320px; }
+  .brand-title-block { padding: 45px 24px; }
+  .brand-title-block > .fashion-kicker { font-size: 8px; }
+  .brand-title-block h1 { font-size: 38px; margin-top: 20px; }
+  .brand-title-block > p { font-size: 12px; margin-top: 20px; }
+  .brand-maison-opening { display: flex; flex-direction: column; min-height: 0; }
+  .brand-maison-photo { min-height: 0; height: 125vw; max-height: 700px; }
+  .brand-maison-copy { padding: 40px 25px 45px; }
+  .brand-maison-copy > .fashion-kicker { font-size: 8px; }
+  .brand-maison-copy h1 { font-size: 35px; margin-top: 23px; }
+  .brand-maison-copy h2 { font-size: 22px; margin: 20px 0; }
+  .brand-maison-copy p { font-size: 12px; }
+  .brand-workshop-story { display: flex; flex-direction: column-reverse; }
+  .brand-workshop-photo { min-height: 0; height: 130vw; max-height: 700px; }
+  .brand-workshop-copy { padding: 40px 25px; }
+  .brand-workshop-copy h2 { font-size: 29px; margin: 20px 0; max-width: 280px; }
+  .brand-workshop-copy p { font-size: 12px; }
+  .brand-services { padding: 45px 24px; grid-template-columns: 1fr; gap: 35px; }
+  .brand-service-intro h2 { font-size: 30px; max-width: 310px; margin-top: 22px; }
+  .brand-service-intro p { font-size: 12px; }
+  .brand-service-details summary { min-height: 82px; }
+  .brand-service-details h3 { font-size: 19px; }
+  .brand-service-details p { font-size: 12px; }
+  .brand-accessories-opening { grid-template-columns: 1fr; min-height: 0; }
+  .brand-accessories-photo { min-height: 0; height: 120vw; max-height: 650px; }
+}

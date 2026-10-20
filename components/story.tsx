@@ -18,7 +18,7 @@ export function Story() {
     return () => media.revert();
   }, { scope: root });
   return <section id="story" className="fashion-campaign campaign-hero" ref={root} aria-label={copy.hero}>
-    <CampaignMedia src="/videos/goya-movement.mp4" poster="/images/campaign/goya-movement-men.webp" alt={state.locale === 'fr' ? 'Mocassins Goya noirs à bride tissée, portés sur des marches en béton.' : 'Goya black loafers with woven straps, worn on concrete steps.'} posterSizes="(min-width: 700px) 100vw, 240vw" posterPosition="35% center" priority />
+    <CampaignMedia src="/videos/goya-campaign.mp4" poster="/images/campaign/goya-movement-men.webp" alt={state.locale === 'fr' ? 'Mocassins Goya noirs à bride tissée, portés sur des marches en béton.' : 'Goya black loafers with woven straps, worn on concrete steps.'} posterSizes="(min-width: 700px) 100vw, 240vw" posterPosition="35% center" priority />
     <div className="fashion-campaign-shade" />
     <div className="fashion-campaign-copy campaign-copy">
       <h1>{copy.hero}</h1>
