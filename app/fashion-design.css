@@ -69,6 +69,7 @@ body { background: #fff; }
 .fashion-category h2 > span { padding-bottom: 5px; border-bottom: 1px solid #fff; }
 .fashion-pair-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding-top: 4px; }
 .fashion-pair > a { position: relative; display: block; isolation: isolate; height: 63vw; max-height: 1100px; min-height: 610px; overflow: hidden; color: #171717; }
+.fashion-pair > a::before { content: ''; position: absolute; inset: 0 0 auto; height: 190px; z-index: -1; background: linear-gradient(#ffffffa3, #ffffff00); pointer-events: none; }
 .fashion-pair-photo { position: absolute; inset: -5% 0; z-index: -2; }
 .fashion-pair-photo img { object-fit: cover; transition: scale 1.2s cubic-bezier(.2,.6,.2,1); }
 .fashion-pair--men .fashion-pair-photo img { object-position: 34% center; }
