@@ -65,7 +65,7 @@ export function BookingModal({ close }: { close: () => void }) {
         <div><dt>{t('bookingReference')}</dt><dd>{booking.id}</dd></div>
         <div><dt>{t('service')}</dt><dd>{t(booking.service)}</dd></div>
         <div><dt>{t('boutique')}</dt><dd>{t(booking.location)}</dd></div>
-        <div><dt>{t('date')}</dt><dd>{formatDate(booking.date, state.locale, true)} · {booking.time}</dd></div>
+        <div><dt>{t('date')}</dt><dd>{formatDate(booking.date, state.language, true)} · {booking.time}</dd></div>
         <div><dt>{t('name')}</dt><dd>{booking.name}</dd></div>
       </dl>
       <button type="button" className="button button-gold button-full" onClick={close}>{t('close')}<Icon name="check" /></button>

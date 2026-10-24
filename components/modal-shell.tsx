@@ -4,7 +4,6 @@ import { useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { gsap, useGSAP } from '@/lib/gsap';
 import { useShop } from '@/context/shop-context';
-import { LanguageSwitch } from './controls';
 import { Icon } from './icon';
 
 interface ModalShellProps {
@@ -83,7 +82,7 @@ export function ModalShell({ title, drawer = false, wide = false, className = ''
       <div className="dialog-panel" ref={panel}>
         {chrome && <header className="dialog-chrome">
           <p id={titleId} className="eyebrow">{title}</p>
-          <div className="dialog-controls"><LanguageSwitch compact />
+          <div className="dialog-controls">
             <button type="button" className="icon-button" data-close-modal aria-label={t('close')} onClick={close}><Icon name="close" /></button>
           </div>
         </header>}

@@ -1,0 +1,62 @@
+.exact-culture-page{background:#fff;color:#000;font-family:var(--sans);padding:0}
+.exact-maison-panel{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100svh - var(--store-header-height,106px))}
+.exact-maison-panel-media{position:relative;min-height:calc(100svh - var(--store-header-height,106px));overflow:hidden}
+.exact-maison-panel-media>img{object-fit:cover}
+.exact-maison-panel-media--monochrome>img,.exact-maison-panel-media--monochrome .fashion-film{filter:grayscale(1)}
+.exact-maison-panel-copy{display:flex;align-items:center;justify-content:center;padding:70px max(40px,10vw)}
+.exact-maison-panel-copy>div{width:100%;max-width:440px}
+.exact-editorial-kicker,.exact-maison-panel-copy .exact-editorial-kicker{font-family:var(--sans);font-size:12px;font-weight:400;line-height:18px;letter-spacing:.8px;text-transform:uppercase;color:#8a8881;margin:0 0 24px}
+.exact-maison-panel-copy h2{font-family:var(--sans);font-size:24px;font-weight:600;line-height:1.4;letter-spacing:.2px;text-transform:uppercase;margin:0 0 28px}
+.exact-maison-panel-copy p{font-size:14px;font-weight:300;line-height:1.5;letter-spacing:.2px;margin:0 0 18px}
+.exact-maison-panel--reverse .exact-maison-panel-media{order:2}
+.exact-editorial-source{display:inline-flex;align-items:center;gap:10px;font-size:11px;line-height:1.5;text-decoration:underline;text-underline-offset:4px}
+.exact-editorial-opening{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100svh - var(--store-header-height,106px))}
+.exact-editorial-opening-media{position:relative;min-height:calc(100svh - var(--store-header-height,106px));overflow:hidden}
+.exact-editorial-opening-media>img{object-fit:cover}
+.exact-editorial-opening-copy{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 9vw;text-align:center}
+.exact-editorial-opening-copy h1{font-family:var(--sans);font-size:24px;font-weight:600;line-height:1.4;letter-spacing:.2px;text-transform:uppercase;max-width:450px;margin:0 0 24px}
+.exact-editorial-opening-copy h2{font-family:var(--sans);font-size:14px;font-weight:400;line-height:1.5;letter-spacing:.6px;text-transform:uppercase;max-width:440px;margin:0 0 24px;color:#88867e}
+.exact-editorial-opening-copy>p{font-size:14px;font-weight:300;line-height:1.5;letter-spacing:.2px;max-width:450px;margin:0}
+.exact-editorial-opening-copy>.exact-editorial-kicker{font-size:12px;margin:0 0 24px}
+.exact-atelier-page .exact-editorial-opening{background:#f8f7f5}
+.exact-atelier-page .exact-editorial-opening-media>img{filter:grayscale(1)}
+.exact-editorial-quotation{font-family:var(--sans);font-size:32px;font-style:italic;font-weight:300;line-height:1.5;letter-spacing:0;max-width:none;min-height:350px;margin:0;padding:100px max(40px,20vw);text-align:center;color:#8a8881;display:flex;justify-content:center;align-items:center;border:0;background:#fff}
+.exact-editorial-gallery{padding:0;margin:0;background:#fff}
+.exact-editorial-gallery-rail{display:grid;grid-auto-flow:column;grid-auto-columns:23.25%;gap:1px;overflow:auto;scrollbar-width:none;scroll-snap-type:x mandatory}
+.exact-editorial-gallery-rail>figure{position:relative;aspect-ratio:4/5;margin:0;min-width:0;overflow:hidden;scroll-snap-align:start}
+.exact-editorial-gallery-rail>figure>img{object-fit:cover}
+.exact-editorial-gallery-controls{height:90px;display:flex;align-items:center;justify-content:center;gap:24px}
+.exact-editorial-gallery-controls>button{height:30px;width:30px;display:grid;place-items:center;border:0;background:none;color:#000}
+.exact-editorial-gallery-controls>button:disabled{opacity:.2;cursor:not-allowed}
+.exact-editorial-paragraph-band{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:30px;padding:24px;background:#f8f7f5}
+.exact-editorial-paragraph-band--three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.exact-editorial-paragraph-band>p{font-size:12px;font-weight:300;line-height:18px;letter-spacing:.5px;margin:0}
+.exact-editorial-full-image{position:relative;aspect-ratio:16/9;overflow:hidden}
+.exact-editorial-full-image>img{object-fit:cover}
+.exact-editorial-ending{display:flex;justify-content:center;padding:25px 24px 60px}
+.exact-editorial-ending>.fashion-link{font-size:11px;line-height:1.5;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid;padding:4px 0}
+.exact-editorial-gallery-heading{font-family:var(--sans);font-size:14px;font-weight:400;line-height:1.5;letter-spacing:.6px;text-transform:uppercase;text-align:center;color:#88867e;margin:0;padding:75px 24px 45px}
+.exact-editorial-diptych{display:grid;grid-template-columns:1fr 1fr;gap:1px}
+.exact-editorial-diptych>figure{position:relative;min-height:calc(100svh - var(--store-header-height,106px));margin:0;overflow:hidden}
+.exact-editorial-diptych>figure>img{object-fit:cover}
+.exact-journal-hero{position:relative;height:calc(100svh - var(--store-header-height,106px));min-height:650px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;text-align:center;color:#fff}
+.exact-journal-hero>img{object-fit:cover}
+.exact-journal-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 25%,#0008)}
+.exact-journal-hero>div{position:relative;z-index:1;padding:70px 24px;max-width:1000px}
+.exact-journal-hero .exact-editorial-kicker{color:#fff}
+.exact-journal-hero h1{font-family:var(--sans);font-size:36px;font-weight:600;line-height:1.3;letter-spacing:.2px;text-transform:uppercase;margin:0}
+.exact-journal-introduction{padding:90px 24px;max-width:1000px;margin:0 auto;text-align:center}
+.exact-journal-introduction>h2{font-family:var(--sans);font-size:26px;font-weight:400;line-height:1.5;letter-spacing:0;margin:0}
+.exact-journal-prose{columns:2;column-gap:70px;max-width:1100px;margin:0 auto;padding:0 40px 90px}
+.exact-journal-prose>p{font-size:14px;font-weight:300;line-height:1.7;letter-spacing:.2px;margin:0 0 24px;break-inside:avoid}
+.exact-journal-second-image{max-height:850px}
+.exact-editorial-related{padding:70px 24px}
+.exact-editorial-related>h2{font-family:var(--sans);font-size:24px;font-weight:600;line-height:1.4;text-align:center;text-transform:uppercase;margin:0 0 40px}
+.exact-editorial-related>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.exact-editorial-related a>figure{position:relative;aspect-ratio:4/5;margin:0 0 20px;overflow:hidden}
+.exact-editorial-related a>figure>img{object-fit:cover;transition:transform .8s ease}
+.exact-editorial-related a:hover>figure>img{transform:scale(1.025)}
+.exact-editorial-related h3{font-family:var(--sans);font-size:18px;font-weight:400;line-height:1.4;text-transform:uppercase;margin:0 0 12px}
+.exact-editorial-related a>span{font-size:11px;text-transform:uppercase;letter-spacing:.5px;text-decoration:underline;text-underline-offset:4px}
+@media(max-width:799px){.exact-maison-panel,.exact-editorial-opening{grid-template-columns:1fr;min-height:0}.exact-maison-panel-media,.exact-editorial-opening-media{min-height:0;height:70svh;max-height:750px}.exact-maison-panel--reverse .exact-maison-panel-media{order:0}.exact-maison-panel-copy{padding:65px 30px;min-height:420px}.exact-maison-panel-copy h2,.exact-editorial-opening-copy h1{font-size:22px}.exact-maison-panel-copy p,.exact-editorial-opening-copy>p{font-size:13px}.exact-editorial-opening-copy{padding:65px 30px;min-height:400px}.exact-editorial-quotation{font-size:24px;min-height:280px;padding:75px 30px}.exact-editorial-gallery-rail{grid-auto-columns:46.5%}.exact-editorial-gallery-controls{height:70px}.exact-editorial-paragraph-band,.exact-editorial-paragraph-band--three{grid-template-columns:1fr;gap:20px;padding:25px}.exact-editorial-full-image{aspect-ratio:4/3}.exact-editorial-diptych{grid-template-columns:1fr}.exact-editorial-diptych>figure{min-height:70svh}.exact-editorial-gallery-heading{padding:55px 24px 35px}.exact-journal-hero{height:80svh;min-height:550px}.exact-journal-hero>div{padding:50px 25px}.exact-journal-hero h1{font-size:28px}.exact-journal-introduction{padding:60px 25px}.exact-journal-introduction>h2{font-size:22px}.exact-journal-prose{columns:1;padding:0 25px 55px}.exact-editorial-related{padding:55px 24px}.exact-editorial-related>div{display:grid;grid-auto-flow:column;grid-auto-columns:80%;grid-template-columns:none;overflow:auto;scroll-snap-type:x mandatory;gap:18px}.exact-editorial-related>div>a{scroll-snap-align:start}}
+@media(prefers-reduced-motion:reduce){.exact-editorial-related a>figure>img{transition:none}.exact-editorial-related a:hover>figure>img{transform:none}}

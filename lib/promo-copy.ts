@@ -1,0 +1,4 @@
+export const promoCopy = {
+  en: { demoPromotion:'Demo promotion', invalid:'This demo code is invalid. Try {code}.', discount:'Discount', promotion:'Promotion {code}', express:'Express demo checkout: {provider}. No wallet is connected and no payment is charged.', stockChanged:'The bag has changed. Please review your selection.', failed:'Your promotion could not be checked. Please try again.' },
+  fr: { demoPromotion:'Promotion de démonstration', invalid:'Ce code de démonstration est invalide. Essayez {code}.', discount:'Réduction', promotion:'Promotion {code}', express:'Commande express de démonstration : {provider}. Aucun portefeuille n’est connecté et aucun paiement n’est débité.', stockChanged:'Le panier a changé. Veuillez vérifier votre sélection.', failed:'Votre promotion n’a pas pu être vérifiée. Réessayez.' },
+} as const;

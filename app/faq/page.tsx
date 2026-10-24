@@ -5,4 +5,7 @@ import { Footer } from '@/components/editorial';
 import { Overlays } from '@/components/overlays';
 import { Toast } from '@/components/controls';
 export const metadata: Metadata = { title: 'Frequently asked questions — Maison Goya' };
-export default function Page() { return <><Header /><FaqPage /><Footer /><Overlays /><Toast /></>; }
+export default async function Page({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
+  const { category } = await searchParams;
+  return <><Header /><FaqPage initialSection={category} /><Footer /><Overlays /><Toast /></>;
+}

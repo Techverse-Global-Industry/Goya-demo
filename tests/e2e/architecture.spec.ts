@@ -51,7 +51,12 @@ test('an account keeps private workspace routes while the brand logo and shoppin
   await expect(page).toHaveURL(/\/app\/shop$/);
   await expect(page.locator('.product-card').first()).toBeVisible();
   await page.locator('[data-cart-trigger]').click();
-  await page.getByRole('dialog').getByRole('link', { name: 'Explore the collection', exact: true }).click();
+  await expect(page.locator('.exact-minicart-empty')).toHaveText('Your bag is empty');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-cart-trigger]')).toBeFocused();
+  await page.goto('/bag');
+  await page.locator('.exact-bag-empty').getByRole('link', { name: 'Continue exploring', exact: true }).click();
   await expect(page).toHaveURL(/\/collections$/);
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.locator('.site-header .wordmark').click();

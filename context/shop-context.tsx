@@ -2,13 +2,14 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef } from 'react';
 import type { Dispatch, ReactNode } from 'react';
-import { formatMoney, remainingStock, STORAGE_KEY, subtotal } from '@/lib/commerce';
+import { formatMoney, quoteCart, remainingStock, STORAGE_KEY, subtotal } from '@/lib/commerce';
 import { INITIAL_STATE, shopReducer } from '@/lib/store';
 import type { ShopAction, ShopState } from '@/lib/store';
 import { translate } from '@/lib/i18n';
-import { shopRequest } from '@/lib/api';
+import { RequestError, shopRequest } from '@/lib/api';
+import { languageDirection } from '@/lib/international';
 import type { Translate } from '@/lib/i18n';
-import type { Currency, Product, StoreSnapshot } from '@/lib/types';
+import type { CartQuote, Currency, Product, StoreSnapshot } from '@/lib/types';
 
 interface ShopContextValue {
   state: ShopState;
@@ -18,6 +19,9 @@ interface ShopContextValue {
   remaining: (productId: string, size: string) => number;
   itemCount: number;
   cartSubtotal: number;
+  cartQuote: CartQuote;
+  applyPromo: (code: string) => Promise<CartQuote>;
+  removePromo: () => void;
   products: Product[];
   productById: ReadonlyMap<string, Product>;
   refresh: (force?: boolean) => Promise<void>;
@@ -33,6 +37,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const wishlistAccount = useRef<string | null>(null);
   const wishlistSent = useRef('');
   const wishlistServer = useRef('');
+  const promoAttempt = useRef(0);
+  useEffect(() => { promoAttempt.current += 1; }, [state.user?.id]);
   const refresh = useCallback(function refreshSnapshot(force = false): Promise<void> {
     if (inFlight.current) return force ? inFlight.current.then(() => refreshSnapshot()) : inFlight.current;
     inFlight.current = (async () => {
@@ -76,13 +82,13 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!state.ready) return;
-    const serialized = JSON.stringify({ version: 1, locale: state.locale, currency: state.currency, cart: state.cart, wishlist: state.wishlist, market: state.market, customerId: state.user?.id ?? null });
+    const serialized = JSON.stringify({ version: 1, locale: state.locale, language: state.language, currency: state.currency, cart: state.cart, promoCode: state.promoCode, wishlist: state.wishlist, market: state.market, customerId: state.user?.id ?? null });
     try {
       if (window.localStorage.getItem(STORAGE_KEY) !== serialized) window.localStorage.setItem(STORAGE_KEY, serialized);
     } catch {
       // Shopping stays functional in private browsing and storage-quota failures.
     }
-  }, [state.ready, state.locale, state.currency, state.cart, state.wishlist, state.market, state.user?.id]);
+  }, [state.ready, state.locale, state.language, state.currency, state.cart, state.promoCode, state.wishlist, state.market, state.user?.id]);
 
   useEffect(() => {
     if (!state.ready || !state.user) { wishlistAccount.current = null; guestWishlist.current = true; return; }
@@ -112,8 +118,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   }, [state.ready, state.user, state.profile, state.wishlist, state.products]);
 
   useEffect(() => {
-    document.documentElement.lang = state.locale;
-  }, [state.locale]);
+    document.documentElement.lang = state.language;
+    document.documentElement.dir = languageDirection(state.language);
+  }, [state.language]);
 
   useEffect(() => {
     if (!state.notice) return;
@@ -121,15 +128,24 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timeout);
   }, [state.notice]);
 
-  const t = useCallback<Translate>((key, values) => translate(state.locale, key, values), [state.locale]);
-  const money = useCallback((amount: number, currency: Currency = state.currency) => formatMoney(amount, currency, state.locale), [state.locale, state.currency]);
+  const t = useCallback<Translate>((key, values) => translate(state.language, key, values), [state.language]);
+  const money = useCallback((amount: number, currency: Currency = state.currency) => formatMoney(amount, currency, state.language), [state.language, state.currency]);
   const productById = useMemo(() => new Map(state.products.map((product) => [product.id, product])), [state.products]);
   const remaining = useCallback((productId: string, size: string) => remainingStock(state.cart, state.stockUsed, productId, size, productById), [state.cart, state.stockUsed, productById]);
+  const cartQuote = useMemo(() => quoteCart(state.cart, state.currency, productById, state.promoCode), [state.cart, state.currency, state.promoCode, productById]);
+  const applyPromo = useCallback(async (code: string) => {
+    const attempt = ++promoAttempt.current;
+    const { quote } = await shopRequest<{ quote: CartQuote }>('cartQuote', { cart: state.cart, currency: state.currency, promoCode: code });
+    if (attempt !== promoAttempt.current) throw new RequestError('The bag has changed.', 'stockChanged', 409);
+    dispatch({ type: 'promo', code: quote.promoCode ?? '' });
+    return quote;
+  }, [state.cart, state.currency]);
+  const removePromo = useCallback(() => { promoAttempt.current += 1; dispatch({ type: 'promo', code: '' }); }, []);
   const value = useMemo<ShopContextValue>(() => ({
-    state, dispatch, t, money, remaining, products: state.products, productById, refresh,
+    state, dispatch, t, money, remaining, products: state.products, productById, refresh, cartQuote, applyPromo, removePromo,
     itemCount: state.cart.reduce((count, line) => count + line.quantity, 0),
     cartSubtotal: subtotal(state.cart, state.currency, productById),
-  }), [state, t, money, remaining, productById, refresh]);
+  }), [state, t, money, remaining, productById, refresh, cartQuote, applyPromo, removePromo]);
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 }

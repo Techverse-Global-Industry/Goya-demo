@@ -1,0 +1,20 @@
+export const privacyCopy = {
+  en: {
+    title: 'Your cookie preference', privacy: 'Your Privacy', necessary: 'Strictly Necessary Cookies', performance: 'Performance Cookies', functional: 'Functional Cookies', targeting: 'Targeting Cookies', close: 'Close', continue: 'Continue without Accepting', choose: 'Let me choose', accept: 'Accept all cookies', save: 'Save my preferences', reject: 'Reject all', allow: 'Allow all', active: 'Always active', unavailable: 'Not active in this demonstration',
+    banner: 'This website uses essential cookies to support your session, shopping bag and requested preferences. With your choice, it can also remember recent searches and show an invitation to the Goya newsletter on this device. Choose which optional features to allow below. Continuing without accepting activates essential features only. You can change your choice at any time.',
+    policy: 'Privacy and Cookie Policy', introduction: 'Use this panel to choose how the Goya demonstration remembers your visit. Essential session features keep your own account, orders and service requests separate from those of other visitors. Optional choices apply only to this device. No advertising network or external analytics service is connected.',
+    necessaryBody: 'These features support sign-in, verified guest access, shopping-bag contents and preferences you request. They are required to use those functions and cannot be switched off here.',
+    performanceBody: 'No external analytics service or performance-tracking cookie is active in this demonstration. This category remains inactive.',
+    functionalBody: 'Allow Goya to remember your recent searches on this device. Turning this off clears the saved search history. Shopping, your wishlist and language settings remain available.',
+    targetingBody: 'Allow a newsletter invitation once per visit. This only controls the invitation inside the application; it does not subscribe you, send an email or enable advertising trackers.',
+  },
+  fr: {
+    title: 'Vos préférences de cookies', privacy: 'Votre confidentialité', necessary: 'Cookies strictement nécessaires', performance: 'Cookies de performance', functional: 'Cookies fonctionnels', targeting: 'Cookies de ciblage', close: 'Fermer', continue: 'Continuer sans accepter', choose: 'Personnaliser', accept: 'Accepter tous les cookies', save: 'Enregistrer mes préférences', reject: 'Tout refuser', allow: 'Tout autoriser', active: 'Toujours actifs', unavailable: 'Inactifs dans cette démonstration',
+    banner: 'Ce site utilise des cookies essentiels pour votre session, votre panier et les préférences demandées. Avec votre accord, il peut aussi conserver vos recherches récentes et afficher une invitation à la newsletter Goya sur cet appareil. Choisissez les fonctions facultatives à autoriser ci-dessous. Continuer sans accepter active uniquement les fonctions essentielles. Votre choix peut être modifié à tout moment.',
+    policy: 'Politique de confidentialité et de cookies', introduction: 'Choisissez ici comment la démonstration Goya mémorise votre visite. Les fonctions de session essentielles distinguent votre compte, vos commandes et vos demandes de ceux des autres visiteurs. Les choix facultatifs concernent uniquement cet appareil. Aucun réseau publicitaire ni service externe d’analyse n’est connecté.',
+    necessaryBody: 'Ces fonctions permettent la connexion, l’accès invité vérifié, le panier et les préférences demandées. Elles sont nécessaires à ces fonctions et ne peuvent pas être désactivées ici.',
+    performanceBody: 'Aucun service externe d’analyse ni cookie de mesure de performance n’est actif dans cette démonstration. Cette catégorie reste inactive.',
+    functionalBody: 'Autorisez Goya à mémoriser vos recherches récentes sur cet appareil. Désactiver cette fonction efface l’historique enregistré. Les achats, les envies et la langue restent disponibles.',
+    targetingBody: 'Autorisez une invitation à la newsletter par visite. Ce choix concerne uniquement l’invitation dans l’application : il ne vous inscrit pas, n’envoie aucun e-mail et n’active aucun traceur publicitaire.',
+  },
+} as const;

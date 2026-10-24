@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/commerce.test.ts tests/i18n.test.ts tests/backend.test.ts",
+    "test": "tsx --test tests/commerce.test.ts tests/i18n.test.ts tests/backend.test.ts tests/international.test.ts tests/translation-coverage.test.ts",
     "setup:demo": "node scripts/setup-demo.cjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

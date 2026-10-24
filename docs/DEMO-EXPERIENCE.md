@@ -1,29 +1,35 @@
 # Goya reference storefront completion
 
-This release expands the Santoni-inspired Goya presentation and customer journeys. The public US shopping experience was the purchase-enabled reference. Goya retains its own name, copy, photographs, French/English translations, supported markets and installable PWA.
+The Goya storefront follows measured desktop/mobile shell, catalogue, service and editorial structures from Santoni's public shopping experience. It retains Goya's name, content, photographs, shared vector wordmark and installable PWA. This does not claim complete visual or functional equivalence: Avus Pro remains pending an appropriate licence, and some commercial-provider features remain outside the demo. See [font licensing](FONT-LICENSING.md).
 
 ## Implemented journeys
 
 - A promotion strip, seven main menus, desktop groups and a three-level mobile menu. Men and women have shoe families, accessory families and curated editorial selections.
 - Four homepage destinations (men new in, men accessories, women new in, women accessories), a genuine product carousel and thirteen original bilingual journal stories.
-- Distinct new-in, gifting and featured memberships, audience-aware accessories, materials/colours/sizes/construction filters, actual related colour SKUs, product zoom and availability requests.
-- A conversion chart and illustrative fit questionnaire. Recommendations check real demo sizes/stock; the chart is not a measurement system verified by Goya.
-- Ranked bilingual search, inventory-derived style suggestions and optional recent searches. Recent searches persist only when experience preferences are enabled.
+- Twenty-five seeded Goya listings using actual supplied or historical Goya photographs, with distinct new-in, gifting and featured memberships, audience-aware accessories, materials/colours/sizes/construction filters and custom sorting. Related colour choices switch between separate real demo SKUs and stocks.
+- Measured four-column desktop/two-column mobile catalogue layouts, square product media, alternate supplied photographs on hover, load-more pagination, horizontal wishlist rows and a nonmodal empty-bag popover. PDP galleries support desktop dragging, mobile vertical scrolling, zoom and mobile information drawers; available angles are shown honestly.
+- A right-side size picker, conversion chart, two-step fit questionnaire and unavailable-size request form. Recommendations check real demo sizes/stock; conversions are illustrative and have not been verified by Goya.
+- Search with inventory-derived style suggestions, a default product carousel, typed suggestions, no-results state and a full results page. English/French search remains available, with selected-language metadata matching for translated seeded content. The reference-style overlay does not show a recent-search list.
+- Seven interface languages: English, French, Italian, German, Spanish, Japanese and Arabic. Country selection covers 100 countries plus International and maps to 12 illustrative demo currencies. Original catalogue/editorial content and the admin editor use English/French; newly entered admin text and uploads are not automatically translated into the other five languages.
 - Guest and customer checkout, addresses, billing, gift options, simulated approval/decline, card/wallet/MoMo and demo PayPal/Klarna/Scalapay presentations. Installment options vary by demonstration market. No payment provider is contacted and no credit is issued.
 - Order lookup with an exact order reference and checkout email, private order histories, item-level returns, owner review, receipt and simulated refunds. Inventory is restored once on receipt; refunds never transfer money.
 - Current-password-protected email/password edits, session revocation and single-use, expiring demo recovery. Recovery links are shown only when the browser has proof from a previous successful account authentication. No reset email is sent.
-- Four distinct personalization journeys: bespoke enquiry, made-to-order configuration, initial personalization and care/restoration assessment with optional photos. These are demonstration proposals, not claims that Goya currently operates every Santoni service.
+- Four distinct personalization editorial journeys: bespoke, made to order, on-time personalization and caring. Their consultation routes can collect a demonstration brief, including optional care photos; on-time also links to an eligible product listing. These are demonstration proposals, not claims that Goya currently operates every Santoni service.
 - Online/boutique consultation requests, city-based store finder/maps, store detail pages, country/language/currency selection, contact/newsletter/careers forms and private request tracking.
 - Admin management of enquiries, availability alerts, return stages, responses, catalogue imagery, inventory and merchandising metadata.
 - Separate demonstration legal/support pages, detailed footer links, verified brand social links, working preference controls and optional newsletter invitations.
 
 Requests, orders and inventory share the backend. Customer records and attachments remain restricted to their owner session or an administrator. Attachments are fetched on demand instead of included in routine catalogue polling.
 
+Contact, newsletter and availability submissions create private persistent backend records; they are not local-only previews. Demo password recovery changes a password only after previously issued browser proof authorizes a single-use, expiring reset. No recovery or service email is sent.
+
 ## Brand and content boundaries
 
 Store maps point to illustrative city centres in Cotonou, Paris and Dakar. Street addresses, phone numbers and operating hours were not invented. Consultation requests do not create real video calls, physical appointments, shipments or email messages. The 2020 Goya × Funkè story is historical and cites [MC&CO](https://www.mcandco.agency/fr/work/funke/).
 
-The application does not claim access to Santoni's private order-management systems, authenticated account data or commercial provider contracts. No Santoni logo, campaign text or proprietary font was copied into Goya content.
+The application does not claim access to Santoni's private order-management systems, authenticated account data or commercial provider contracts. No Santoni logo, campaign text or proprietary font was copied into Goya content. The current interface uses the licensed bundled fallback described in [font licensing](FONT-LICENSING.md).
+
+The reference's populated bag could not be exercised during the fresh audit: its size-variation request removed the purchase control. Populated Goya bag layouts therefore follow the reference's public stylesheet, without a claim of a complete live populated-bag comparison. Goya retains working quantities, removal confirmation, move to wishlist, totals and checkout. Its promo panel validates demo code `GOYA10` against the backend quote, supports invalid-code feedback and removal, and carries the product discount into checkout, saved orders and invoices. PayPal/Apple Pay bag actions preselect demo checkout; no live wallet provider is contacted. These additions await final regression verification.
 
 ## Archive photographs
 
@@ -56,10 +62,8 @@ All source images use the article's `/wp-content/uploads/2020/11/` directory. Fi
 
 Existing uploaded images, product edits, prices, stock, accounts and orders are retained. Reconciliation adds missing archive demo listings without resetting an existing listing.
 
-## Verification — 24 October 2026
+## Verification
 
-- 92 unit tests passed, including order ownership, return quantities, stock restoration, credential changes, recovery, administrator provisioning and catalogue preservation.
-- 43 distinct desktop/mobile browser journeys passed across the full run and focused reruns after corrections. The mobile duplicate of the desktop campaign-animation test remains intentionally skipped.
-- Browser journeys include guest/customer checkout, demo MoMo, saved billing/gifting, account recovery, availability alerts, owner service responses, returns/refunds, fit recommendations, colour SKUs and all four personalization/consultation paths.
-- TypeScript, production build, source lint and original/archive image validation passed.
-- All automated writes used isolated local demo data with an empty `DATABASE_URL`. Hosted verification is read-only.
+The current reference comparison includes desktop/mobile navigation, catalogue/filter/sort states, search states, PDP gallery/detail drawers, available and unavailable sizes, conversion chart, fit questions, wishlist and empty bag. The populated reference bag limitation is described above. Saved reference evidence is kept in the ignored `.data/exact-reference/` directory.
+
+Run the repository's lint, type, unit, asset, production-build and browser checks for the final state; this document does not assert new build or E2E results before those checks finish. Browser coverage includes guest/customer shopping, simulated payment, account recovery, private requests, returns/refunds and consultation journeys. Automated writes must use isolated local demo data with an empty `DATABASE_URL`; hosted verification remains read-only.

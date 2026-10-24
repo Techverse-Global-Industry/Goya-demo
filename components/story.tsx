@@ -3,12 +3,13 @@
 import { useRef } from 'react';
 import { useShop } from '@/context/shop-context';
 import { fashionCopy } from '@/lib/fashion-copy';
+import { translatedCopy } from '@/lib/international';
 import { gsap, useGSAP } from '@/lib/gsap';
 import { CampaignMedia } from './campaign-media';
 
 export function Story() {
   const { state } = useShop();
-  const copy = fashionCopy[state.locale];
+  const copy = translatedCopy(fashionCopy[state.locale], state.language);
   const root = useRef<HTMLElement>(null);
   useGSAP(() => {
     const media = gsap.matchMedia();

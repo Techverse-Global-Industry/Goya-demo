@@ -1,22 +1,37 @@
-import { COUNTRIES, LOCATION_TIMEZONES, LOCATIONS, PAYMENT_METHODS, PRODUCT_BY_ID, SERVICES, TIME_SLOTS } from './catalog';
-import type { AtelierLocation, Booking, BookingDetails, CartLine, Country, Currency, Locale, Order, PaymentMethod, PriceBook, Product, ShippingDetails } from './types';
+import { LOCATION_TIMEZONES, LOCATIONS, PAYMENT_METHODS, PRODUCT_BY_ID, SERVICES, TIME_SLOTS } from './catalog';
+import type { AtelierLocation, Booking, BookingDetails, CartLine, CartQuote, Country, Currency, Locale, SiteLocale, Order, PaymentMethod, PriceBook, Product, ShippingDetails } from './types';
+import { MARKET_CODES } from './international';
 import type { TranslationKey } from './i18n';
 import { shoeTypeOf } from './merchandising';
 
-export const SHIPPING_THRESHOLD: PriceBook = { EUR: 60000, USD: 65000, XOF: 395000 };
-export const SHIPPING_FEE: PriceBook = { EUR: 2000, USD: 2500, XOF: 15000 };
 export const STORAGE_KEY = 'maison-goya:v1';
-export const CURRENCIES: readonly Currency[] = ['EUR', 'USD', 'XOF'];
+export const CURRENCIES: readonly Currency[] = ['EUR', 'USD', 'XOF', 'GBP', 'JPY', 'AED', 'CHF', 'CAD', 'SAR', 'KWD', 'TRY', 'CNY'];
 export type StockUsed = Readonly<Record<string, number>>;
 export type FieldErrors<T> = Partial<Record<keyof T, TranslationKey>>;
 
-export function formatMoney(minorUnits: number, currency: Currency, locale: Locale): string {
+/** Fixed illustrative rates for demo regional quotes, never live FX rates. */
+export const DEMO_CURRENCY_RATES: Readonly<Record<Currency, number>> = { EUR: 1, USD: 1.09, XOF: 656, GBP: .86, JPY: 160, AED: 4, CHF: .96, CAD: 1.49, SAR: 4.1, KWD: .335, TRY: 40, CNY: 7.85 };
+export function currencyScale(currency: Currency): number { return currency === 'JPY' || currency === 'XOF' ? 1 : currency === 'KWD' ? 1000 : 100; }
+export function priceAmount(book: PriceBook, currency: Currency): number {
+  const explicit = book[currency];
+  if (explicit !== undefined && Number.isSafeInteger(explicit)) return explicit;
+  return Math.round(book.EUR / 100 * DEMO_CURRENCY_RATES[currency] * currencyScale(currency));
+}
+export function expandPriceBook(book: PriceBook): Record<Currency, number> {
+  return Object.fromEntries(CURRENCIES.map(currency => [currency, priceAmount(book, currency)])) as Record<Currency, number>;
+}
+export const SHIPPING_THRESHOLD = expandPriceBook({ EUR: 60000, USD: 65000, XOF: 395000 });
+export const SHIPPING_FEE = expandPriceBook({ EUR: 2000, USD: 2500, XOF: 15000 });
+
+export function formatMoney(minorUnits: number, currency: Currency, locale: SiteLocale): string {
   if (!Number.isSafeInteger(minorUnits)) throw new TypeError('Money must be expressed in integer minor units.');
-  return new Intl.NumberFormat(locale === 'fr' ? 'fr-FR' : 'en-US', {
+  const scale = currencyScale(currency);
+  const digits = scale === 1000 ? 3 : scale === 1 ? 0 : 2;
+  return new Intl.NumberFormat(locale === 'fr' ? 'fr-FR' : locale === 'en' ? 'en-US' : locale, {
     style: 'currency', currency,
-    minimumFractionDigits: currency === 'XOF' || minorUnits % 100 === 0 ? 0 : 2,
-    maximumFractionDigits: currency === 'XOF' ? 0 : 2,
-  }).format(minorUnits / (currency === 'XOF' ? 1 : 100));
+    minimumFractionDigits: minorUnits % scale === 0 ? 0 : digits,
+    maximumFractionDigits: digits,
+  }).format(minorUnits / scale);
 }
 
 export function variantKey(productId: string, size: string): string {
@@ -79,7 +94,7 @@ export function readPreferences(raw: string | null, catalog: ReadonlyMap<string,
 }
 
 export function subtotal(cart: readonly CartLine[], currency: Currency, catalog: ReadonlyMap<string, Product> = PRODUCT_BY_ID): number {
-  return cart.reduce((sum, line) => sum + (catalog.get(line.productId)?.prices[currency] ?? 0) * line.quantity, 0);
+  return cart.reduce((sum, line) => { const product = catalog.get(line.productId); return sum + (product ? priceAmount(product.prices, currency) : 0) * line.quantity; }, 0);
 }
 
 export function shippingCost(amount: number, currency: Currency, payment?: PaymentMethod): number {
@@ -87,8 +102,36 @@ export function shippingCost(amount: number, currency: Currency, payment?: Payme
   return SHIPPING_FEE[currency];
 }
 
+export const DEMO_PROMO_CODE = 'GOYA10';
+/** Local preferences are untrusted; only the bounded public demonstration code survives. */
+export function normalizePromoCode(value: unknown): string {
+  return typeof value === 'string' && value.length <= 32 && value.trim().toUpperCase() === DEMO_PROMO_CODE ? DEMO_PROMO_CODE : '';
+}
+
+export function expressPayment(value: unknown): 'apple' | 'paypal' | null {
+  return value === 'apple' || value === 'paypal' ? value : null;
+}
+
+/** Round each paid unit once to the currency's minor unit. Refunds use this exact unit. */
+export function quoteCart(cart: readonly CartLine[], currency: Currency, catalog: ReadonlyMap<string, Product> = PRODUCT_BY_ID, code?: unknown, payment?: PaymentMethod): CartQuote {
+  const promoCode = normalizePromoCode(code);
+  if (code !== undefined && code !== null && code !== '' && !promoCode) throw new Error('Invalid demonstration promotion code.');
+  const lines = cart.map(line => {
+    const product = catalog.get(line.productId);
+    if (!product || !Number.isSafeInteger(line.quantity) || line.quantity < 1) throw new Error('Invalid cart quote.');
+    const originalUnitPrice = priceAmount(product.prices, currency);
+    const unitPrice = promoCode ? Math.round(originalUnitPrice * 9 / 10) : originalUnitPrice;
+    return { productId: line.productId, size: line.size, quantity: line.quantity, unitPrice, ...(promoCode ? { originalUnitPrice } : {}) };
+  });
+  const originalSubtotal = lines.reduce((sum,line) => sum + (line.originalUnitPrice ?? line.unitPrice) * line.quantity, 0);
+  const amount = lines.reduce((sum,line) => sum + line.unitPrice * line.quantity, 0);
+  if (!Number.isSafeInteger(originalSubtotal) || !Number.isSafeInteger(amount)) throw new Error('Invalid cart quote.');
+  const shipping = shippingCost(amount, currency, payment);
+  return { promoCode: promoCode || null, lines, originalSubtotal, discount: originalSubtotal - amount, subtotal: amount, shipping, total: amount + shipping };
+}
+
 export function isPaymentAvailable(payment: PaymentMethod, country: Country): boolean {
-  if (!PAYMENT_METHODS.includes(payment) || !COUNTRIES.includes(country)) return false;
+  if (!PAYMENT_METHODS.includes(payment) || !MARKET_CODES.includes(country)) return false;
   if (payment === 'mobile') return country === 'BJ' || country === 'SN';
   if (payment === 'pickup') return country === 'BJ';
   if (payment === 'klarna') return country === 'FR' || country === 'GB' || country === 'US';
@@ -106,7 +149,7 @@ export function validateShipping(value: ShippingDetails): FieldErrors<ShippingDe
   if (!validEmail(value.email)) errors.email = 'invalidEmail';
   if (value.address.trim().length < 5 || value.address.length > 240) errors.address = 'invalidAddress';
   if (value.city.trim().length < 2 || value.city.length > 100) errors.city = 'invalidCity';
-  if (!COUNTRIES.includes(value.country)) errors.country = 'invalidCountry';
+  if (!MARKET_CODES.includes(value.country)) errors.country = 'invalidCountry';
   return errors;
 }
 
@@ -119,6 +162,7 @@ export function createOrder(options: {
   payment: PaymentMethod;
   customerId: string | null;
   stockUsed?: StockUsed;
+  promoCode?: string;
 }): Order {
   const { id, createdAt, cart, currency, recipient, payment, customerId, stockUsed = {} } = options;
   if (!/^DEMO-MG-[A-Z0-9-]+$/.test(id)) throw new Error('A demonstration order ID is required.');
@@ -127,14 +171,14 @@ export function createOrder(options: {
   if (!CURRENCIES.includes(currency) || !isPaymentAvailable(payment, recipient.country)) throw new Error('Unavailable payment or currency.');
   const normalized = sanitizeCart(cart, stockUsed);
   if (!normalized.length || JSON.stringify(normalized) !== JSON.stringify(cart)) throw new Error('Invalid cart or insufficient stock.');
-  const amount = subtotal(normalized, currency);
-  const delivery = shippingCost(amount, currency, payment);
+  const quote = quoteCart(normalized, currency, PRODUCT_BY_ID, options.promoCode, payment);
   return {
     id,
     tracking: payment === 'pickup' ? null : `SIM-${id.replace('DEMO-MG-', '')}`,
     createdAt, customerId, currency,
-    lines: normalized.map((line) => ({ ...line, unitPrice: PRODUCT_BY_ID.get(line.productId)!.prices[currency] })),
-    subtotal: amount, shipping: delivery, total: amount + delivery, payment,
+    lines: quote.lines,
+    subtotal: quote.subtotal, shipping: quote.shipping, total: quote.total, payment,
+    ...(quote.promoCode ? { promoCode: quote.promoCode, originalSubtotal: quote.originalSubtotal, discount: quote.discount } : {}),
     recipient: {
       name: recipient.name.trim(), email: recipient.email.trim().toLowerCase(),
       address: recipient.address.trim(), city: recipient.city.trim(), country: recipient.country,
@@ -207,8 +251,8 @@ export function validateBooking(value: BookingDetails, bookings: readonly Pick<B
 }
 
 /** Format date-only bookings without silently shifting them into a different day. */
-export function formatDate(value: string, locale: Locale, dateOnly = false): string {
-  return new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', {
+export function formatDate(value: string, locale: SiteLocale, dateOnly = false): string {
+  return new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : locale === 'en' ? 'en-GB' : locale, {
     day: 'numeric', month: 'long', year: 'numeric',
     ...(dateOnly ? { timeZone: 'UTC' } : {}),
   }).format(new Date(dateOnly ? `${value}T12:00:00.000Z` : value));

@@ -4,18 +4,23 @@ import { useRef } from 'react';
 import type { InputHTMLAttributes, SelectHTMLAttributes, ReactNode } from 'react';
 import { useShop } from '@/context/shop-context';
 import { CURRENCIES } from '@/lib/commerce';
+import { LANGUAGE_NAMES, SITE_LOCALES, translatedCopy } from '@/lib/international';
+import { internationalCopy } from '@/lib/international-copy';
 import type { Currency } from '@/lib/types';
 import type { TranslationKey } from '@/lib/i18n';
 import { gsap, useGSAP } from '@/lib/gsap';
 import { Icon } from './icon';
 
 export function LanguageSwitch({ compact = false }: { compact?: boolean }) {
-  const { state, dispatch, t } = useShop();
-  return <div role="group" aria-label={t('language')} className={`language-switch ${compact ? 'is-compact' : ''}`}>
-    <button type="button" lang="en" aria-label="English" aria-pressed={state.locale === 'en'} onClick={() => dispatch({ type: 'locale', locale: 'en' })}>EN</button>
-    <span aria-hidden="true">|</span>
-    <button type="button" lang="fr" aria-label="Français" aria-pressed={state.locale === 'fr'} onClick={() => dispatch({ type: 'locale', locale: 'fr' })}>FR</button>
-  </div>;
+  const { state, dispatch } = useShop();
+  const c = translatedCopy(internationalCopy[state.locale], state.language);
+  return <div role="group" aria-label={c.chooseLanguage} className={`language-switch ${compact ? 'is-compact' : ''}`}><button type="button" aria-label={`${c.chooseLanguage}: ${LANGUAGE_NAMES[state.language]}`} onClick={() => dispatch({ type: 'open', overlay: { kind: 'language' } })}><span lang={state.language} translate="no">{LANGUAGE_NAMES[state.language]}</span><Icon name="chevron-right" width={15} /></button></div>;
+}
+
+export function LanguageOptions({ onComplete }: { onComplete?: () => void } = {}) {
+  const { state, dispatch } = useShop();
+  const c = translatedCopy(internationalCopy[state.locale], state.language);
+  return <nav className="exact-language-options" aria-label={c.chooseLanguage}>{SITE_LOCALES.map(language => <button key={language} type="button" lang={language} translate="no" aria-current={state.language === language ? 'true' : undefined} onClick={() => { dispatch({ type: 'language', language }); if (onComplete) onComplete(); else dispatch({ type: 'close' }); }}>{LANGUAGE_NAMES[language]}</button>)}</nav>;
 }
 
 export function CurrencySelect() {

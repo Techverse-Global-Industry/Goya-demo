@@ -6,7 +6,9 @@ import { ARCHIVE_PRODUCTS } from '../lib/archive-catalog';
 import { belongsToEdit, matchesAccessoryAudience, recommendDemoSize } from '../lib/catalog-edits';
 import { CURATED_EDITS } from '../lib/curated-edits';
 import { rankedSearch, safeRecentSearches, searchScore } from '../lib/search';
-import { addDays, availableStock, bookingDateRange, createOrder, formatDate, formatMoney, isPaymentAvailable, isTimeAvailable, localDateTime, matchesProduct, normalizeSearch, readPreferences, remainingStock, sanitizeCart, shippingCost, subtotal, validateBooking, validateShipping } from '../lib/commerce';
+import { addDays, availableStock, bookingDateRange, createOrder, currencyScale, expandPriceBook, expressPayment, formatDate, formatMoney, isPaymentAvailable, isTimeAvailable, localDateTime, matchesProduct, normalizePromoCode, normalizeSearch, priceAmount, quoteCart, readPreferences, remainingStock, sanitizeCart, shippingCost, subtotal, validateBooking, validateShipping } from '../lib/commerce';
+import { INTERNATIONAL_MARKETS, MARKET_CODES } from '../lib/international';
+import { translate } from '../lib/i18n';
 import { invoiceText } from '../lib/browser';
 import { INITIAL_STATE, shopReducer } from '../lib/store';
 import { shoeTypeOf } from '../lib/merchandising';
@@ -20,6 +22,90 @@ const booking: BookingDetails = { name: 'Demo Guest', email: 'guest@example.test
 const savedBooking: Booking = { ...booking, id: 'DEMO-AT-TEST0001', customerId: null };
 const orderOptions = { id: 'DEMO-MG-TEST0001', createdAt: now.toISOString(), cart, currency: 'EUR' as const, recipient: shipping, payment: 'card' as const, customerId: null };
 const hydrated = () => shopReducer(INITIAL_STATE, { type: 'hydrate', raw: null });
+
+test('GOYA10 quotes round paid units once in zero- and three-decimal currencies', () => {
+  const product:Product={...PRODUCTS[0],prices:{...PRODUCTS[0].prices,JPY:101,KWD:1005}};
+  const catalog=new Map([[product.id,product]]);
+  const selection=[{productId:product.id,size:'42',quantity:3}];
+  for(const [currency,paid,original] of [['JPY',91,101],['KWD',905,1005]] as const){
+    const quote=quoteCart(selection,currency,catalog,' goya10 ');
+    assert.equal(quote.promoCode,'GOYA10');
+    assert.equal(quote.lines[0].unitPrice,paid);
+    assert.equal(quote.subtotal,paid*3);
+    assert.equal(quote.originalSubtotal,original*3);
+    assert.equal(quote.discount,(original-paid)*3);
+    assert.equal(quote.total,quote.subtotal+shippingCost(quote.subtotal,currency));
+    assert.ok(Number.isSafeInteger(quote.total));
+  }
+  assert.throws(()=>quoteCart(selection,'EUR',catalog,'INVALID'),/promotion/);
+  const clean=quoteCart([{...selection[0],unitPrice:0,originalUnitPrice:1,product:{id:'forged'}} as CartLine],'JPY',catalog);
+  assert.equal(clean.lines[0].unitPrice,101);
+  assert.equal(clean.lines[0].originalUnitPrice,undefined);
+  assert.equal(clean.lines[0].product,undefined);
+});
+
+test('promotion persistence accepts only GOYA10, follows the bag and clears on completion or sign-out', () => {
+  const raw=(promoCode:unknown,lines:CartLine[]=cart)=>JSON.stringify({version:1,cart:lines,promoCode,currency:'EUR'});
+  const restored=shopReducer(INITIAL_STATE,{type:'hydrate',raw:raw(' goya10 ')});
+  assert.equal(restored.promoCode,'GOYA10');
+  assert.equal(shopReducer(INITIAL_STATE,{type:'hydrate',raw:raw('ADMIN100')}).promoCode,'');
+  assert.equal(shopReducer(INITIAL_STATE,{type:'hydrate',raw:raw({code:'GOYA10'})}).promoCode,'');
+  assert.equal(shopReducer(INITIAL_STATE,{type:'hydrate',raw:raw('GOYA10',[])}).promoCode,'');
+  assert.equal(shopReducer(restored,{type:'promo',code:''}).promoCode,'');
+  assert.equal(shopReducer(restored,{type:'remove',productId:'francesco',size:'42'}).promoCode,'');
+  assert.equal(shopReducer(restored,{type:'signOut'}).promoCode,'');
+  assert.equal(shopReducer(restored,{type:'clearPreferences'}).promoCode,'');
+  assert.equal(shopReducer(restored,{type:'orderComplete',order:createOrder({...orderOptions,promoCode:'GOYA10'})}).promoCode,'');
+  assert.equal(shopReducer({...restored,user:{id:'first',name:'Demo',email:'first@example.test',provider:'email'}},{type:'signIn',user:{id:'second',name:'Demo',email:'second@example.test',provider:'email'}}).promoCode,'');
+  assert.equal(normalizePromoCode('GOYA10'.repeat(100)), '');
+});
+
+test('express preselection is an allowlist and invoices preserve discounted paid order amounts', () => {
+  assert.equal(expressPayment('apple'),'apple');
+  assert.equal(expressPayment('paypal'),'paypal');
+  for(const value of ['card','google','https://paypal.example/','APPLE',['paypal'],null])assert.equal(expressPayment(value),null);
+  const discounted=createOrder({...orderOptions,promoCode:'GOYA10'});
+  assert.equal(discounted.lines[0].unitPrice,37800);
+  assert.equal(discounted.lines[0].originalUnitPrice,42000);
+  assert.equal(discounted.subtotal,37800);
+  assert.equal(discounted.originalSubtotal,42000);
+  assert.equal(discounted.discount,4200);
+  const invoice=invoiceText(discounted,'en');
+  assert.match(invoice,/GOYA10/);
+  assert.ok(invoice.includes(formatMoney(4200,'EUR','en')));
+  assert.ok(invoice.includes(formatMoney(discounted.total,'EUR','en')));
+  assert.ok(invoice.includes(formatMoney(37800,'EUR','en')));
+  assert.equal(invoiceText(createOrder(orderOptions),'en').includes('GOYA10'),false);
+});
+
+test('first visit keeps the International USD default while restoring legacy country preferences', () => {
+  assert.equal(INITIAL_STATE.market, 'WW');
+  assert.equal(INITIAL_STATE.currency, 'USD');
+  assert.equal(hydrated().market, 'WW');
+  assert.equal(hydrated().currency, 'USD');
+  const french = shopReducer(INITIAL_STATE, { type: 'hydrate', raw: JSON.stringify({ version: 1, market: 'FR', locale: 'fr', currency: 'EUR', cart }) });
+  assert.equal(french.market, 'FR');
+  assert.equal(french.currency, 'EUR');
+  assert.equal(french.language, 'fr');
+  const benin = shopReducer(INITIAL_STATE, { type: 'hydrate', raw: JSON.stringify({ version: 1, market: 'BJ', locale: 'fr', currency: 'XOF', cart }) });
+  assert.equal(benin.market, 'BJ');
+  assert.equal(benin.currency, 'XOF');
+  assert.deepEqual(benin.cart, cart);
+});
+
+test('country selection applies its regional quote and language, while a language switch preserves the market and bag', () => {
+  const before = { ...hydrated(), cart };
+  const japan = shopReducer(before, { type: 'market', market: 'JP' });
+  assert.equal(japan.language, 'ja');
+  assert.equal(japan.locale, 'en');
+  assert.equal(japan.currency, 'JPY');
+  assert.equal(subtotal(japan.cart, japan.currency), priceAmount(PRODUCTS[0].prices, 'JPY'));
+  const german = shopReducer(japan, { type: 'language', language: 'de' });
+  assert.equal(german.market, 'JP');
+  assert.equal(german.currency, 'JPY');
+  assert.equal(german.language, 'de');
+  assert.deepEqual(german.cart, cart);
+});
 
 test('shoe navigation separates loafers, sneakers, heels and boots without treating bags as shoes', () => {
   assert.deepEqual(PRODUCTS.slice(0, 8).map(shoeTypeOf), ['loafers', 'sneakers', 'heels', 'pumps', 'boots', 'loafers', 'heels', null]);
@@ -203,6 +289,39 @@ test('subtotal uses selected price book, not a currency conversion', () => {
   assert.equal(subtotal(cart, 'XOF'), 275000);
 });
 
+test('regional demo prices retain explicit base books and support ISO minor units', () => {
+  const prices = PRODUCTS.find(product => product.id === 'francesco')!.prices;
+  assert.equal(priceAmount(prices, 'EUR'), 42000);
+  assert.equal(priceAmount(prices, 'USD'), 45500);
+  assert.equal(priceAmount(prices, 'XOF'), 275000);
+  assert.equal(priceAmount(prices, 'GBP'), 36120);
+  assert.equal(priceAmount(prices, 'JPY'), 67200);
+  assert.equal(priceAmount(prices, 'KWD'), 140700);
+  assert.equal(priceAmount({ ...prices, JPY: 70000 }, 'JPY'), 70000);
+  assert.equal(currencyScale('JPY'), 1);
+  assert.equal(currencyScale('XOF'), 1);
+  assert.equal(currencyScale('KWD'), 1000);
+  assert.equal(currencyScale('GBP'), 100);
+  assert.equal(Object.keys(expandPriceBook(prices)).length, 12);
+  assert.equal(formatMoney(67200, 'JPY', 'ja'), '￥67,200');
+  assert.match(formatMoney(140700, 'KWD', 'en'), /140\.700/);
+  const regional = createOrder({ ...orderOptions, currency: 'GBP', recipient: { ...shipping, country: 'GB' } });
+  assert.equal(regional.lines[0].unitPrice, 36120);
+  assert.equal(regional.subtotal, subtotal(cart, 'GBP'));
+  assert.equal(regional.shipping, shippingCost(regional.subtotal, 'GBP', 'card'));
+  assert.equal(regional.total, regional.subtotal + regional.shipping);
+});
+
+test('the complete country directory uses verified regional currencies and validates real shipping markets', () => {
+  assert.equal(MARKET_CODES.length, 100);
+  for (const [code, currency] of [['GB','GBP'],['JP','JPY'],['AE','AED'],['CH','CHF'],['CA','CAD'],['SA','SAR'],['KW','KWD'],['TR','TRY'],['CN','CNY'],['BJ','XOF']] as const) {
+    assert.equal(INTERNATIONAL_MARKETS.find(market => market.code === code)?.currency, currency);
+    assert.deepEqual(validateShipping({ ...shipping, country: code }), {});
+    assert.equal(isPaymentAvailable('card', code), true);
+  }
+  assert.equal(validateShipping({ ...shipping, country: 'WW' }).country, 'invalidCountry');
+});
+
 test('shipping thresholds, empty bags and boutique pickup', () => {
   assert.equal(shippingCost(42000, 'EUR'), 2000);
   assert.equal(shippingCost(60000, 'EUR'), 0);
@@ -265,6 +384,24 @@ test('invoice is localized and never represents a fiscal document or receipt', (
   assert.match(french, /NI FACTURE FISCALE/);
   assert.match(english, /DEMO-MG-TEST0001/);
   assert.match(french, /Le Mocassin Francesco/);
+});
+
+test('Japanese and Arabic regional invoices support new countries and preserve customer-entered text', () => {
+  for (const [country, currency, language, countryLabel] of [['JP', 'JPY', 'ja', '日本'], ['AE', 'AED', 'ar', 'الإمارات العربية المتحدة']] as const) {
+    const recipient = { ...shipping, country, name: 'Shopping bag', address: '12 Last name Avenue', city: 'Password' };
+    const order = createOrder({ ...orderOptions, currency, recipient });
+    const invoice = invoiceText(order, language);
+    assert.ok(invoice.includes(translate(language, 'invoiceDisclaimer')));
+    assert.ok(invoice.includes(translate(language, 'invoiceTitle')));
+    assert.ok(invoice.includes(countryLabel));
+    assert.ok(invoice.includes(formatMoney(order.total, currency, language)));
+    assert.ok(invoice.includes(`${translate(language, 'date')}: ${formatDate(order.createdAt, language)}`));
+    assert.ok(invoice.includes(`${translate(language, 'recipient')}: Shopping bag`));
+    assert.ok(invoice.includes(recipient.address));
+    assert.ok(invoice.includes(recipient.city));
+    assert.ok(invoice.includes(order.id));
+    assert.equal(invoice.includes(PRODUCTS[0].name.en), false);
+  }
 });
 
 test('search folds accents and case', () => {

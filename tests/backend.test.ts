@@ -4,7 +4,7 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { mutateDatabase, readDatabase, reconcileDemoCatalog, seedDatabase } from '../lib/server/database';
-import { accessibleOrder, changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, customerProfile, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct } from '../lib/server/shop';
+import { accessibleOrder, changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, customerProfile, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, quoteShopCart, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct } from '../lib/server/shop';
 import { beginDemoRecovery, checkPassword, finishDemoRecovery, guestIdentityForToken, hashPassword, issueRecoveryCode, prepareGuestCheckout, provisionAdministrator, updateCredentials, userForToken, tokenHash } from '../lib/server/security';
 import { matchesProduct } from '../lib/commerce';
 import type { DemoUser } from '../lib/types';
@@ -18,6 +18,86 @@ process.env.DATABASE_URL = '';
 process.env.DEMO_LOCAL = 'true';
 process.env.DEMO_DATA_FILE = testFile;
 after(async () => { await rm(testFile, { force: true }); delete process.env.DEMO_DATA_FILE; });
+
+test('public promotion quotes reject drafts, unknown variants, duplicate lines and unavailable quantities', () => {
+  const db = seedDatabase();
+  const published = db.products[0];
+  const payload = { ...input(), promoCode: 'GOYA10' };
+  const quote = quoteShopCart(db, payload);
+  assert.equal(quote.promoCode, 'GOYA10');
+  assert.deepEqual(Object.keys(quote.lines[0]).sort(), ['originalUnitPrice','productId','quantity','size','unitPrice']);
+  assert.equal(JSON.stringify(quote).includes(user.email), false);
+  const before = structuredClone(db);
+  assert.throws(() => quoteShopCart(db, { ...payload, cart: [{ productId: 'unknown', size: '45', quantity: 1 }] }), /Availability/);
+  assert.throws(() => quoteShopCart(db, { ...payload, cart: [{ productId: published.id, size: 'invalid', quantity: 1 }] }), /Availability/);
+  assert.throws(() => quoteShopCart(db, { ...payload, cart: [{ ...payload.cart[0], quantity: 999 }] }), /Availability/);
+  assert.throws(() => quoteShopCart(db, { ...payload, cart: [payload.cart[0], payload.cart[0]] }), /Availability/);
+  assert.throws(() => quoteShopCart(db, { ...payload, currency: 'INVALID' }), /currency/);
+  assert.deepEqual(db, before, 'public quotes never reserve stock or create records');
+  published.published = false;
+  assert.throws(() => quoteShopCart(db, payload), /Availability/);
+});
+
+test('invalid promotion cannot allocate stock or idempotency; replays keep the original paid order', () => {
+  const db = seedDatabase();
+  const payload = { ...input(), promoCode: 'FREE-ORDER' };
+  const stock = db.products[0].stock['45'];
+  assert.throws(() => placeOrder(db, user, payload), error => (error as {code?:string}).code === 'invalidPromo');
+  assert.equal(db.products[0].stock['45'], stock);
+  assert.equal(db.orders.length, 0);
+  assert.equal(Object.hasOwn(db.idempotency, `${user.id}:${payload.idempotencyKey}`), false);
+  const order = placeOrder(db, user, { ...payload, promoCode: ' goya10 ', discount: 999999999, subtotal: 0, total: 0 });
+  assert.equal(order.promoCode, 'GOYA10');
+  assert.equal(order.discount, 27500);
+  assert.equal(order.lines[0].unitPrice, 247500);
+  assert.equal(order.total, order.subtotal + order.shipping);
+  const repeated = placeOrder(db, user, { ...payload, cart: [], promoCode: 'INVALID' });
+  assert.equal(repeated, order);
+  assert.equal(db.orders.length, 1);
+  assert.equal(db.products[0].stock['45'], stock - 1);
+  const fullPrice = placeOrder(seedDatabase(), user, input());
+  assert.equal(fullPrice.lines[0].originalUnitPrice, undefined);
+  assert.equal(fullPrice.promoCode, undefined);
+  assert.equal(fullPrice.discount, undefined);
+  assert.equal(fullPrice.originalSubtotal, undefined);
+  assert.equal(fullPrice.subtotal, 275000);
+});
+
+for (const [currency, original, paid] of [['JPY',101,91],['KWD',1005,905]] as const) {
+  test(`${currency} coupon quotes, payment and partial refunds use the same rounded paid unit`, () => {
+    const db = seedDatabase(); const product = db.products[0];
+    product.prices = { ...product.prices, [currency]: original };
+    product.stock = { ...product.stock, '42': 5 };
+    const payload = { ...input(), cart: [{ productId: product.id, size: '42', quantity: 3 }], currency, payment: 'card', promoCode: 'GOYA10' };
+    const quote = quoteShopCart(db,payload);
+    assert.equal(quote.lines[0].unitPrice,paid);
+    assert.equal(quote.originalSubtotal,original*3);
+    assert.equal(quote.subtotal,paid*3);
+    assert.equal(quote.discount,(original-paid)*3);
+    assert.ok(Number.isSafeInteger(quote.total));
+    const order = placeOrder(db,user,payload);
+    assert.equal(order.subtotal,quote.subtotal);
+    assert.equal(order.shipping,quote.shipping);
+    assert.equal(order.total,quote.total);
+    assert.equal(order.lines[0].originalUnitPrice,original);
+    assert.equal(db.products[0].stock['42'],2);
+    // A later catalogue price must never increase the amount eligible for refund.
+    product.prices = { ...product.prices, [currency]: original*50 };
+    for (const status of ['preparing','shipped','delivered'] as const) changeOrderStatus(db,order.id,status);
+    const makeReturn = (quantity:number) => requestCustomerReturn(db,user,null,{orderId:order.id,idempotencyKey:randomUUID(),lines:[{productId:product.id,size:'42',quantity,reason:'size'}]});
+    const first = makeReturn(1); const rest = makeReturn(2);
+    assert.equal(first.refundAmount,paid);
+    assert.equal(rest.refundAmount,paid*2);
+    assert.equal(first.refundAmount+rest.refundAmount,order.subtotal);
+    assert.ok(first.refundAmount+rest.refundAmount<order.total,'delivery is not refunded');
+    assert.throws(()=>makeReturn(1),/already/);
+    for(const returned of [first,rest]) for(const status of ['approved','received','refunded'] as const) updateReturnStatus(db,returned.id,status);
+    updateReturnStatus(db,first.id,'refunded');
+    assert.equal(product.stock['42'],5,'returned stock is restored exactly once');
+    assert.equal(order.lines[0].unitPrice,paid);
+    assert.equal(order.lines[0].product?.prices[currency],original);
+  });
+}
 
 test('customer credential changes reject reserved administrator addresses without changing the account', () => {
   const previousAdminEmail = process.env.ADMIN_EMAIL;
@@ -95,9 +175,12 @@ test('returns are owned, quantity-bound, idempotent and restore stock once on re
   assert.throws(() => requestCustomerReturn(db, user, null, { ...payload, idempotencyKey: randomUUID() }), /already/);
   assert.equal(record.refundAmount, order.lines[0].unitPrice);
   assert.equal(db.products[0].stock['45'], 0);
+  const restockRequest=createServiceRequest(db,user,null,{kind:'availability',name:user.name,email:user.email,locale:'en',productId:'francesco',details:{size:'45'}});
+  assert.equal(restockRequest.status,'received');
   assert.throws(() => updateReturnStatus(db, record.id, 'refunded'), /unavailable/);
   updateReturnStatus(db, record.id, 'approved'); updateReturnStatus(db, record.id, 'received'); updateReturnStatus(db, record.id, 'received');
   assert.equal(db.products[0].stock['45'], 1);
+  assert.equal(restockRequest.status,'confirmed');
   updateReturnStatus(db, record.id, 'refunded'); updateReturnStatus(db, record.id, 'refunded');
   assert.equal(db.products[0].stock['45'], 1);
   assert.deepEqual(record.events.map(value => value.status), ['requested', 'approved', 'received', 'refunded']);
@@ -128,6 +211,34 @@ test('service requests persist privately, bound details and support a real demo 
   assert.equal(request.status, 'reviewing'); assert.ok(request.note?.includes('devis'));
   assert.throws(() => createServiceRequest(db, null, guest.identity, { ...request, details: { message: 'x'.repeat(3001) } }), /shorten/);
   assert.throws(() => createServiceRequest(db, null, guest.identity, { ...request, attachments: [{ name: 'bad.svg', type: 'image/svg+xml', dataUrl: 'data:image/svg+xml;base64,PHN2Zz4=' }] }), /JPEG/);
+});
+
+test('consultation requests reserve shared slots atomically and retries do not duplicate the request', () => {
+  const db=seedDatabase();const guest=prepareGuestCheckout(db,null);const stranger=prepareGuestCheckout(db,null);
+  const appointment=new Date();appointment.setUTCDate(appointment.getUTCDate()+2);if(appointment.getUTCDay()===0)appointment.setUTCDate(appointment.getUTCDate()+1);
+  const date=appointment.toISOString().slice(0,10);
+  const payload={kind:'consultation',name:'Appointment Guest',email:'appointment@example.test',locale:'en',details:{mode:'online',location:'cotonou',date,time:'10:00',topic:'care',requestKey:randomUUID()}};
+  const request=createServiceRequest(db,null,guest.identity,payload);
+  assert.equal(createServiceRequest(db,null,guest.identity,payload).id,request.id);
+  assert.equal(db.inquiries?.length,1);
+  assert.deepEqual(snapshot(db,1,null).bookedSlots,[{date,time:'10:00',location:'cotonou'}]);
+  assert.deepEqual(snapshot(db,1,null,false,stranger.identity).requests,[]);
+  assert.throws(()=>createServiceRequest(db,null,stranger.identity,payload),/unavailable/);
+  assert.throws(()=>createBooking(db,user,{name:user.name,email:user.email,date,time:'10:00',location:'cotonou',service:'polish'}),/unavailable/);
+  updateServiceRequest(db,request.id,'closed');
+  assert.equal(snapshot(db,1,null).bookedSlots.length,0);
+  assert.ok(createBooking(db,user,{name:user.name,email:user.email,date,time:'10:00',location:'cotonou',service:'polish'}).id);
+});
+
+test('personalization consent is an optional private profile preference with strict boolean validation', () => {
+  const db=seedDatabase();db.users.push({...user,passwordHash:'unused'});
+  assert.equal(customerProfile(db,user)?.personalization,undefined);
+  assert.throws(()=>saveCustomerProfile(db,user,{personalization:'yes'}),/preference/);
+  assert.equal(db.users[0].profile,undefined);
+  assert.equal(saveCustomerProfile(db,user,{personalization:true}).personalization,true);
+  assert.equal(snapshot(db,1,user).profile?.personalization,true);
+  assert.equal(snapshot(db,1,other).profile,null);
+  assert.equal(saveCustomerProfile(db,user,{personalization:false}).personalization,false);
 });
 
 test('restocking resolves availability requests and creates only the requesting account notification', () => {
@@ -392,6 +503,29 @@ test('archive images can be saved while external images and traversal paths are 
   assert.deepEqual(validateProduct({ ...product }).images, product.images);
   for (const image of ['/images/archive/../private.jpg', '/images/./private.jpg', '/images/..', 'https://example.test/product.jpg']) {
     assert.throws(() => validateProduct({ ...product, images: [image] }), /images/);
+  }
+});
+
+test('product prices retain optional regional quotes while base currencies remain required', () => {
+  const product = seedDatabase().products[0];
+  const regional = validateProduct({ ...product, prices: { ...product.prices, JPY: 50000, KWD: 125000 } });
+  assert.equal(regional.prices.JPY, 50000);
+  assert.equal(regional.prices.KWD, 125000);
+  const baseOnly = validateProduct({ ...product, prices: { EUR: 10000, USD: 10900, XOF: 65600 } });
+  assert.equal(baseOnly.prices.JPY, undefined);
+  assert.throws(() => validateProduct({ ...product, prices: { EUR: 10000, USD: 10900, XOF: 65600, JPY: -1 } }), /price/);
+  assert.throws(() => validateProduct({ ...product, prices: { EUR: 10000, USD: 10900 } }), /price/);
+});
+
+test('regional checkout quotes use the correct zero- and three-decimal currency scales', () => {
+  for (const [currency, country, unitPrice, total] of [['JPY', 'JP', 16000, 19200], ['KWD', 'KW', 33500, 40200]] as const) {
+    const db = seedDatabase();
+    db.products[0].prices = { EUR: 10000, USD: 10900, XOF: 65600 };
+    const order = placeOrder(db, user, { ...input(), currency, payment: 'card', recipient: { ...recipient, country } });
+    assert.equal(order.lines[0].unitPrice, unitPrice);
+    assert.equal(order.subtotal, unitPrice);
+    assert.equal(order.total, total);
+    assert.equal(Number.isSafeInteger(order.total), true);
   }
 });
 

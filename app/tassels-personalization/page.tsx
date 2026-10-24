@@ -1,0 +1,2 @@
+import { CatalogPage } from '@/components/storefront-pages';
+export default function Page(){return <CatalogPage selection={['francesco','kente-derby','mosaic-tassel-red','mosaic-tassel-black','mosaic-tassel-blue','signature-slipper','mosaic-belt']} heading={{en:'On-Time Personalization',fr:'Personnalisation'}} intro={{en:'Choose a Goya creation to begin a personal conversation with the atelier.',fr:'Choisissez une création Goya pour commencer une conversation personnelle avec l’atelier.'}}/>;}

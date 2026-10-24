@@ -3,6 +3,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import type { Product } from '../../lib/types';
 import type { ServiceRequest } from '../../lib/experience-types';
 import { changeLanguage, registerCustomer, seedPrivacy } from './navigation';
+import { chooseListboxOption, openSizeChart } from './catalog-navigation';
 
 const origin = 'http://127.0.0.1:3100';
 const headers = { origin };
@@ -41,6 +42,10 @@ test('homepage keeps the four reference destinations, a real product carousel an
   expect(cardsPerView).toBeLessThan(isMobile ? 2.5 : 4.7);
   const stories = page.locator('.reference-journal-story');
   await expect(stories).toHaveCount(13);
+  const storyDestinations = await stories.locator('a').evaluateAll(links => links.map(link => link.getAttribute('href')));
+  expect(new Set(storyDestinations).size).toBe(13);
+  for (const destination of storyDestinations) expect(destination).toMatch(/^\/culture\/[^/]+$/);
+  await expect(page.locator('#goya-journal-title')).toHaveText('Goya anthology');
   const storyTrack = page.locator('#goya-journal-rail');
   await storyTrack.scrollIntoViewIfNeeded();
   await storyTrack.focus();
@@ -49,11 +54,11 @@ test('homepage keeps the four reference destinations, a real product carousel an
   await page.keyboard.press('Home');
   await expect(page.locator('.reference-journal-controls').getByRole('button', { name: 'Previous story', exact: true })).toBeDisabled();
   await changeLanguage(page, 'Français');
-  await expect(page.locator('#goya-journal-title')).toHaveText('L’univers de Goya');
+  await expect(page.locator('#goya-journal-title')).toHaveText('Anthologie Goya');
   await expect(collections.first()).toContainText('Homme · Nouveautés');
   await page.goto('/culture/une-rencontre-creative');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Goya × Funkè');
-  await expect(page.locator('.reference-culture-body')).toContainText('2020');
+  await expect(page.locator('.exact-encounter-page')).toContainText('2020');
   await expect(page.getByRole('link', { name: 'Le projet de 2020 — MC&CO', exact: true })).toHaveAttribute('href', 'https://www.mcandco.agency/fr/work/funke/');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
@@ -68,11 +73,11 @@ test('curated collections, accessory audiences and construction filters show the
   expect(gifts).toContain('mosaic-tassel-red');
   expect(gifts).not.toContain('mosaic-tassel-blue');
   await page.goto('/accessories?audience=men');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Accessories for men');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText("Men's Accessories");
   expect(await visibleProductIds(page)).toContain('mosaic-belt');
   expect(await visibleProductIds(page)).not.toContain('archive-crossbody');
   await page.goto('/accessories/bags-backpacks?audience=women');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bags & backpacks for women');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText("Women's Bags & backpacks");
   const bags = await visibleProductIds(page);
   expect(bags).toContain('archive-crossbody');
   expect(bags).not.toContain('mosaic-belt');
@@ -85,7 +90,7 @@ test('curated collections, accessory audiences and construction filters show the
   await drawer.locator('summary').filter({ hasText: 'Construction' }).click();
   await drawer.getByLabel('Not specified', { exact: true }).check();
   await drawer.getByRole('button', { name: /^Show \d+ results?$/ }).click();
-  await expect(page.locator('.reference-active-filters')).toContainText('Not specified');
+  await expect(page.locator('.reference-toolbar-reset')).toBeVisible();
   expect(await visibleProductIds(page)).toContain('cobalt-lace-up');
   await page.goto('/women/sandals');
   expect(await visibleProductIds(page)).toContain('mosaic-sandal');
@@ -97,28 +102,28 @@ test('curated collections, accessory audiences and construction filters show the
 test('conversion guide and fit answers select a real size, then colour navigation keeps it on a separate SKU', async ({ page }) => {
   await page.goto('/product/mosaic-tassel-red');
   await expect(page.locator('[data-product-detail="mosaic-tassel-red"]')).toBeVisible();
-  await page.getByRole('button', { name: 'Size guide', exact: true }).click();
-  const guide = page.getByRole('dialog', { name: 'Size guide', exact: true });
-  for (const name of ['EU', 'UK', 'US men', 'Foot (cm)']) await expect(guide.getByRole('columnheader', { name, exact: true })).toBeVisible();
-  await expect(guide).toContainText('measurement chart verified by Goya');
-  await guide.getByRole('button', { name: 'Find my size', exact: true }).click();
+  const guide = await openSizeChart(page, 'mosaic-tassel-red');
+  for (const name of ['Goya size', 'EU', 'UK', 'USA', 'CM']) await expect(guide.getByRole('columnheader', { name, exact: true })).toBeVisible();
+  await expect(guide).toContainText('Goya has not verified these conversions');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Find your size', exact: true }).click();
   const fit = page.locator('.fit-finder');
-  await fit.getByRole('combobox', { name: 'Your usual size system', exact: true }).selectOption('EU');
-  await fit.getByRole('combobox', { name: 'Your usual size', exact: true }).selectOption('42');
-  await fit.getByRole('combobox', { name: 'Your foot width', exact: true }).selectOption('regular');
-  await fit.getByRole('combobox', { name: 'Your preferred fit', exact: true }).selectOption('regular');
-  await fit.getByRole('button', { name: 'See my recommendation', exact: true }).click();
-  await expect(fit.locator('.fit-result strong')).toHaveText('EU 42');
+  await chooseListboxOption(fit, 'Your usual size system', 'EU');
+  await chooseListboxOption(fit, 'Your usual size', '42');
+  await fit.getByRole('button', { name: 'Continue', exact: true }).click();
+  await fit.getByRole('radio', { name: /^Average/ }).click();
+  await fit.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(fit.locator('.fit-result-size')).toHaveText('EU 42');
   await fit.getByRole('button', { name: 'Select this size', exact: true }).click();
-  await expect(page.locator('#pdp-size-mosaic-tassel-red')).toHaveValue('42');
+  await expect(page.locator('#pdp-size-mosaic-tassel-red')).toContainText('42');
   await page.locator('.pdp-color-options').getByRole('link', { name: 'black & multicolor', exact: true }).click();
   await expect(page).toHaveURL(/\/product\/mosaic-tassel-black$/);
-  await expect(page.locator('#pdp-size-mosaic-tassel-black')).toHaveValue('42');
+  await expect(page.locator('#pdp-size-mosaic-tassel-black')).toContainText('42');
   await expect(page.locator('.pdp-color-swatch[aria-current="true"]')).toHaveAttribute('href', '/product/mosaic-tassel-black');
   await changeLanguage(page, 'Français');
-  await expect(page.locator('#pdp-size-mosaic-tassel-black')).toHaveValue('42');
+  await expect(page.locator('#pdp-size-mosaic-tassel-black')).toContainText('42');
   await page.reload();
-  await expect(page.locator('#pdp-size-mosaic-tassel-black')).toHaveValue('42');
+  await expect(page.locator('#pdp-size-mosaic-tassel-black')).toContainText('42');
   await expect(page.locator('.pdp-main-information h1')).toContainText('Noir');
 });
 
@@ -145,7 +150,7 @@ test('account credentials require the current password and recovery works only i
   await page.locator('.reference-auth-forgot').click();
   const recovery = page.locator('.demo-recovery-flow');
   await recovery.getByLabel('Email address', { exact: true }).fill(updatedEmail);
-  await recovery.getByRole('button', { name: 'Send recovery instructions', exact: true }).click();
+  await recovery.getByRole('button', { name: 'Proceed', exact: true }).click();
   await expect(recovery.getByRole('button', { name: 'Open password reset link', exact: true })).toBeVisible();
   const stranger = await browser.newContext({ baseURL: origin, reducedMotion: 'reduce' });
   try {
@@ -155,7 +160,7 @@ test('account credentials require the current password and recovery works only i
     await strangerPage.locator('.reference-auth-forgot').click();
     const strangerRecovery = strangerPage.locator('.demo-recovery-flow');
     await strangerRecovery.getByLabel('Email address', { exact: true }).fill(updatedEmail);
-    await strangerRecovery.getByRole('button', { name: 'Send recovery instructions', exact: true }).click();
+    await strangerRecovery.getByRole('button', { name: 'Proceed', exact: true }).click();
     await expect(strangerRecovery.locator('.demo-recovery-inbox')).toBeVisible();
     await expect(strangerRecovery.getByRole('button', { name: 'Open password reset link', exact: true })).toHaveCount(0);
   } finally { await stranger.close(); }
@@ -178,11 +183,14 @@ test('availability and caring requests persist, receive an owner response and re
   test.setTimeout(120000);
   const email = `care-${crypto.randomUUID()}@example.test`;
   await page.goto('/product/mosaic-tassel-red');
-  await page.locator('.pdp-availability-link').click();
+  await page.locator('#pdp-size-mosaic-tassel-red').click();
+  await page.locator('.reference-sizes-dialog').getByRole('button', { name: /^46\s*Notify me$/ }).click();
   const availability = page.locator('.pdp-availability-notice');
-  await availability.getByRole('combobox', { name: 'Size', exact: true }).selectOption('46');
-  await availability.getByLabel('Email address', { exact: true }).fill(email);
-  await availability.getByRole('button', { name: 'Save my request', exact: true }).click();
+  await expect(availability).toContainText('Size: 46');
+  await availability.getByLabel('First Name *', { exact: true }).fill('Care');
+  await availability.getByLabel('Last Name *', { exact: true }).fill('Guest');
+  await availability.getByLabel('Email *', { exact: true }).fill(email);
+  await availability.getByRole('button', { name: 'Notify me', exact: true }).click();
   await expect(availability.getByRole('heading', { name: 'Your demo request is saved.', exact: true })).toBeVisible();
   const firstSnapshot = await (await page.request.get('/api/shop')).json();
   const alert = firstSnapshot.requests.find((request: ServiceRequest) => request.kind === 'availability');
@@ -193,6 +201,9 @@ test('availability and caring requests persist, receive an owner response and re
   await expect(page).toHaveURL(/\/my-requests$/);
   await expect(page.locator('.customer-request-history')).toContainText(alert.id);
   await page.goto('/personalization/caring');
+  await page.locator('.experience-service-hero a[href^="/book-an-appointment"]').click();
+  await page.locator('.consultation-landing a[href*="mode=online"]').click();
+  await page.getByRole('button', { name: 'Prepare a personal brief', exact: true }).click();
   await page.locator('.experience-care-form textarea').fill('Please assess the worn heels and renew the shine of this demo pair.');
   await page.locator('.experience-care-form').getByRole('button', { name: 'Continue', exact: true }).click();
   const contact = page.locator('.experience-contact-form');

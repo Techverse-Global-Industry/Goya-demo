@@ -12,10 +12,11 @@ test('customer account supports registration, private details, address book, ord
   await page.waitForURL(/\/login\?next=%2Fapp$/, { waitUntil: 'domcontentloaded', timeout: 45000 });
   await expect(page.locator('.reference-account-entry')).toHaveCount(1);
   await expect(page.locator('.reference-account-entry')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'My account', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Login to your account', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const auth = page.locator('.reference-account-form .reference-auth');
   await auth.locator('.reference-auth-tabs').getByRole('button', { name: 'Create an account', exact: true }).click();
+  await auth.getByRole('combobox', { name: 'Title *', exact: true }).selectOption('mr');
   await auth.getByLabel('First name *', { exact: true }).fill('Amara');
   await auth.getByLabel('Last name *', { exact: true }).fill('Demo');
   await auth.getByLabel('Email *', { exact: true }).fill(email);
@@ -41,6 +42,7 @@ test('customer account supports registration, private details, address book, ord
   await address.getByLabel('Address label (optional)', { exact: true }).fill('Home');
   await address.getByLabel('Street address', { exact: true }).fill('12 Saved Demo Road');
   await address.getByLabel('City', { exact: true }).fill('Cotonou');
+  await address.getByRole('combobox', { name: 'Country', exact: true }).selectOption('BJ');
   await address.getByRole('button', { name: 'Save address', exact: true }).click();
   await expect(page.locator('.account-saved-address')).toContainText('12 Saved Demo Road');
   await page.reload();

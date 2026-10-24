@@ -5,6 +5,7 @@ import type { FormEvent } from 'react';
 import { useShop } from '@/context/shop-context';
 import { shopRequest } from '@/lib/api';
 import { COUNTRIES } from '@/lib/catalog';
+import { marketName, siteText } from '@/lib/international';
 import type { AccountProfile, Country, SavedAddress, ShippingDetails } from '@/lib/types';
 import { Icon } from './icon';
 
@@ -70,7 +71,7 @@ function PreferenceForm({ initial }: { initial: ProfileFields }) {
 }
 
 function AddressBook() {
-  const { state, refresh, t } = useShop();
+  const { state, refresh } = useShop();
   const c = copy[state.locale];
   const addresses = state.profile?.addresses ?? [];
   const [editor, setEditor] = useState<AddressDraft | null>(null);
@@ -94,8 +95,8 @@ function AddressBook() {
     <div className="account-address-toolbar"><div className="account-preference-heading"><h2 id="account-address-heading">{c.addresses}</h2><p>{c.addressIntro}</p></div><button ref={addButton} type="button" className="button button-outline" onClick={openNew} disabled={!!busy}>{c.add}<Icon name="plus" width={17} /></button></div>
     {feedback && <p className={`account-preference-feedback ${feedback === 'failed' ? 'is-error' : ''}`} role={feedback === 'failed' ? 'alert' : 'status'}>{c[feedback]}</p>}
     {editor ? <AddressEditor key={editor.id ?? 'new'} initial={editor} onCancel={() => { setEditor(null); addButton.current?.focus(); }} onSaved={() => { setEditor(null); setFeedback('addressSaved'); addButton.current?.focus(); }} /> : addresses.length ? <div className="account-address-grid">{addresses.map((address) => <article className="account-saved-address" key={address.id}>
-      <div className="account-saved-address-title"><h3>{address.label || c.address}</h3>{address.isDefault && <span>{c.default}</span>}</div>
-      <address><strong>{address.name}</strong>{address.company && <span>{address.company}</span>}<span>{address.address}</span>{address.address2 && <span>{address.address2}</span>}<span>{[address.postalCode, address.city].filter(Boolean).join(' ')}</span><span>{t(`country${address.country}`)}</span>{address.phone && <span>{address.phone}</span>}</address>
+      <div className="account-saved-address-title"><h3 translate={address.label ? 'no' : undefined}>{address.label || c.address}</h3>{address.isDefault && <span>{c.default}</span>}</div>
+      <address><strong>{address.name}</strong>{address.company && <span>{address.company}</span>}<span>{address.address}</span>{address.address2 && <span>{address.address2}</span>}<span>{[address.postalCode, address.city].filter(Boolean).join(' ')}</span><span>{marketName(address.country, state.language)}</span>{address.phone && <span>{address.phone}</span>}</address>
       <div className="account-address-actions"><button type="button" onClick={() => { setEditor({ ...address, label: address.label ?? '', isDefault: !!address.isDefault }); setFeedback(null); setDeleting(null); }} disabled={!!busy}>{c.edit}</button><button type="button" aria-expanded={deleting === address.id} aria-controls={`address-remove-${address.id}`} onClick={() => setDeleting(deleting === address.id ? null : address.id)} disabled={!!busy}>{c.remove}</button></div>
       {deleting === address.id && <div className="account-address-confirm" id={`address-remove-${address.id}`} role="group" aria-label={c.deleteQuestion}><p>{c.deleteQuestion}</p><button type="button" onClick={() => void remove(address.id)} disabled={!!busy}>{busy === address.id ? c.deleting : c.confirmDelete}</button><button type="button" onClick={() => setDeleting(null)} disabled={!!busy}>{c.cancel}</button></div>}
     </article>)}</div> : <div className="account-address-empty"><Icon name="pin" width={24} height={24} /><p>{c.empty}</p></div>}
@@ -103,7 +104,7 @@ function AddressBook() {
 }
 
 function AddressEditor({ initial, onCancel, onSaved }: { initial: AddressDraft; onCancel: () => void; onSaved: () => void }) {
-  const { state, refresh, t } = useShop();
+  const { state, refresh } = useShop();
   const c = copy[state.locale];
   const [address, setAddress] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -131,7 +132,7 @@ function AddressEditor({ initial, onCancel, onSaved }: { initial: AddressDraft; 
       <label className="field account-preference-wide"><span>{c.address2}</span><input autoComplete="address-line2" maxLength={240} value={address.address2 ?? ''} onChange={(event) => change('address2', event.target.value)} /></label>
       <label className="field"><span>{c.postalCode}</span><input autoComplete="postal-code" maxLength={24} value={address.postalCode ?? ''} onChange={(event) => change('postalCode', event.target.value)} /></label>
       <label className="field"><span>{c.city}</span><input autoComplete="address-level2" required minLength={2} maxLength={100} value={address.city} onChange={(event) => change('city', event.target.value)} /></label>
-      <label className="field account-preference-wide"><span>{c.country}</span><select autoComplete="country" value={address.country} onChange={(event) => change('country', event.target.value as Country)}>{COUNTRIES.map((country) => <option key={country} value={country}>{t(`country${country}`)}</option>)}</select></label>
+      <label className="field account-preference-wide"><span>{c.country}</span><select autoComplete="country" aria-label={c.country} required value={address.country === 'WW' ? '' : address.country} onChange={(event) => change('country', event.target.value as Country)}><option value="" disabled>{siteText(state.language, 'Choose your country', 'Choisissez votre pays')}</option>{COUNTRIES.map((country) => <option key={country} value={country}>{marketName(country, state.language)}</option>)}</select></label>
     </fieldset>
     <label className="account-preference-checkbox"><input type="checkbox" checked={address.isDefault} onChange={(event) => change('isDefault', event.target.checked)} disabled={busy} /><span>{c.makeDefault}</span></label>
     {failed && <p className="account-preference-feedback is-error" role="alert">{c.failed}</p>}

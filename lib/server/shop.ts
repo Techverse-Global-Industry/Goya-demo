@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { CURRENCIES, shippingCost, validEmail, validateBooking, validateShipping, isPaymentAvailable } from '../commerce';
-import type { AccountProfile, Announcement, BookingDetails, CartLine, Currency, DemoUser, Localized, Order, OrderStatus, PaymentMethod, Product, SavedAddress, ShippingDetails, StoreSnapshot } from '../types';
+import { bookingDateRange, CURRENCIES, isTimeAvailable, normalizePromoCode, quoteCart, validEmail, validateBooking, validateShipping, isPaymentAvailable } from '../commerce';
+import type { AccountProfile, Announcement, BookingDetails, CartLine, CartQuote, Currency, DemoUser, Localized, Order, OrderStatus, PaymentMethod, Product, SavedAddress, ShippingDetails, StoreSnapshot } from '../types';
 import type { Account, Database } from './database';
 import { ApiError } from './security';
 import type { RequestAttachment, ReturnLine, ReturnRequest, ReturnStatus, ServiceRequest, ServiceRequestKind, ServiceRequestStatus } from '../experience-types';
@@ -29,6 +29,7 @@ function profileDefaults(account: Account): AccountProfile {
   return {
     phone: stored?.phone ?? '', birthDate: stored?.birthDate ?? '', title: stored?.title ?? '',
     preferredLocale: stored?.preferredLocale === 'fr' ? 'fr' : 'en', newsletter: stored?.newsletter === true,
+    ...(typeof stored?.personalization === 'boolean' ? { personalization: stored.personalization } : {}),
     addresses: structuredClone(stored?.addresses ?? []), wishlist: [...(stored?.wishlist ?? [])],
   };
 }
@@ -74,6 +75,10 @@ export function saveCustomerProfile(db: Database, user: DemoUser, input: unknown
   if (Object.hasOwn(value, 'newsletter')) {
     if (typeof value.newsletter !== 'boolean') throw new ApiError('Please check your communication preference.');
     profile.newsletter = value.newsletter;
+  }
+  if (Object.hasOwn(value, 'personalization')) {
+    if (typeof value.personalization !== 'boolean') throw new ApiError('Please check your personalization preference.');
+    profile.personalization = value.personalization;
   }
   account.profile = profile;
   return customerProfile(db, user)!;
@@ -134,7 +139,8 @@ export function validateProduct(value: Record<string, unknown>, existing?: Produ
     if (value.kind === 'belt' && (Number(size) < 50 || Number(size) > 150)) throw new ApiError('Belt sizes must be between 50 and 150 cm.');
   }
   const prices = value.prices as Product['prices'];
-  if (!prices || CURRENCIES.some((currency) => !Number.isSafeInteger(prices[currency]) || prices[currency] < 1 || prices[currency] > 100000000)) throw new ApiError('Enter a positive price for each currency.');
+  if (!prices || typeof prices !== 'object' || Array.isArray(prices) || (['EUR', 'USD', 'XOF'] as const).some(currency => !Number.isSafeInteger(prices[currency]) || prices[currency] < 1 || prices[currency] > 100000000) || Object.entries(prices).some(([currency, amount]) => !CURRENCIES.includes(currency as Currency) || typeof amount !== 'number' || !Number.isSafeInteger(amount) || amount < 1 || amount > 100000000)) throw new ApiError('Enter a positive price for each currency.');
+  const validatedPrices = Object.fromEntries(CURRENCIES.filter(currency => prices[currency] !== undefined).map(currency => [currency, prices[currency]])) as Product['prices'];
   const images = value.images ?? [];
   if (!Array.isArray(images) || images.length > 6 || images.some((url) => typeof url !== 'string' || !/^\/(images\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9._-]+|api\/media\/[a-zA-Z0-9._-]+)$/.test(url) || url.split('/').some(segment => segment === '..' || segment === '.'))) throw new ApiError('Use images uploaded to the boutique.');
   const image = Number(value.image ?? existing?.image ?? 4);
@@ -154,7 +160,10 @@ export function validateProduct(value: Record<string, unknown>, existing?: Produ
   if (value.kind === 'footwear') delete metadata.accessoryType;
   const edits = value.edits ?? existing?.edits;
   if (edits !== undefined) { if (!Array.isArray(edits) || edits.length > 3 || edits.some(edit => !['new', 'gifts', 'featured'].includes(edit))) throw new ApiError('Choose valid collection edits.'); metadata.edits = [...new Set(edits)] as Product['edits']; }
-  return { id, name: localized(value.name, 'Name', 160), description: localized(value.description, 'Description'), material: localized(value.material, 'Materials', 400), color: localized(value.color, 'Color', 120), category: value.category as Product['category'], kind: value.kind as Product['kind'], badge: value.badge as Product['badge'], prices: { EUR: prices.EUR, USD: prices.USD, XOF: prices.XOF }, stock: { ...stock }, images, image, ...metadata, published: value.published === true, updatedAt: new Date().toISOString() };
+  return { id, name: localized(value.name, 'Name', 160), description: localized(value.description, 'Description'), material: localized(value.material, 'Materials', 400), color: localized(value.color, 'Color', 120), category: value.category as Product['category'], kind: value.kind as Product['kind'], badge: value.badge as Product['badge'], prices: validatedPrices, stock: { ...stock }, images, image, ...metadata, published: value.published === true, updatedAt: new Date().toISOString() };
+}
+function consultationSlots(db: Database): Pick<BookingDetails, 'date' | 'time' | 'location'>[] {
+  return (db.inquiries ?? []).filter(record => record.kind === 'consultation' && record.status !== 'closed' && ['cotonou', 'paris', 'dakar'].includes(record.details.location) && /^\d{4}-\d{2}-\d{2}$/.test(record.details.date ?? '') && /^\d{2}:\d{2}$/.test(record.details.time ?? '')).map(record => ({ date: record.details.date, time: record.details.time, location: record.details.location as BookingDetails['location'] }));
 }
 export function snapshot(db: Database, revision: number, user: DemoUser | null, admin = false, guestIdentity: string | null = null): StoreSnapshot {
   const isAdmin = admin && user?.role === 'admin';
@@ -165,7 +174,7 @@ export function snapshot(db: Database, revision: number, user: DemoUser | null, 
     products: db.products.filter((product) => isAdmin || product.published !== false), user,
     orders: db.orders.filter((order) => isAdmin || (!!user && order.customerId === user.id) || guestRecords.has(order.id)),
     bookings: db.bookings.filter((booking) => isAdmin || (user ? booking.customerId === user.id : booking.customerId === null && guestRecords.has(booking.id))),
-    bookedSlots: db.bookings.map(({ date, time, location }) => ({ date, time, location })),
+    bookedSlots: [...db.bookings.map(({ date, time, location }) => ({ date, time, location })), ...consultationSlots(db)],
     announcements: db.announcements.slice(0, 12), notifications: user ? db.notifications.filter((notice) => notice.userId === user.id).slice(0, 50) : [],
     revision, pushPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null, profile: customerProfile(db, user),
     returns: (db.returns ?? []).filter(value => isAdmin || (!!user && value.customerId === user.id) || guestRecords.has(value.orderId)),
@@ -177,6 +186,28 @@ export function addNotification(db: Database, userId: string, title: Localized, 
   db.notifications = db.notifications.slice(0, 2000);
 }
 
+/** Public quote exposes only published variant prices; no draft or customer data. */
+export function quoteShopCart(db: Database, input: Record<string, unknown>): CartQuote {
+  const currency = input.currency as Currency;
+  if (!CURRENCIES.includes(currency)) throw new ApiError('Select a valid currency.');
+  const rawCode = input.promoCode;
+  if (rawCode !== undefined && rawCode !== null && rawCode !== '' && !normalizePromoCode(rawCode)) throw new ApiError('Invalid demonstration promotion code.', 400, 'invalidPromo');
+  const cart = input.cart as CartLine[];
+  if (!Array.isArray(cart) || !cart.length || cart.length > 50) throw new ApiError('Your bag is empty or invalid.', 409, 'stockChanged');
+  const catalog = new Map(db.products.filter(product => product.published !== false).map(product => [product.id, product]));
+  const seen = new Set<string>();
+  for (const line of cart) {
+    if (!line || typeof line.productId !== 'string' || typeof line.size !== 'string' || !Number.isSafeInteger(line.quantity) || line.quantity < 1 || line.quantity > 10000) throw new ApiError('Please review your bag.', 409, 'stockChanged');
+    const product = catalog.get(line.productId);
+    const variant = `${line.productId}:${line.size}`;
+    if (!product || !Object.hasOwn(product.stock, line.size) || product.stock[line.size] < line.quantity || seen.has(variant)) throw new ApiError('Availability has changed. Please review your bag.', 409, 'stockChanged');
+    seen.add(variant);
+  }
+  const payment = input.payment as PaymentMethod | undefined;
+  // Quotes do not reserve stock or authorize payment. Delivery eligibility is checked at order placement.
+  return quoteCart(cart, currency, catalog, rawCode, payment === 'pickup' ? 'pickup' : undefined);
+}
+
 export function placeOrder(db: Database, user: DemoUser | null, input: Record<string, unknown>, guestIdentity?: string): Order {
   if (!user && (!guestIdentity || !/^guest:[a-f0-9]{32}$/.test(guestIdentity) || !db.sessions.some((session) => session.userId === guestIdentity && session.expiresAt > Date.now()))) throw new ApiError('A valid checkout session is required.', 401, 'unauthorized');
   const owner = user?.id ?? guestIdentity!;
@@ -184,7 +215,6 @@ export function placeOrder(db: Database, user: DemoUser | null, input: Record<st
   if (typeof key !== 'string' || !/^[a-zA-Z0-9-]{8,80}$/.test(key)) throw new ApiError('A checkout reference is required.');
   const prior = db.idempotency[`${owner}:${key}`];
   if (prior) return db.orders.find((order) => order.id === prior)!;
-  const cart = input.cart as CartLine[];
   const currency = input.currency as Currency;
   const payment = input.payment as PaymentMethod;
   const recipient = deliveryDetails(input.recipient);
@@ -197,21 +227,13 @@ export function placeOrder(db: Database, user: DemoUser | null, input: Record<st
     gift = { wrap: value.wrap, message: value.wrap ? value.message.trim() : '' };
   }
   if (!CURRENCIES.includes(currency) || !isPaymentAvailable(payment, recipient.country)) throw new ApiError('This payment method is unavailable in the selected country.');
-  if (!Array.isArray(cart) || !cart.length || cart.length > 50) throw new ApiError('Your bag is empty or invalid.');
-  const seen = new Set<string>();
-  const lines = cart.map((line) => {
-    if (!line || typeof line.productId !== 'string' || typeof line.size !== 'string' || !Number.isSafeInteger(line.quantity) || line.quantity < 1 || line.quantity > 10000) throw new ApiError('Please review your bag.');
-    const product = db.products.find((product) => product.id === line.productId && product.published !== false);
-    const variant = `${line.productId}:${line.size}`;
-    if (!product || !Object.hasOwn(product.stock, line.size) || product.stock[line.size] < line.quantity || seen.has(variant)) throw new ApiError('Availability has changed. Please review your bag.', 409, 'stockChanged');
-    seen.add(variant);
-    return { productId: product.id, size: line.size, quantity: line.quantity, unitPrice: product.prices[currency], product: structuredClone(product) };
-  });
-  const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
-  const shipping = shippingCost(subtotal, currency, payment);
+  const quote = quoteShopCart(db, input);
+  const lines = quote.lines.map(line => ({ ...line, product: structuredClone(db.products.find(product => product.id === line.productId)!) }));
+  const { subtotal, shipping } = quote;
   const id = `DEMO-MG-${randomUUID().slice(0, 8).toUpperCase()}`;
   const createdAt = new Date().toISOString();
   const order: Order = { id, createdAt, customerId: user?.id ?? null, currency, lines, subtotal, shipping, total: subtotal + shipping, payment, recipient, status: 'confirmed', events: [{ status: 'confirmed', at: createdAt }], tracking: payment === 'pickup' ? null : `SIM-${id.slice(8)}`, paymentReference: payment === 'pickup' ? 'DEMO-PAY-ON-PICKUP' : `DEMO-PAY-${randomUUID().slice(0, 8).toUpperCase()}` };
+  if (quote.promoCode) { order.promoCode = quote.promoCode; order.originalSubtotal = quote.originalSubtotal; order.discount = quote.discount; }
   order.checkoutReference = key;
   if (billingRecipient) order.billingRecipient = billingRecipient;
   if (gift) order.gift = gift;
@@ -236,7 +258,7 @@ export function changeOrderStatus(db: Database, id: string, status: OrderStatus)
   if (!transitions[current].includes(status)) throw new ApiError('That order transition is unavailable.', 409);
   if (status === 'cancelled') for (const line of order.lines) {
     const product = db.products.find((product) => product.id === line.productId);
-    if (product) { product.stock = { ...product.stock, [line.size]: (product.stock[line.size] ?? 0) + line.quantity }; product.updatedAt = new Date().toISOString(); }
+    if (product) { product.stock = { ...product.stock, [line.size]: (product.stock[line.size] ?? 0) + line.quantity }; product.updatedAt = new Date().toISOString(); processAvailability(db, product); }
   }
   order.status = status;
   order.events = [...(order.events ?? []), { status, at: new Date().toISOString() }];
@@ -248,7 +270,7 @@ export function createBooking(db: Database, user: DemoUser | null, input: unknow
   if (!user && (!guestIdentity || !/^guest:[a-f0-9]{32}$/.test(guestIdentity) || !db.sessions.some((session) => session.userId === guestIdentity && session.expiresAt > Date.now()))) throw new ApiError('A valid appointment session is required.', 401, 'unauthorized');
   const details = input as BookingDetails;
   if (!details || ['name', 'email', 'date', 'time', 'service', 'location'].some((field) => typeof (details as unknown as Record<string, unknown>)[field] !== 'string') || !validEmail(details.email)) throw new ApiError('Please check your appointment details.');
-  const errors = validateBooking(details, db.bookings);
+  const errors = validateBooking(details, [...db.bookings, ...consultationSlots(db)]);
   if (Object.keys(errors).length) throw new ApiError('That appointment is unavailable. Please select another time.', 409, 'slotTaken');
   const booking = { name: details.name.trim(), email: details.email.trim().toLowerCase(), date: details.date, time: details.time, service: details.service, location: details.location, id: `DEMO-AT-${randomUUID().slice(0, 8).toUpperCase()}`, customerId: user?.id ?? null };
   db.bookings.push(booking);
@@ -327,7 +349,7 @@ export function updateReturnStatus(db: Database, id: unknown, status: unknown, n
   if (!transitions[record.status].includes(next)) throw new ApiError('This return transition is unavailable.', 409, 'returnTransition');
   if (next === 'received') for (const line of record.lines) {
     const product = db.products.find(value => value.id === line.productId);
-    if (product) { product.stock = { ...product.stock, [line.size]: (product.stock[line.size] ?? 0) + line.quantity }; product.updatedAt = new Date().toISOString(); }
+    if (product) { product.stock = { ...product.stock, [line.size]: (product.stock[line.size] ?? 0) + line.quantity }; product.updatedAt = new Date().toISOString(); processAvailability(db, product); }
   }
   record.status = next; record.updatedAt = new Date().toISOString();
   if (typeof note === 'string') record.note = note.trim();
@@ -359,6 +381,19 @@ export function createServiceRequest(db: Database, user: DemoUser | null, guestI
   if (!REQUEST_KINDS.includes(value.kind as ServiceRequestKind) || typeof value.email !== 'string' || !validEmail(value.email) || typeof value.name !== 'string' || value.name.trim().length > 100 || (value.kind !== 'newsletter' && value.kind !== 'availability' && value.name.trim().length < 2)) throw new ApiError('Enter your name and a valid email address.');
   if (!value.details || typeof value.details !== 'object' || Array.isArray(value.details) || Object.keys(value.details).length > 30 || JSON.stringify(value.details).length > 20_000 || Object.entries(value.details).some(([key, text]) => key.length > 80 || typeof text !== 'string' || text.length > 3000)) throw new ApiError('Please shorten your request details.');
   const details = Object.fromEntries(Object.entries(value.details as Record<string, string>).map(([key, text]) => [key, text.trim()]));
+  const owner = user?.id ?? guestIdentity;
+  const requestKey = value.kind === 'consultation' && details.requestKey && /^[a-zA-Z0-9-]{8,80}$/.test(details.requestKey) ? `${owner}:consultation:${details.requestKey}` : '';
+  if (requestKey && db.idempotency[requestKey]) {
+    const prior = db.inquiries?.find(record => record.id === db.idempotency[requestKey]);
+    if (prior) return prior;
+  }
+  if (value.kind === 'consultation' && ['date', 'time', 'location'].some(field => Object.hasOwn(details, field))) {
+    if (!['cotonou', 'paris', 'dakar'].includes(details.location)) throw new ApiError('Choose an available appointment.', 409, 'slotTaken');
+    const location = details.location as BookingDetails['location'];
+    const range = bookingDateRange(location);
+    const date = new Date(`${details.date}T12:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(details.date ?? '') || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== details.date || details.date < range.min || details.date > range.max || date.getUTCDay() === 0 || !isTimeAvailable({ location, date: details.date, time: details.time }, [...db.bookings, ...consultationSlots(db)])) throw new ApiError('That appointment is unavailable. Please select another time.', 409, 'slotTaken');
+  }
   const productId = typeof value.productId === 'string' ? value.productId : undefined;
   if (value.productId !== undefined && (!productId || !db.products.some(product => product.id === productId && product.published !== false))) throw new ApiError('Select an available product.');
   if (value.kind === 'availability' && (!productId || (details.size && !Object.hasOwn(db.products.find(product => product.id === productId)!.stock, details.size)))) throw new ApiError('Select a valid product and size.');
@@ -367,6 +402,7 @@ export function createServiceRequest(db: Database, user: DemoUser | null, guestI
   const record: ServiceRequest = { id: `DEMO-REQ-${randomUUID().slice(0, 8).toUpperCase()}`, kind: value.kind as ServiceRequestKind, name: value.name.trim(), email: value.email.trim().toLowerCase(), locale: value.locale === 'fr' ? 'fr' : 'en', details, ...(productId ? { productId } : {}), ...(attachments?.length ? { attachments } : {}), status: 'received', customerId: user?.id ?? null, createdAt, updatedAt: createdAt };
   db.inquiries ??= []; db.inquiries.unshift(record);
   if (guestIdentity) db.idempotency[`${guestIdentity}:request:${record.id}`] = record.id;
+  if (requestKey) db.idempotency[requestKey] = record.id;
   return record;
 }
 export function ownServiceRequest(db: Database, user: DemoUser | null, guestIdentity: string | null, id: unknown): ServiceRequest {

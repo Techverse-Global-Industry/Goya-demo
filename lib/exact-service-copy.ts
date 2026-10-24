@@ -1,0 +1,66 @@
+export const exactServiceCopy = {
+  en: {
+    scroll: 'Scroll', encounter: 'The encounter', encounterBody: 'An idea becomes personal when it meets the hands of an artisan. Discover four ways to make Goya part of your story.',
+    bespokeTitle: 'Bespoke. One of a kind.', bespokeIntro: 'One personal journey. One conversation.', bespokeBody: 'Begin with how you live, how you move and what you imagine. A conversation with the atelier gives every choice its purpose.', bespokeProcess: 'How does the bespoke process work?', bespokeProcessBody: 'Four stages to explore with the atelier, from the first conversation to the final fitting.', consultation: 'Schedule your consultation', book: 'Book an appointment', conversation: 'A creation begins with a conversation.', conversationBody: 'Choose an online conversation or a visit to the Maison. Share an idea, discover a detail, or ask about caring for a pair you already love.',
+    bespokeStages: [
+      { title: 'The conversation', subtitle: 'Understanding your everyday', body: 'Tell the atelier about the occasions, movements and details that matter to you. Your preferences are the beginning of the brief.', image: '/images/img2.jpg' },
+      { title: 'The form', subtitle: 'A study of your fit', body: 'Explore proportion and fit with the atelier. Measurements and fitting requirements are discussed individually before any real commission.', image: '/images/campaign/goya-signature.webp' },
+      { title: 'The materials', subtitle: 'Choose with the artisan', body: 'Compare colour, texture and the character of different finishes. The atelier helps turn a preference into a considered selection.', image: '/images/img1.jpg' },
+      { title: 'The fitting', subtitle: 'Refine the details together', body: 'The fit, balance and finishing details form part of the conversation. Actual fittings and delivery arrangements are confirmed directly by Goya.', image: '/images/campaign/goya-care-poster.webp' },
+    ],
+    madeTitle: 'Made to order. One yours.', madeIntro: 'A familiar silhouette. Your own choices.', madeBody: 'Begin with a Goya creation and explore the materials, colour and finish that express your taste. Keep your selections together for the atelier.', madeProcess: 'Compose your creation', madeStages: [
+      { title: 'Choose your silhouette', body: 'A loafer, a lace-up, or another creation from the collection becomes your starting point.' },
+      { title: 'Explore materials and colour', body: 'Place textures and tones beside one another and create a selection to discuss with the atelier.' },
+      { title: 'Consider the finishing details', body: 'Add a sole and finish preference. The atelier reviews what can be made before any real commission.' },
+    ],
+    onTimeTitle: 'On-time personalization. One live.', onTimeIntro: 'Your mark, made personal', onTimeBody: 'A subtle initial, a colour, a finishing detail. Explore a personal touch for a selected Goya creation.', tasselsTitle: 'Tassel personalization', tasselsBody: 'Discover the character of a loafer, then explore a tassel colour in the demonstration studio. Availability of a real personalization is confirmed by the atelier.', stampTitle: 'Embossed hot stamp', stampBody: 'Explore initials and symbols as a discreet personal detail. Your preview is an illustration for the atelier to review.', shop: 'Shop now', personalize: 'Make your mark',
+    caringTitle: 'Caring. One forever.', caringIntro: 'The craft of preservation', caringBody: 'The care of a shoe begins with understanding its leather, construction and the life it has already lived. Share your pair with the atelier and explore the next step.', caringStory: 'Care as a continuing relationship', caringStoryBody: 'A favourite pair belongs to more than one occasion. Thoughtful care makes room for the next chapter while respecting its character.', caringThread: 'A shared thread', caringThreadBody: 'From the first selection to the shoes you return to again, care connects your experience with the Maison.', services: 'Our services', servicesBody: 'Explore the types of care that can be assessed. Every real intervention depends on the condition and construction of your pair.', assessment: 'Request information', careServices: [
+      { title: 'Colour and patina', body: 'Discuss a colour refresh and the finish appropriate for the leather.' },
+      { title: 'Polishing', body: 'Explore cleaning, nourishment and a renewed shine for your pair.' },
+      { title: 'Sole assessment', body: 'Ask the atelier to assess wear and the possible repair of your soles.' },
+      { title: 'Heel care', body: 'Discuss worn heel pieces, balance and the next appropriate intervention.' },
+      { title: 'Shape and fit', body: 'Share concerns about shape, comfort and the way the pair now fits.' },
+      { title: 'Replacement laces', body: 'Ask about suitable laces and the finishing details of your pair.' },
+      { title: 'Replacement insoles', body: 'Discuss interior comfort and an insole appropriate for the shoe.' },
+    ],
+    careProcess: 'How does caring work?', careProcessBody: 'From your first photographs to a considered assessment, each step begins with the pair in front of us.', careStages: [
+      { title: 'Online enquiry', body: 'Share photographs and describe what you would like the atelier to assess.' },
+      { title: 'Assessment', body: 'The atelier reviews the condition and discusses suitable care with you.' },
+      { title: 'Artisan care', body: 'Any real intervention, scope and timing are agreed directly with Goya.' },
+      { title: 'Return to your journey', body: 'The demonstration shows how your request progresses through the Maison.' },
+    ],
+    close: 'Close', studio: 'Your personal creation', demo: 'Demonstration journey. Requests are saved for review; no physical service, appointment or payment is arranged.',
+  },
+  fr: {
+    scroll: 'Défiler', encounter: 'La rencontre', encounterBody: 'Une idée devient personnelle lorsqu’elle rencontre les mains d’un artisan. Découvrez quatre façons de faire entrer Goya dans votre histoire.',
+    bespokeTitle: 'Sur mesure. Une pièce unique.', bespokeIntro: 'Un parcours personnel. Un dialogue.', bespokeBody: 'Tout commence par votre quotidien, vos mouvements et votre imagination. Le dialogue avec l’atelier donne du sens à chaque choix.', bespokeProcess: 'Comment se déroule le sur mesure ?', bespokeProcessBody: 'Quatre étapes à explorer avec l’atelier, du premier échange au dernier essayage.', consultation: 'Organiser votre consultation', book: 'Prendre rendez-vous', conversation: 'Une création commence par un échange.', conversationBody: 'Choisissez un échange en ligne ou une visite à la Maison. Partagez une idée, découvrez un détail ou parlez du soin de votre paire préférée.',
+    bespokeStages: [
+      { title: 'Le dialogue', subtitle: 'Comprendre votre quotidien', body: 'Parlez à l’atelier des occasions, des mouvements et des détails qui comptent pour vous. Vos préférences sont le point de départ.', image: '/images/img2.jpg' },
+      { title: 'La forme', subtitle: 'Une étude de votre chaussant', body: 'Explorez les proportions et le chaussant avec l’atelier. Les mesures et les essayages se discutent individuellement avant toute commande réelle.', image: '/images/campaign/goya-signature.webp' },
+      { title: 'Les matières', subtitle: 'Choisir avec l’artisan', body: 'Comparez les couleurs, les textures et les finitions. L’atelier vous accompagne pour transformer une envie en sélection réfléchie.', image: '/images/img1.jpg' },
+      { title: 'L’essayage', subtitle: 'Affiner les détails ensemble', body: 'Le chaussant, l’équilibre et les finitions font partie du dialogue. Goya confirme directement les modalités réelles des essayages et de la livraison.', image: '/images/campaign/goya-care-poster.webp' },
+    ],
+    madeTitle: 'Sur commande. Une pièce à vous.', madeIntro: 'Une silhouette familière. Vos choix.', madeBody: 'Partez d’une création Goya et explorez les matières, la couleur et la finition qui expriment votre goût. Conservez vos choix pour l’atelier.', madeProcess: 'Composer votre création', madeStages: [
+      { title: 'Choisir votre silhouette', body: 'Un mocassin, un soulier à lacets ou une autre création de la collection devient votre point de départ.' },
+      { title: 'Explorer matières et couleurs', body: 'Rapprochez les textures et les teintes pour composer une sélection à partager avec l’atelier.' },
+      { title: 'Considérer les finitions', body: 'Ajoutez une préférence de semelle et de finition. L’atelier étudie ce qui peut être réalisé avant toute commande réelle.' },
+    ],
+    onTimeTitle: 'Personnalisation. Votre signature.', onTimeIntro: 'Votre marque, personnelle', onTimeBody: 'Une initiale discrète, une couleur, une finition. Explorez une touche personnelle sur une création Goya sélectionnée.', tasselsTitle: 'Personnalisation des pompons', tasselsBody: 'Découvrez le caractère d’un mocassin, puis explorez une couleur de pompons dans le studio de démonstration. L’atelier confirme toute personnalisation réelle.', stampTitle: 'Marquage à chaud en relief', stampBody: 'Explorez des initiales et des symboles comme détail personnel. Votre aperçu est une illustration à étudier avec l’atelier.', shop: 'Découvrir la collection', personalize: 'Apposer votre signature',
+    caringTitle: 'Le soin. Pour longtemps.', caringIntro: 'L’art de préserver', caringBody: 'Le soin d’un soulier commence par la compréhension de son cuir, de sa construction et de son histoire. Présentez votre paire à l’atelier pour explorer la suite.', caringStory: 'Le soin, une relation qui continue', caringStoryBody: 'Une paire préférée accompagne plus d’une occasion. Un soin réfléchi prépare le prochain chapitre tout en respectant son caractère.', caringThread: 'Un fil commun', caringThreadBody: 'De votre première sélection aux souliers que vous retrouvez toujours, le soin relie votre expérience à la Maison.', services: 'Nos services', servicesBody: 'Explorez les soins qui peuvent être évalués. Chaque intervention réelle dépend de l’état et de la construction de votre paire.', assessment: 'Demander des informations', careServices: [
+      { title: 'Couleur et patine', body: 'Échangez autour d’un rafraîchissement de couleur et de la finition adaptée au cuir.' },
+      { title: 'Cirage', body: 'Explorez le nettoyage, la nutrition et le retour de l’éclat de votre paire.' },
+      { title: 'Évaluation des semelles', body: 'Demandez à l’atelier d’évaluer l’usure et les possibilités de réparation des semelles.' },
+      { title: 'Soin des talons', body: 'Parlez de l’usure des talons, de l’équilibre et d’une intervention adaptée.' },
+      { title: 'Forme et chaussant', body: 'Partagez vos questions sur la forme, le confort et le chaussant actuel.' },
+      { title: 'Remplacement des lacets', body: 'Renseignez-vous sur les lacets adaptés et les finitions de votre paire.' },
+      { title: 'Remplacement des semelles intérieures', body: 'Échangez autour du confort intérieur et d’une semelle adaptée au soulier.' },
+    ],
+    careProcess: 'Comment se déroule le soin ?', careProcessBody: 'Des premières photographies à une évaluation réfléchie, chaque étape part de votre paire.', careStages: [
+      { title: 'Demande en ligne', body: 'Partagez des photographies et décrivez ce que vous souhaitez faire évaluer.' },
+      { title: 'Évaluation', body: 'L’atelier examine l’état de la pièce et échange avec vous sur les soins adaptés.' },
+      { title: 'Soin de l’artisan', body: 'Toute intervention réelle, son étendue et son délai se conviennent directement avec Goya.' },
+      { title: 'La suite de votre histoire', body: 'La démonstration montre le suivi de votre demande au sein de la Maison.' },
+    ],
+    close: 'Fermer', studio: 'Votre création personnelle', demo: 'Parcours de démonstration. Les demandes sont enregistrées pour étude ; aucun service physique, rendez-vous ni paiement n’est organisé.',
+  },
+} as const;

@@ -1,13 +1,15 @@
 export type Locale = 'en' | 'fr';
-export type Currency = 'EUR' | 'USD' | 'XOF';
+export type SiteLocale = 'en' | 'it' | 'fr' | 'de' | 'es' | 'ja' | 'ar';
+export type Currency = 'EUR' | 'USD' | 'XOF' | 'GBP' | 'JPY' | 'AED' | 'CHF' | 'CAD' | 'SAR' | 'KWD' | 'TRY' | 'CNY';
+export type BaseCurrency = 'EUR' | 'USD' | 'XOF';
 export type Category = 'all' | 'men' | 'women' | 'accessories';
 export type ShoeType = 'all' | 'loafers' | 'lace-ups' | 'boots' | 'sneakers' | 'monk-straps' | 'slippers' | 'sandals' | 'pumps' | 'flats' | 'heels' | 'mules';
-export type Country = 'BJ' | 'FR' | 'SN' | 'US' | 'GB';
+export type Country = 'AL' | 'AD' | 'AT' | 'BE' | 'BY' | 'BA' | 'BG' | 'VA' | 'CY' | 'HR' | 'DK' | 'EE' | 'FI' | 'FR' | 'DE' | 'GR' | 'IE' | 'IS' | 'IT' | 'KZ' | 'LV' | 'LI' | 'LT' | 'LU' | 'MK' | 'MT' | 'MD' | 'MC' | 'ME' | 'NO' | 'NL' | 'PL' | 'PT' | 'GB' | 'CZ' | 'RO' | 'SM' | 'RS' | 'SK' | 'SI' | 'ES' | 'SE' | 'CH' | 'UA' | 'HU' | 'CA' | 'US' | 'SA' | 'BH' | 'AE' | 'IL' | 'KW' | 'OM' | 'QA' | 'TR' | 'YE' | 'AM' | 'AZ' | 'BN' | 'CN' | 'PH' | 'JP' | 'GI' | 'HK' | 'IN' | 'ID' | 'KR' | 'LB' | 'MO' | 'MY' | 'PK' | 'SG' | 'TW' | 'TH' | 'TM' | 'VN' | 'AR' | 'BR' | 'CL' | 'CO' | 'CR' | 'DO' | 'EC' | 'GF' | 'MX' | 'PY' | 'PE' | 'UY' | 'VE' | 'AU' | 'NC' | 'NZ' | 'DZ' | 'EG' | 'MA' | 'NG' | 'ZA' | 'TN' | 'BJ' | 'SN' | 'WW';
 export type PaymentMethod = 'card' | 'apple' | 'paypal' | 'klarna' | 'scalapay' | 'mobile' | 'pickup';
 export type AtelierLocation = 'cotonou' | 'paris' | 'dakar';
 export type AtelierService = 'polish' | 'patina' | 'heels' | 'restoration';
 export type Localized = Record<Locale, string>;
-export type PriceBook = Record<Currency, number>;
+export type PriceBook = Record<BaseCurrency, number> & Partial<Record<Exclude<Currency, BaseCurrency>, number>>;
 
 export interface Product {
   id: string;
@@ -58,6 +60,7 @@ export interface AccountProfile {
   title: '' | 'mr' | 'ms' | 'mx';
   preferredLocale: Locale;
   newsletter: boolean;
+  personalization?: boolean;
   addresses: SavedAddress[];
   wishlist: string[];
 }
@@ -66,7 +69,18 @@ export interface CatalogFilters { sizes: string[]; colors: string[]; materials: 
 
 export interface OrderLine extends CartLine {
   unitPrice: number;
+  originalUnitPrice?: number;
   product?: Product;
+}
+
+export interface CartQuote {
+  promoCode: string | null;
+  lines: OrderLine[];
+  originalSubtotal: number;
+  discount: number;
+  subtotal: number;
+  shipping: number;
+  total: number;
 }
 
 export type OrderStatus = 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
@@ -81,6 +95,9 @@ export interface Order {
   currency: Currency;
   lines: OrderLine[];
   subtotal: number;
+  originalSubtotal?: number;
+  discount?: number;
+  promoCode?: string;
   shipping: number;
   total: number;
   payment: PaymentMethod;
@@ -141,6 +158,9 @@ export type Overlay =
   | { kind: 'menu' }
   | { kind: 'info'; topic: 'shipping' | 'care' | 'privacy' }
   | { kind: 'region' }
+  | { kind: 'language' }
+  | { kind: 'sizes'; productId: string; size?: string }
+  | { kind: 'productInfo'; productId: string; section: 'details' | 'shipping' | 'care' }
   | { kind: 'recovery' }
   | { kind: 'sizeGuide'; productId?: string }
   | { kind: 'fit'; productId: string }

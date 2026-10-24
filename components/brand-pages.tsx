@@ -7,19 +7,18 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useShop } from '@/context/shop-context';
 import { fashionCopy, shoeCategories } from '@/lib/fashion-copy';
-import { presentationCopy } from '@/lib/presentation-copy';
 import { gsap, useGSAP } from '@/lib/gsap';
 import { catalogPath } from '@/lib/storefront';
 import { SERVICES } from '@/lib/catalog';
 import type { TranslationKey } from '@/lib/i18n';
 import { Header } from './header';
 import { Footer, CraftCampaign } from './editorial';
-import { MaisonStory } from './journal';
 import { BrandCollection } from './brand-collection';
 import { MaisonImage } from './maison-image';
 import { Overlays } from './overlays';
 import { Toast } from './controls';
 import { Icon } from './icon';
+import { MaisonEditorial } from './culture-editorial';
 
 function BrandFrame({ children }: { children: ReactNode }) {
   const root = useRef<HTMLElement>(null);
@@ -62,12 +61,7 @@ export function CollectionsPage() {
   return <BrandFrame><header className="brand-title-block brand-reveal"><span className="fashion-kicker">L’HÉRITAGE CROISÉ</span><h1>{copy.new}</h1><p>{state.locale === 'fr' ? 'Pour lui. Pour elle. Une signature singulière.' : 'For him. For her. A signature of your own.'}</p><div><Link href="/men" className="fashion-link">{copy.men}</Link><Link href="/women" className="fashion-link">{copy.women}</Link></div></header><BrandCollection /><CraftCampaign /></BrandFrame>;
 }
 
-export function MaisonPage() {
-  const { state } = useShop();
-  const copy = fashionCopy[state.locale];
-  const story = presentationCopy[state.locale];
-  return <BrandFrame><section className="brand-maison-opening"><div className="brand-maison-photo"><MaisonImage index={2} alt={copy.storyCulture} sizes="(min-width: 700px) 50vw, 100vw" className="object-cover" preload /></div><div className="brand-maison-copy brand-reveal"><span className="fashion-kicker">L’HÉRITAGE CROISÉ</span><h1>{copy.maison}</h1><h2>{copy.statement}</h2><p>{story.maisonBody}</p><p>{story.maisonSecond}</p><Link href="/collections" className="fashion-link">{copy.discover}<Icon name="arrow-right" /></Link></div></section><section className="brand-workshop-story"><div className="brand-workshop-copy brand-reveal"><span className="fashion-kicker">COTONOU / MAISON GOYA</span><h2>{copy.storyCraft}</h2><p>{copy.craftBody}</p><p>{state.locale === 'fr' ? 'Le caractère d’un soulier se prolonge dans le soin qu’on lui apporte. Découvrez les gestes et les services de l’atelier Goya.' : 'The character of a shoe continues through the care it receives. Discover the gestures and services of the Goya atelier.'}</p><Link href="/shoe-care" className="fashion-link">{copy.careCta}<Icon name="arrow-right" /></Link></div><div className="brand-workshop-photo"><MaisonImage index={1} alt={story.carePhoto} sizes="(min-width: 700px) 55vw, 100vw" className="object-cover" /></div></section><MaisonStory /></BrandFrame>;
-}
+export function MaisonPage(){return <MaisonEditorial/>;}
 
 export function ShoeCarePage() {
   const { state, t, dispatch } = useShop();

@@ -1,15 +1,15 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useShop } from '@/context/shop-context';
-import { experienceCopy } from '@/lib/service-experiences';
-import { Header } from '@/components/header';
-import { Footer } from '@/components/editorial';
+import { translatedCopy } from '@/lib/international';
+import { internationalCopy } from '@/lib/international-copy';
+import { GoyaWordmark } from '@/components/goya-wordmark';
 import { Overlays } from '@/components/overlays';
 import { Toast } from '@/components/controls';
 import { RegionSelector } from '@/components/reference-services';
 
 export default function Page(){
-  const {state}=useShop();const router=useRouter();const c=experienceCopy[state.locale];
-  return <><Header /><main id="public-content" className="reference-service-page experience-countries-page"><header className="reference-service-heading"><h1>{c.countries}</h1><p>{c.countryIntro}</p></header><RegionSelector onComplete={()=>router.push('/collections')} /></main><Footer /><Overlays /><Toast /></>;
+  const {state}=useShop();const c=translatedCopy(internationalCopy[state.locale],state.language);
+  return <><main id="public-content" className="exact-country-page"><header className="exact-country-brand"><Link href="/" aria-label="Goya"><GoyaWordmark /></Link></header><RegionSelector /><footer className="exact-country-legal">© {new Date().getFullYear()} Goya · {c.rights} {c.demonstration}</footer></main><Overlays /><Toast /></>;
 }

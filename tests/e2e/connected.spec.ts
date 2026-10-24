@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { registerCustomer, seedPrivacy } from './navigation';
+import { selectProductSize } from './catalog-navigation';
 
 test.beforeEach(async ({ page }) => { await seedPrivacy(page); });
 
@@ -54,7 +55,8 @@ test('owner publishes a product, customer pays with demo MoMo, owner fulfills, c
   await expect(customerPage.locator('.reference-search-results li')).toHaveCount(1);
   await customerPage.locator('.reference-search-results li a').click();
   await expect(customerPage.getByRole('heading', { level: 1, name: englishName, exact: true })).toBeVisible();
-  await customerPage.locator('.pdp-size-control select').selectOption('42');
+  const productId = new URL(customerPage.url()).pathname.split('/').at(-1)!;
+  await selectProductSize(customerPage, productId, '42');
   await customerPage.locator('.pdp-purchase').getByRole('button', { name: 'Add to bag', exact: true }).click();
   await customerPage.getByRole('dialog').getByRole('link', { name: 'Boutique checkout', exact: true }).click();
   await expect(customerPage).toHaveURL(/\/checkout$/);
@@ -64,6 +66,7 @@ test('owner publishes a product, customer pays with demo MoMo, owner fulfills, c
   await checkout.getByLabel('Email address', { exact: true }).fill(`journey-${unique}@example.test`);
   await checkout.getByLabel('Street address', { exact: true }).fill('12 Demonstration Avenue');
   await checkout.getByLabel('City', { exact: true }).fill('Cotonou');
+  await checkout.locator('#shipping-country').selectOption('BJ');
   await checkout.getByRole('button', { name: 'Continue', exact: true }).click();
   await checkout.getByRole('radio', { name: /Mobile Money/ }).check();
   await checkout.getByRole('button', { name: 'Confirm demo order', exact: true }).click();
@@ -91,7 +94,7 @@ test('owner publishes a product, customer pays with demo MoMo, owner fulfills, c
   const order = page.locator('.admin-order').filter({ hasText: orderId! });
   await order.locator('.admin-order-summary').click();
   for (const status of ['preparing', 'shipped', 'delivered']) {
-    await order.getByLabel('Order status', { exact: true }).selectOption(status);
+    await order.getByRole('combobox', { name: 'Order status', exact: true }).selectOption(status);
     await order.getByRole('button', { name: 'Update order', exact: true }).click();
     await expect(order.locator(`.admin-order-summary .status-${status}`)).toBeVisible();
   }

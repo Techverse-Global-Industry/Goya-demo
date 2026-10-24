@@ -1,13 +1,16 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { changeLanguage, seedPrivacy } from './navigation';
+import type { CartQuote, Currency } from '../../lib/types';
+import { formatMoney } from '../../lib/commerce';
+import { changeLanguage, openShoppingBag, seedPrivacy } from './navigation';
+import { chooseListboxOption, openSizeChart, openWishlist, selectProductSize } from './catalog-navigation';
 
 const origin = 'http://127.0.0.1:3100';
 
 async function addFrancesco(page: Page) {
   await page.goto('/product/francesco');
   await expect(page.locator('[data-product-detail="francesco"]')).toBeVisible();
-  await page.locator('#pdp-size-francesco').selectOption('42');
+  await selectProductSize(page, 'francesco', '42');
   await page.locator('.pdp-purchase').getByRole('button', { name: 'Add to bag', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Shopping bag', exact: true })).toBeVisible();
 }
@@ -27,35 +30,46 @@ test.beforeEach(async ({ page }) => {
   expect((await (await page.request.get('/api/shop')).json()).user).toBeNull();
 });
 
-test('public product and open bag translate without losing the selected size', async ({ page }) => {
+test('product and bag preserve the selected size across language changes', async ({ page }) => {
   await changeLanguage(page, 'Français');
   await expect(page.locator('[data-product-id="francesco"] h3')).toHaveText('Le Mocassin Francesco');
   await page.locator('[data-product-id="francesco"] .reference-card-image').click();
   await expect(page).toHaveURL(/\/product\/francesco$/);
-  await page.locator('#pdp-size-francesco').selectOption('42');
+  await selectProductSize(page, 'francesco', '42');
   await changeLanguage(page, 'English');
-  await expect(page.locator('#pdp-size-francesco')).toHaveValue('42');
+  await expect(page.locator('#pdp-size-francesco')).toContainText('42');
   await page.locator('.pdp-purchase').getByRole('button', { name: 'Add to bag', exact: true }).click();
   const bag = page.getByRole('dialog');
   await expect(bag).toHaveAccessibleName('Shopping bag');
-  await expect(bag.locator('.cart-size')).toContainText('42');
-  await bag.getByRole('button', { name: 'Français', exact: true }).click();
+  await expect(bag.locator('.exact-bag-product-copy')).toContainText('Size: EU 42');
+  await page.keyboard.press('Escape');
+  await changeLanguage(page, 'Français');
+  await page.locator('[data-cart-trigger]').click();
   await expect(bag).toHaveAccessibleName('Panier');
-  await expect(bag.locator('.cart-size')).toContainText('42');
-  await bag.getByRole('button', { name: 'English', exact: true }).click();
+  await expect(bag.locator('.exact-bag-product-copy')).toContainText('42');
+  await page.keyboard.press('Escape');
+  await changeLanguage(page, 'English');
+  await page.locator('[data-cart-trigger]').click();
   await expect(bag).toHaveAccessibleName('Shopping bag');
 });
 
 test('anonymous bag quantities, currency and variant survive a reload', async ({ page }) => {
+  await page.goto('/countries');
+  await page.locator('.exact-country-search input').fill('Benin');
+  await page.getByRole('option', { name: 'Benin', exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+  // Country navigation updates the URL before the public shell has mounted.
+  await expect(page.locator('.site-header:visible')).toHaveAttribute('data-ready', 'true');
+  await expect(page.locator('.exact-footer-country > button')).toBeVisible();
+  await changeLanguage(page, 'English');
   await addFrancesco(page);
   await page.getByRole('button', { name: 'Increase quantity', exact: true }).click();
-  await expect(page.locator('.quantity-control output')).toHaveText('2');
-  await page.getByRole('dialog').getByLabel('Currency', { exact: true }).selectOption('XOF');
+  await expect(page.locator('.exact-bag-quantity output')).toHaveText('2');
   await page.reload();
-  await expect(page.locator('[data-cart-trigger]')).toHaveAccessibleName('Shopping bag (2)');
-  await page.locator('[data-cart-trigger]').click();
-  await expect(page.locator('.quantity-control output')).toHaveText('2');
-  await expect(page.getByRole('dialog').getByLabel('Currency', { exact: true })).toHaveValue('XOF');
+  await expect(page.locator('.site-header:visible [data-cart-trigger]')).toHaveAccessibleName('Shopping bag (2)');
+  await openShoppingBag(page);
+  await expect(page.locator('.exact-bag-quantity output')).toHaveText('2');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('maison-goya:v1')!).currency)).toBe('XOF');
   expect((await (await page.request.get('/api/shop')).json()).user).toBeNull();
 });
 
@@ -63,8 +77,49 @@ test('bag quantity cannot exceed the shared published variant stock', async ({ p
   await addFrancesco(page);
   const increase = page.getByRole('button', { name: 'Increase quantity', exact: true });
   for (let i = 0; i < 4; i++) await increase.click();
-  await expect(page.locator('.quantity-control output')).toHaveText('5');
+  await expect(page.locator('.exact-bag-quantity output')).toHaveText('5');
   await expect(increase).toBeDisabled();
+});
+
+test('bag promo codes use server quotes, persist, remove cleanly and open demo express checkout', async ({ page }) => {
+  await addFrancesco(page);
+  await page.keyboard.press('Escape');
+  await page.goto('/bag');
+  const promo = page.locator('.exact-bag-promo');
+  await promo.getByRole('button', { name: 'Promo code', exact: true }).click();
+  const input = promo.getByLabel('Enter your promo code', { exact: true });
+  await input.fill('INVALID');
+  await promo.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(promo.getByRole('alert')).toHaveText('This promo code is not valid.');
+  await expect(page.locator('.exact-bag-discount')).toHaveCount(0);
+  await input.fill('goya10');
+  await promo.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(promo.getByRole('status')).toContainText('Promo code applied.');
+  await expect(input).toHaveValue('GOYA10');
+  const currency = await page.evaluate(() => JSON.parse(localStorage.getItem('maison-goya:v1')!).currency) as Currency;
+  const quoteResponse = await page.request.post('/api/shop', { headers: { origin }, data: { action: 'cartQuote', cart: [{ productId: 'francesco', size: '42', quantity: 1 }], currency, promoCode: 'GOYA10' } });
+  expect(quoteResponse.ok()).toBe(true);
+  const { quote } = await quoteResponse.json() as { quote: CartQuote };
+  expect(quote.discount).toBeGreaterThan(0);
+  await expect(page.locator('.exact-bag-discount')).toContainText('−' + formatMoney(quote.discount, currency, 'en'));
+  await expect(page.locator('.exact-bag-grand-total strong')).toHaveText(formatMoney(quote.total, currency, 'en'));
+  await page.reload();
+  await expect(promo.getByLabel('Enter your promo code', { exact: true })).toHaveValue('GOYA10');
+  await expect(page.locator('.exact-bag-grand-total strong')).toHaveText(formatMoney(quote.total, currency, 'en'));
+  await promo.getByRole('button', { name: 'Remove promo code', exact: true }).click();
+  await expect(promo.getByRole('status')).toHaveText('Promo code removed.');
+  await expect(page.locator('.exact-bag-discount')).toHaveCount(0);
+  const fullPriceResponse = await page.request.post('/api/shop', { headers: { origin }, data: { action: 'cartQuote', cart: [{ productId: 'francesco', size: '42', quantity: 1 }], currency } });
+  expect(fullPriceResponse.ok()).toBe(true);
+  const fullPrice = await fullPriceResponse.json() as { quote: CartQuote };
+  await expect(page.locator('.exact-bag-grand-total strong')).toHaveText(formatMoney(fullPrice.quote.total, currency, 'en'));
+  for (const [payment, provider] of [['paypal', 'PayPal'], ['apple', 'Apple Pay']]) {
+    await page.locator('.exact-bag-express').getByRole('link', { name: `Continue with ${provider} (demo)`, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/checkout\\?payment=${payment}$`));
+    await expect(page.locator('.checkout-express-notice')).toContainText(provider);
+    await page.goto('/bag');
+  }
+  expect((await (await page.request.get('/api/shop')).json()).orders).toEqual([]);
 });
 
 test('guest checkout saves billing and gift details, confirms once and restricts tracking to its cookie', async ({ page, browser, isMobile }) => {
@@ -162,17 +217,24 @@ test('guest checkout saves billing and gift details, confirms once and restricts
 });
 
 test('bag focus trapping, Escape and public continuation work without an account', async ({ page }) => {
-  await page.locator('[data-cart-trigger]').click();
+  // Empty bags are a nonmodal source-style popover; populated bags trap focus.
+  await openShoppingBag(page);
+  await expect(page.locator('.exact-minicart-empty')).toHaveText('Your bag is empty');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.site-header:visible [data-cart-trigger]')).toBeFocused();
+  await addFrancesco(page);
   for (let i = 0; i < 14; i++) {
     await page.keyboard.press('Tab');
     expect(await page.evaluate(() => !!document.activeElement?.closest('dialog[open]'))).toBe(true);
   }
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.locator('[data-cart-trigger]')).toBeFocused();
+  // This bag was opened by the PDP purchase button, which receives focus back.
+  await expect(page.locator('.pdp-purchase .pdp-add-button')).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('');
-  await page.locator('[data-cart-trigger]').click();
-  await page.getByRole('dialog').getByRole('link', { name: 'Explore the collection', exact: true }).click();
+  await openShoppingBag(page);
+  await page.getByRole('dialog').getByRole('link', { name: 'Continue exploring', exact: true }).click();
   await expect(page).toHaveURL(/\/collections$/);
 });
 
@@ -184,7 +246,7 @@ test('public search ignores accents and filters, sorting and shoe-category route
   await page.locator('#maison-search').fill('DÉCONTRACTÉ');
   await expect(page.locator('.reference-search-results h3')).toHaveText(unaccented);
   await page.keyboard.press('Escape');
-  await page.getByLabel('Sort by', { exact: true }).selectOption('priceAsc');
+  await chooseListboxOption(page, 'Sort by', 'Price — low to high');
   const snapshot = await (await page.request.get('/api/shop')).json();
   const ids = await page.locator('.product-card').evaluateAll(cards => cards.map(card => card.getAttribute('data-product-id')));
   const prices = ids.map(id => snapshot.products.find((product: { id: string }) => product.id === id).prices.EUR);
@@ -197,19 +259,40 @@ test('public search ignores accents and filters, sorting and shoe-category route
   await expect(page.getByRole('dialog')).toHaveCount(0);
   while (!await page.locator('[data-product-id="francesco"]').count()) {
     const previousCount = await page.locator('.reference-plp-grid .product-card').count();
-    await page.getByRole('button', { name: 'Load more', exact: true }).click();
+    await page.getByRole('button', { name: /^Load more/ }).click();
     await expect.poll(() => page.locator('.reference-plp-grid .product-card').count()).toBeGreaterThan(previousCount);
   }
   await expect(page.locator('[data-product-id="francesco"]')).toBeVisible();
-  await expect(page.locator('.reference-active-filters')).toContainText('Black');
+  await expect(page.locator('.reference-toolbar-reset')).toBeVisible();
   const filteredIds = await page.locator('.product-card').evaluateAll(cards => cards.map(card => card.getAttribute('data-product-id')));
   expect(filteredIds.length).toBeGreaterThan(0);
   for (const id of filteredIds) expect(snapshot.products.find((product: { id: string }) => product.id === id).color.en.toLowerCase()).toContain('black');
   await page.getByRole('button', { name: 'Clear all', exact: true }).click();
   await page.goto('/women/boots');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ankle boots for women');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText("Women's Ankle boots");
   await expect(page.locator('[data-product-id="calfskin-belt"]')).toBeVisible();
   await expect(page.locator('[data-product-id="francesco"]')).toHaveCount(0);
+});
+
+test('category navigation opens the correct shoe family on desktop and mobile', async ({ page, isMobile }) => {
+  if (isMobile) {
+    await page.locator('.mobile-menu-trigger').click();
+    const menu = page.locator('.exact-mobile-menu');
+    await menu.getByRole('button', { name: /— Man$/ }).click();
+    await menu.getByRole('button', { name: /— Shoes$/ }).click();
+    await expect(menu.getByRole('link', { name: 'Loafers', exact: true })).toHaveAttribute('href', '/men/loafers');
+    await menu.locator('.reference-mobile-back').click();
+    await expect(menu.getByRole('button', { name: /— Accessories$/ })).toBeVisible();
+    await menu.getByRole('button', { name: /— Shoes$/ }).click();
+    await menu.getByRole('link', { name: 'Loafers', exact: true }).click();
+  } else {
+    await page.locator('.reference-desktop-nav a[href="/men"]').hover();
+    await page.locator('#reference-mega-menu .reference-mega-columns').getByRole('link', { name: 'Loafers', exact: true }).click();
+  }
+  await expect(page).toHaveURL(/\/men\/loafers$/);
+  await expect(page.locator('[data-product-id="francesco"]')).toBeVisible();
+  await expect(page.locator('[data-product-id="cobalt-lace-up"]')).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('public product gallery, size guide, wishlist and move-from-bag stay available as a guest', async ({ page }) => {
@@ -218,61 +301,80 @@ test('public product gallery, size guide, wishlist and move-from-bag stay availa
   await page.locator('.pdp-gallery').getByRole('button', { name: /^Enlarge / }).first().click();
   await expect(page.getByRole('dialog', { name: 'Product image zoom', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Close image zoom', exact: true }).click();
-  await page.getByRole('button', { name: 'Size guide', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Size guide', exact: true }).getByRole('table')).toBeVisible();
+  await openSizeChart(page, 'francesco');
   await page.keyboard.press('Escape');
   const heart = page.locator('.pdp-purchase').getByRole('button', { name: 'Add to wishlist', exact: true });
   await heart.click();
   await expect(page.locator('.pdp-purchase .pdp-wishlist-button')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('.reference-wishlist-trigger').click();
-  await expect(page).toHaveURL(/\/wishlist$/);
+  await openWishlist(page);
   await expect(page.locator('[data-product-id="francesco"]')).toBeVisible();
   await page.reload();
   await expect(page.locator('[data-product-id="francesco"]')).toBeVisible();
   await addFrancesco(page);
+  await page.getByRole('dialog').getByRole('button', { name: 'Remove', exact: true }).click();
   await page.getByRole('button', { name: 'Move to wishlist', exact: true }).click();
-  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Your next chapter awaits.', exact: true })).toBeVisible();
-  await page.getByRole('dialog').getByRole('link', { name: 'View my wishlist', exact: true }).click();
+  await expect(page.locator('.exact-minicart-empty')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await openWishlist(page);
   await expect(page.locator('[data-product-id="francesco"]')).toHaveCount(1);
   expect((await (await page.request.get('/api/shop')).json()).user).toBeNull();
 });
 
 test('guest shoe-care appointment confirms bilingually and keeps personal details in its own cookie', async ({ page, browser }) => {
-  await page.goto('/shoe-care');
-  await page.getByRole('button', { name: 'Book a shoe-care service', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Atelier Cotonou', exact: true });
-  await dialog.getByRole('button', { name: 'Confirm demo appointment', exact: true }).click();
-  await expect(page.locator('#atelier-date')).toHaveAttribute('aria-invalid', 'true');
+  test.setTimeout(120000);
+  await page.goto('/personalization/caring');
+  await page.locator('.experience-service-hero a[href^="/book-an-appointment"]').click();
+  await page.locator('.consultation-landing a[href*="mode=boutique"]').click();
+  const boutiques = page.locator('.exact-booking-boutiques');
+  await boutiques.getByRole('button', { name: /Cotonou/ }).click();
+  await boutiques.getByRole('button', { name: 'Continue', exact: true }).click();
+  const service = page.locator('.exact-booking-service');
+  await expect(service.getByRole('combobox', { name: 'Service requested *', exact: true })).toHaveValue('care');
+  await service.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.locator('.exact-calendar-days button:not([disabled])').first().click();
+  const continueDate = page.locator('.exact-booking-date').getByRole('button', { name: 'Continue', exact: true });
+  await expect(continueDate).toBeDisabled();
+  const slot = page.locator('.exact-booking-slot:not([disabled])').first();
+  const time = (await slot.textContent())!.trim();
+  await slot.click();
+  await continueDate.click();
   const email = `appointment-${crypto.randomUUID()}@example.test`;
-  await dialog.getByLabel('Full name', { exact: true }).fill('Appointment Guest');
-  await dialog.getByLabel('Email address', { exact: true }).fill(email);
-  const min = await page.locator('#atelier-date').getAttribute('min');
-  let time = '';
-  for (let offset = 2; offset < 20 && !time; offset++) {
-    const date = new Date(`${min}T12:00:00Z`);
-    date.setUTCDate(date.getUTCDate() + offset);
-    if (date.getUTCDay() === 0) continue;
-    await page.locator('#atelier-date').fill(date.toISOString().slice(0, 10));
-    time = await page.locator('#atelier-time').evaluate(element => Array.from((element as HTMLSelectElement).options).find(option => option.value && !option.disabled)?.value ?? '');
-  }
-  expect(time).not.toBe('');
-  await page.locator('#atelier-time').selectOption(time);
-  await dialog.getByRole('button', { name: 'Confirm demo appointment', exact: true }).click();
-  await expect(dialog.getByRole('heading', { name: 'A moment, reserved.', exact: true })).toBeVisible();
+  const contact = page.locator('.exact-booking-contact');
+  await contact.getByRole('button', { name: 'Confirm my demo request', exact: true }).click();
+  expect(await contact.evaluate(form => (form as HTMLFormElement).checkValidity())).toBe(false);
+  await contact.getByRole('combobox', { name: 'Title *', exact: true }).selectOption('mr');
+  await contact.getByRole('textbox', { name: 'First name *', exact: true }).fill('Appointment');
+  await contact.getByRole('textbox', { name: 'Last name *', exact: true }).fill('Guest');
+  await contact.getByRole('textbox', { name: 'Email *', exact: true }).fill(email);
+  await contact.getByRole('textbox', { name: 'Mobile phone number *', exact: true }).fill('+229 01 00 00 00 00');
+  await contact.getByRole('combobox', { name: 'Country *', exact: true }).selectOption('BJ');
+  await contact.getByRole('checkbox').check();
+  const saved = page.waitForResponse(response => {
+    if (!response.url().endsWith('/api/shop') || response.request().method() !== 'POST') return false;
+    const payload = response.request().postDataJSON();
+    return payload?.action === 'serviceRequest' && payload.request?.kind === 'consultation';
+  });
+  await contact.getByRole('button', { name: 'Confirm my demo request', exact: true }).click();
+  expect((await saved).ok()).toBe(true);
+  const receipt = page.locator('.experience-receipt');
+  await expect(receipt.getByRole('heading', { name: 'Your request is received.', exact: true })).toBeVisible();
   const own = await (await page.request.get('/api/shop')).json();
   expect(own.user).toBeNull();
-  expect(own.bookings).toHaveLength(1);
-  expect(own.bookings[0].email).toBe(email);
-  expect(own.bookings[0].customerId).toBeNull();
-  await dialog.getByRole('button', { name: 'Français', exact: true }).click();
-  await expect(dialog.getByRole('heading', { name: 'Un instant, réservé.', exact: true })).toBeVisible();
-  await expect(dialog.locator('.booking-summary')).toContainText(own.bookings[0].id);
+  expect(own.requests).toHaveLength(1);
+  const request = own.requests[0];
+  expect(request).toMatchObject({ kind: 'consultation', email, customerId: null, details: { mode: 'boutique', topic: 'care', location: 'cotonou', time } });
+  expect(request.details.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  await changeLanguage(page, 'Français');
+  await expect(receipt.getByRole('heading', { name: 'Votre demande est reçue.', exact: true })).toBeVisible();
+  await expect(receipt).toContainText(request.id);
+  expect((await page.context().cookies()).find(cookie => cookie.name === 'mg_guest')).toMatchObject({ httpOnly: true, sameSite: 'Lax' });
   const stranger = await browser.newContext();
   try {
     const snapshot = await (await stranger.request.get(`${origin}/api/shop`)).json();
     expect(snapshot.bookings).toEqual([]);
+    expect(snapshot.requests).toEqual([]);
     expect(JSON.stringify(snapshot)).not.toContain(email);
-    expect(snapshot.bookedSlots).toContainEqual({ date: own.bookings[0].date, time, location: own.bookings[0].location });
+    expect(snapshot.bookedSlots).toContainEqual({ date: request.details.date, time, location: request.details.location });
     for (const slot of snapshot.bookedSlots) expect(Object.keys(slot).sort()).toEqual(['date', 'location', 'time']);
   } finally { await stranger.close(); }
 });

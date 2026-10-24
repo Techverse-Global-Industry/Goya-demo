@@ -4,6 +4,8 @@ import { ShopProvider } from '@/context/shop-context';
 import { PwaProvider, ConnectionNotice } from '@/components/pwa';
 import { PrivacyChoices } from '@/components/privacy-choices';
 import { PromotionPrompt } from '@/components/promotion';
+import { CountryPrompt } from '@/components/country-prompt';
+import { LegacyTranslation } from '@/components/legacy-translation';
 import './globals.css';
 import './commerce.css';
 import './account.css';
@@ -25,6 +27,11 @@ import './fit-guide.css';
 import './personalization-experience.css';
 import './featured-products.css';
 import './parity-completion.css';
+import './international.css';
+import './exact-services.css';
+import './exact-shell.css';
+import './exact-catalog.css';
+import './exact-editorial.css';
 
 const inter = localFont({ src: '../public/fonts/inter-normal-100-900.woff2', variable: '--font-inter', display: 'swap', weight: '100 900', style: 'normal' });
 const playfair = localFont({ src: [
@@ -34,7 +41,7 @@ const playfair = localFont({ src: [
 
 export const metadata: Metadata = {
   title: 'Maison Goya — L’Héritage Croisé',
-  description: 'European precision. African soul. Discover the Maison Goya collection and Atelier Cotonou in a bilingual demonstration experience.',
+  description: 'European precision. African soul. Discover Maison Goya shoes, accessories and care in an international demonstration experience.',
   applicationName: 'Maison Goya',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Maison Goya' },
   icons: { apple: '/icons/apple-touch-icon.png' },
@@ -46,7 +53,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={`${inter.variable} ${playfair.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
     <body suppressHydrationWarning className="bg-obsidian text-ivory antialiased">
-      <ShopProvider><PwaProvider>{children}<ConnectionNotice /><PrivacyChoices /><PromotionPrompt /></PwaProvider></ShopProvider>
+      <ShopProvider><PwaProvider><LegacyTranslation />{children}<ConnectionNotice /><PrivacyChoices /><CountryPrompt /><PromotionPrompt /></PwaProvider></ShopProvider>
     </body>
   </html>;
 }

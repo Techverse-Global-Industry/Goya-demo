@@ -1,25 +1,27 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useShop } from '@/context/shop-context';
 import { downloadInvoice } from '@/lib/browser';
+import { formatDate } from '@/lib/commerce';
+import { localizedText, translatedCopy } from '@/lib/international';
 import type { CultureStory } from '@/lib/culture-stories';
-import { storefrontCopy } from '@/lib/storefront';
-import type { Category, Localized, Order, ShoeType } from '@/lib/types';
+import type { Category, Localized, Order, PaymentMethod, ShoeType } from '@/lib/types';
 import type { CatalogEdit } from '@/lib/catalog-edits';
 import { GuestOrderLookup, OrdersAndReturns } from './after-sales';
 import { Header } from './header';
 import { Footer } from './editorial';
 import { Overlays } from './overlays';
 import { Toast } from './controls';
-import { Collection, ProductCard } from './collection';
+import { Collection, WishlistContent } from './collection';
 import { CartDrawer } from './cart';
 import { Checkout } from './checkout';
 import { Icon } from './icon';
 import { OrderJourney } from './order-journey';
+import { OrderPromotion } from './order-promotion';
+import { CollaborationsEditorial, CraftsmanshipEditorial, JournalEditorial } from './culture-editorial';
 
 const copy = {
   en: {
@@ -44,35 +46,29 @@ export function CatalogPage({ category = 'all', style = 'all', edit = 'collectio
 }
 
 export function WishlistPage() {
-  const { state, products } = useShop();
-  const c = copy[state.locale];
-  const labels = storefrontCopy[state.locale];
-  const saved = products.filter(product => product.published !== false && state.wishlist.includes(product.id));
-  return <StorefrontShell className="reference-wishlist-page"><header className="reference-public-heading"><h1>{labels.wishlist}{saved.length > 0 && <sup>{saved.length}</sup>}</h1><p>{labels.wishlistIntro}</p>{!state.user && <div className="reference-wishlist-account"><p>{c.wishlistGuest} {c.wishlistAccount}</p><Link href="/login?next=%2Fwishlist">{c.signIn}<Icon name="arrow-right" width={16} /></Link></div>}</header>
-    {!state.ready ? <p className="reference-public-loading" role="status">{c.loading}</p> : saved.length ? <div className="reference-plp-grid reference-wishlist-grid">{saved.map((product, index) => <ProductCard key={product.id} product={product} index={index} />)}</div> : <div className="reference-public-empty"><Icon name="heart" width={36} height={36} /><h2>{labels.emptyWishlist}</h2><Link href="/collections" className="reference-button">{c.explore}<Icon name="arrow-right" width={17} /></Link></div>}
-  </StorefrontShell>;
+  return <StorefrontShell className="reference-wishlist-page"><WishlistContent/></StorefrontShell>;
 }
 
 export function BagPage() {
   const { state, dispatch } = useShop();
-  const c = copy[state.locale];
+  const c = translatedCopy(copy[state.locale],state.language);
   return <StorefrontShell className="reference-bag-page"><header className="reference-public-heading"><h1>{c.bag}</h1></header><div className="reference-bag-content">{!state.ready ? <p className="reference-public-loading" role="status">{c.loading}</p> : <CartDrawer fullPage close={() => dispatch({ type: 'close' })} />}</div></StorefrontShell>;
 }
 
-export function CheckoutPage() {
+export function CheckoutPage({initialPayment}:{initialPayment?:PaymentMethod}={}) {
   const { state, dispatch } = useShop();
-  return <StorefrontShell className="reference-checkout-page"><header className="reference-public-heading"><h1>{copy[state.locale].checkout}</h1></header><div className="reference-public-checkout"><Checkout fullPage close={() => dispatch({ type: 'close' })} /></div></StorefrontShell>;
+  return <StorefrontShell className="reference-checkout-page"><header className="reference-public-heading"><h1>{translatedCopy(copy[state.locale],state.language).checkout}</h1></header><div className="reference-public-checkout"><Checkout fullPage initialPayment={initialPayment} close={() => dispatch({ type: 'close' })} /></div></StorefrontShell>;
 }
 
 function TrackedOrder({ order }: { order: Order }) {
   const { state, t, money, productById } = useShop();
-  const c = copy[state.locale];
-  return <article className="reference-tracked-order"><header><div><p>{c.order}</p><h2>{order.id}</h2><small>{c.placed} <time dateTime={order.createdAt}>{new Intl.DateTimeFormat(state.locale, { dateStyle: 'medium' }).format(new Date(order.createdAt))}</time></small></div><div><strong>{money(order.total, order.currency)}</strong><span>{t(order.status ?? 'confirmed')}</span></div></header><div className="reference-track-journey"><OrderJourney order={order} /></div><p className="reference-track-number"><span>{t('tracking')}</span><strong>{order.tracking ?? t('pickupTracking')}</strong></p><details><summary>{c.details}<Icon name="plus" width={17} /></summary><ul>{order.lines.map(line => <li key={`${line.productId}-${line.size}`}><div><p>{line.product?.name[state.locale] ?? productById.get(line.productId)?.name[state.locale] ?? line.productId}</p><small>{t('size')}: {line.size === 'OS' ? t('oneSize') : line.size} · ×{line.quantity}</small></div><span>{money(line.unitPrice * line.quantity, order.currency)}</span></li>)}</ul><div className="reference-track-totals"><p><span>{t('subtotal')}</span><span>{money(order.subtotal, order.currency)}</span></p><p><span>{t('shipping')}</span><span>{money(order.shipping, order.currency)}</span></p><p><strong>{t('total')}</strong><strong>{money(order.total, order.currency)}</strong></p></div><button type="button" className="reference-text-link" onClick={() => downloadInvoice(order, state.locale)}>{c.invoice}<Icon name="download" width={16} /></button></details></article>;
+  const c = translatedCopy(copy[state.locale],state.language);
+  return <article className="reference-tracked-order"><header><div><p>{c.order}</p><h2>{order.id}</h2><small>{c.placed} <time dateTime={order.createdAt}>{formatDate(order.createdAt,state.language)}</time></small></div><div><strong>{money(order.total, order.currency)}</strong><span>{t(order.status ?? 'confirmed')}</span></div></header><div className="reference-track-journey"><OrderJourney order={order} /></div><p className="reference-track-number"><span>{t('tracking')}</span><strong>{order.tracking ?? t('pickupTracking')}</strong></p><details><summary>{c.details}<Icon name="plus" width={17} /></summary><ul>{order.lines.map(line => <li key={`${line.productId}-${line.size}`}><div><p>{localizedText(line.product?.name??productById.get(line.productId)?.name??{en:line.productId,fr:line.productId},state.language)}</p><small>{t('size')}: {line.size === 'OS' ? t('oneSize') : line.size} · ×{line.quantity}</small></div><span>{money(line.unitPrice * line.quantity, order.currency)}</span></li>)}</ul><OrderPromotion order={order}/><div className="reference-track-totals"><p><span>{t('subtotal')}</span><span>{money(order.subtotal, order.currency)}</span></p><p><span>{t('shipping')}</span><span>{money(order.shipping, order.currency)}</span></p><p><strong>{t('total')}</strong><strong>{money(order.total, order.currency)}</strong></p></div><button type="button" className="reference-text-link" onClick={() => downloadInvoice(order, state.language)}>{c.invoice}<Icon name="download" width={16} /></button></details></article>;
 }
 
 export function TrackOrderPage() {
   const { state, refresh } = useShop();
-  const c = copy[state.locale];
+  const c = translatedCopy(copy[state.locale],state.language);
   const id = useId();
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
@@ -90,8 +86,10 @@ export function TrackOrderPage() {
   </StorefrontShell>;
 }
 
-export function CultureStoryPage({ story }: { story: CultureStory }) {
-  const { state } = useShop();
-  const c = copy[state.locale];
-  return <StorefrontShell className="reference-culture-page"><article><header className="brand-maison-opening"><div className="brand-maison-photo"><Image src={story.image} alt={story.alt[state.locale]} fill preload sizes="(min-width:700px) 50vw,100vw" className="object-cover" /></div><div className="brand-maison-copy"><span className="fashion-kicker">{story.kicker[state.locale]}</span><h1>{story.title[state.locale]}</h1><p>{story.intro[state.locale]}</p><a href="#culture-story" className="fashion-link">{c.readStory}<Icon name="arrow-right" width={17} /></a></div></header><section id="culture-story" className="reference-culture-body"><p className="fashion-kicker">MAISON GOYA</p>{story.paragraphs.map((paragraph, index) => <p key={index}>{paragraph[state.locale]}</p>)}{story.source && <a className="reference-story-source reference-text-link" href={story.source.url} target="_blank" rel="noreferrer">{story.source.label[state.locale]}<Icon name="arrow-up-right" width={16} /></a>}<div><Link href="/journal" className="reference-text-link">{c.moreStories}<Icon name="arrow-right" width={16} /></Link><Link href="/collections" className="reference-text-link">{c.explore}<Icon name="arrow-right" width={16} /></Link></div></section></article></StorefrontShell>;
+export function CraftsmanshipPage(){return <CraftsmanshipEditorial/>;}
+export function CollaborationsPage(){return <CollaborationsEditorial/>;}
+export function CultureStoryPage({story}:{story:CultureStory}) {
+  if(story.slug==='le-geste-et-la-transmission')return <CraftsmanshipEditorial/>;
+  if(story.slug==='une-rencontre-creative')return <CollaborationsEditorial/>;
+  return <JournalEditorial story={story}/>;
 }

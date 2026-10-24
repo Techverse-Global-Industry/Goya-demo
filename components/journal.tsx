@@ -2,42 +2,20 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
 import { useShop } from '@/context/shop-context';
 import { fashionCopy } from '@/lib/fashion-copy';
 import { CULTURE_STORIES } from '@/lib/culture-stories';
+import { localizedText, siteText, translatedCopy } from '@/lib/international';
 import { Icon } from './icon';
+import { useCarousel } from './use-carousel';
 
 export function MaisonStory() {
   const { state } = useShop();
-  const copy = fashionCopy[state.locale];
-  const fr = state.locale === 'fr';
-  const rail = useRef<HTMLDivElement>(null);
-  const [bounds, setBounds] = useState({ start: true, end: false });
-  useEffect(() => {
-    const element = rail.current; if (!element) return;
-    const update = () => setBounds(previous => {
-      const start = element.scrollLeft < 8;
-      const end = element.scrollLeft + element.clientWidth >= element.scrollWidth - 8;
-      return previous.start === start && previous.end === end ? previous : { start, end };
-    });
-    const observer = new ResizeObserver(update); observer.observe(element);
-    element.addEventListener('scroll', update, { passive: true }); update();
-    return () => { observer.disconnect(); element.removeEventListener('scroll', update); };
-  }, []);
-  const move = (direction: number) => {
-    const element = rail.current; if (!element) return;
-    const gap = Number.parseFloat(getComputedStyle(element).columnGap) || 0;
-    element.scrollBy({ left: direction * ((element.firstElementChild?.clientWidth ?? element.clientWidth) + gap), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
-  };
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); move(event.key === 'ArrowRight' ? 1 : -1); }
-    if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); rail.current?.scrollTo({ left: event.key === 'Home' ? 0 : rail.current.scrollWidth, behavior: 'instant' }); }
-  };
-  return <section id="maison" className="reference-home-journal" aria-labelledby="goya-journal-title" aria-roledescription={fr ? 'carrousel' : 'carousel'}>
-    <div className="reference-journal-intro"><p className="reference-journal-kicker">L’HÉRITAGE CROISÉ</p><h2 id="goya-journal-title">{copy.journal}</h2><p>{copy.journalBody}</p><div className="reference-journal-controls"><button type="button" disabled={bounds.start} aria-controls="goya-journal-rail" aria-label={copy.previous} onClick={() => move(-1)}><Icon name="arrow-left" width={21} /></button><button type="button" disabled={bounds.end} aria-controls="goya-journal-rail" aria-label={copy.next} onClick={() => move(1)}><Icon name="arrow-right" width={21} /></button></div></div>
-    <div id="goya-journal-rail" className="reference-journal-rail" ref={rail} tabIndex={0} role="region" aria-label={fr ? 'Les histoires de la Maison, à faire défiler' : 'Scroll through stories from the Maison'} onKeyDown={onKeyDown}>{CULTURE_STORIES.map((story, index) => <article className="reference-journal-story" key={story.slug} aria-label={`${index + 1} / ${CULTURE_STORIES.length}`}><Link href={`/culture/${story.slug}`}><div className={`reference-journal-image reference-journal-image--${story.slug}`}><Image src={story.image} alt={story.alt[state.locale]} fill sizes="(min-width: 1024px) 23vw, (min-width: 700px) 40vw, 83vw" /><div className="reference-journal-caption"><p>{story.kicker[state.locale]}</p><h3><span>{story.title[state.locale]}</span></h3></div></div><p className="sr-only">{story.intro[state.locale]}</p></Link></article>)}</div>
+  const copy = translatedCopy(fashionCopy[state.locale],state.language);
+  const { track, bounds, move, onKeyDown } = useCarousel(CULTURE_STORIES.length,state.language==='ar');
+  return <section id="maison" className="reference-home-journal" aria-labelledby="goya-journal-title" aria-roledescription={siteText(state.language,'carousel','carrousel')}>
+    <div className="reference-journal-intro"><h2 id="goya-journal-title">{copy.journal}</h2><p>{copy.journalBody}</p></div>
+    <div id="goya-journal-rail" className="reference-journal-rail" ref={track} tabIndex={0} role="region" aria-label={siteText(state.language,'Scroll through stories from the Maison','Les histoires de la Maison, à faire défiler')} onKeyDown={onKeyDown}>{CULTURE_STORIES.map((story, index) => <article className="reference-journal-story" key={story.slug} aria-label={`${index + 1} / ${CULTURE_STORIES.length}`}><Link href={`/culture/${story.slug}`}><div className={`reference-journal-image reference-journal-image--${story.slug}`}><Image src={story.image} alt={localizedText(story.alt,state.language)} fill sizes="(min-width: 700px) 23vw, 66vw" /><div className="reference-journal-caption"><h3><span>{localizedText(story.title,state.language)}</span></h3></div></div></Link></article>)}</div>
+    <div className="reference-journal-controls"><button type="button" disabled={bounds.start} aria-controls="goya-journal-rail" aria-label={copy.previous} onClick={() => move(-1)}><Icon name="arrow-left" width={21} /></button><button type="button" disabled={bounds.end} aria-controls="goya-journal-rail" aria-label={copy.next} onClick={() => move(1)}><Icon name="arrow-right" width={21} /></button></div>
   </section>;
 }

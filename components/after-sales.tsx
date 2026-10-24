@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { useShop } from '@/context/shop-context';
+import { localizedText, siteText, translatedCopy } from '@/lib/international';
+
 import { RequestError, shopRequest } from '@/lib/api';
 import type { Order } from '@/lib/types';
 import type { ReturnReason, ReturnRequest, ReturnStatus } from '@/lib/experience-types';
@@ -23,7 +25,7 @@ const copy = {
 const reasons: { value: ReturnReason; key: 'sizeReason' | 'styleReason' | 'damagedReason' | 'wrongReason' | 'otherReason' }[] = [{ value: 'size', key: 'sizeReason' }, { value: 'style', key: 'styleReason' }, { value: 'damaged', key: 'damagedReason' }, { value: 'wrong-item', key: 'wrongReason' }, { value: 'other', key: 'otherReason' }];
 
 export function GuestOrderLookup({ onFound }: { onFound?: (order: Order) => void } = {}) {
-  const { state, refresh } = useShop(); const c = copy[state.locale];
+  const { state, refresh } = useShop(); const c = translatedCopy(copy[state.locale],state.language);
   const [reference, setReference] = useState(''); const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false); const [message, setMessage] = useState(''); const [error, setError] = useState(false);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -36,17 +38,17 @@ export function GuestOrderLookup({ onFound }: { onFound?: (order: Order) => void
 }
 
 function ReturnHistory({ request }: { request: ReturnRequest }) {
-  const { state, money, productById } = useShop(); const c = copy[state.locale];
+  const { state, money, productById } = useShop(); const c = translatedCopy(copy[state.locale],state.language);
   const stages: ReturnStatus[] = ['requested', 'approved', 'received', 'refunded'];
   const download = () => {
-    const text = `${c.instructionsTitle}\n\n${request.id}\n${request.orderId}\n\n${c.instructionsBody}\n\n${request.lines.map(line => `${productById.get(line.productId)?.name[state.locale] ?? line.productId} · ${line.size} × ${line.quantity}`).join('\n')}`;
+    const text = `${c.instructionsTitle}\n\n${request.id}\n${request.orderId}\n\n${c.instructionsBody}\n\n${request.lines.map(line => `${productById.get(line.productId) ? localizedText(productById.get(line.productId)!.name,state.language) : line.productId} · ${line.size} × ${line.quantity}`).join('\n')}`;
     const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' })); const link = document.createElement('a'); link.href = url; link.download = `${request.id.toLowerCase()}-demo.txt`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  return <article className="return-record" data-return-id={request.id}><header><div><p>{request.id}</p><small>{request.orderId}</small></div><strong>{c[request.status]}</strong></header>{request.status !== 'rejected' && <ol className="return-progress" aria-label={c.details}>{stages.map(stage => <li key={stage} className={request.events.some(event => event.status === stage) ? 'is-complete' : ''}><span aria-hidden="true" /><span>{c[stage]}</span></li>)}</ol>}<ul>{request.lines.map(line => <li key={`${line.productId}:${line.size}`}><span>{productById.get(line.productId)?.name[state.locale] ?? line.productId}<small>{c.size} {line.size} · × {line.quantity}</small></span><span>{c[reasons.find(reason => reason.value === line.reason)!.key]}</span></li>)}</ul><p className="return-value"><span>{c.refund}</span><strong>{money(request.refundAmount, request.currency)}</strong></p>{request.note && <p className="return-note">{request.note}</p>}{['approved', 'received', 'refunded'].includes(request.status) && <button className="reference-text-link" type="button" onClick={download}>{c.instructions}<Icon name="download" width={16} /></button>}<small className="after-sales-demo">{c.deliveryExcluded}</small></article>;
+  return <article className="return-record" data-return-id={request.id}><header><div><p>{request.id}</p><small>{request.orderId}</small></div><strong>{c[request.status]}</strong></header>{request.status !== 'rejected' && <ol className="return-progress" aria-label={c.details}>{stages.map(stage => <li key={stage} className={request.events.some(event => event.status === stage) ? 'is-complete' : ''}><span aria-hidden="true" /><span>{c[stage]}</span></li>)}</ol>}<ul>{request.lines.map(line => <li key={`${line.productId}:${line.size}`}><span>{productById.get(line.productId) ? localizedText(productById.get(line.productId)!.name,state.language) : line.productId}<small>{c.size} {line.size} · × {line.quantity}</small></span><span>{c[reasons.find(reason => reason.value === line.reason)!.key]}</span></li>)}</ul><p className="return-value"><span>{c.refund}</span><strong>{money(request.refundAmount, request.currency)}</strong></p>{request.note && <p className="return-note" translate="no">{request.note}</p>}{['approved', 'received', 'refunded'].includes(request.status) && <button className="reference-text-link" type="button" onClick={download}>{c.instructions}<Icon name="download" width={16} /></button>}<small className="after-sales-demo">{c.deliveryExcluded}</small></article>;
 }
 
 function ReturnForm({ order, close }: { order: Order; close: () => void }) {
-  const { state, refresh } = useShop(); const c = copy[state.locale];
+  const { state, refresh } = useShop(); const c = translatedCopy(copy[state.locale],state.language);
   const [selected, setSelected] = useState<Record<string, { quantity: number; reason: ReturnReason | '' }>>({});
   const [comment, setComment] = useState(''); const [busy, setBusy] = useState(false); const [message, setMessage] = useState('');
   const key = useRef(crypto.randomUUID()); const submitting = useRef(false);
@@ -65,7 +67,7 @@ function ReturnForm({ order, close }: { order: Order; close: () => void }) {
 }
 
 export function OrdersAndReturns({ orderId }: { orderId?: string } = {}) {
-  const { state } = useShop(); const c = copy[state.locale];
+  const { state } = useShop(); const c = translatedCopy(copy[state.locale],state.language);
   const [open, setOpen] = useState<string | null>(null);
   const orders = state.orders.filter(order => !orderId || order.id === orderId);
   const requests = (state.returns ?? []).filter(request => !orderId || request.orderId === orderId);
@@ -77,8 +79,8 @@ export function OrdersAndReturns({ orderId }: { orderId?: string } = {}) {
 }
 
 export function CustomerRequests() {
-  const { state } = useShop(); const c = copy[state.locale];
+  const { state } = useShop(); const c = translatedCopy(copy[state.locale],state.language);
   const status = { received: c.requestReceived, reviewing: c.requestReviewing, confirmed: c.requestConfirmed, completed: c.requestCompleted, closed: c.requestClosed };
   const requests = state.requests ?? [];
-  return <section className="customer-request-history"><h2>{c.requests}</h2>{requests.length ? requests.map(request => <article key={request.id}><header><span>{request.id}</span><strong>{status[request.status]}</strong></header><p>{serviceRequestName(request.kind, state.locale)}</p>{request.note && <p><span>{c.note}: </span>{request.note}</p>}<time dateTime={request.createdAt}>{new Intl.DateTimeFormat(state.locale, { dateStyle: 'medium' }).format(new Date(request.createdAt))}</time></article>) : <p>{c.requestEmpty}</p>}<Link href="/collections" className="reference-text-link">{c.backShop}<Icon name="arrow-right" width={16} /></Link></section>;
+  return <section className="customer-request-history"><h2>{c.requests}</h2>{requests.length ? requests.map(request => <article key={request.id}><header><span>{request.id}</span><strong>{status[request.status]}</strong></header><p>{siteText(state.language,serviceRequestName(request.kind,'en'),serviceRequestName(request.kind,'fr'))}</p>{request.note && <p><span>{c.note}: </span><span translate="no">{request.note}</span></p>}<time dateTime={request.createdAt}>{new Intl.DateTimeFormat(state.locale, { dateStyle: 'medium' }).format(new Date(request.createdAt))}</time></article>) : <p>{c.requestEmpty}</p>}<Link href="/collections" className="reference-text-link">{c.backShop}<Icon name="arrow-right" width={16} /></Link></section>;
 }

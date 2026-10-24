@@ -1,4 +1,5 @@
-import type { Locale } from './types';
+import type { Locale, SiteLocale } from './types';
+import { siteText } from './international';
 import { appEnglish, appFrench } from './copy';
 import { accountEnglish, accountFrench } from './account-copy';
 
@@ -126,7 +127,7 @@ const baseEnglish = {
   infoCareTitle: 'Let time add character.',
   infoCareBody: 'Use a soft brush or cloth for routine care. Let shoes rest between wears and use suitable shoe trees. Keep leather and woven textiles away from prolonged moisture and direct heat. For patina, heel work or delicate textile restoration, request an assessment from the atelier before applying a treatment.',
   infoPrivacyTitle: 'A transparent demonstration.',
-  infoPrivacyBody: 'This demonstration stores only your language, currency and product selections in browser local storage. Profile details, shipping information, appointments and order history stay in tab memory and disappear on refresh. Passwords are never sent or stored. There are no analytics, real OAuth connections, payment requests or transactional emails. Use fictitious details. Real commerce requires secure server-side integrations and approved commercial and privacy policies.',
+  infoPrivacyBody: 'This demonstration saves customer accounts, hashed passwords, addresses, orders, returns and service requests in its backend. Access is limited to the relevant authenticated or verified guest session and the demo administrator. Browser storage remembers your bag, wishlist, country, language and consent choices. Payments and fulfilment are simulated; no real money is charged. No external marketing or recovery email is sent. Use fictitious personal details and a unique demo password.',
   forgetPreferences: 'Clear saved preferences & bag', preferencesCleared: 'Saved preferences and your bag have been cleared.',
   madeBetween: 'Cotonou · Paris · Dakar',
   errorTitle: 'A brief interruption.', errorText: 'The Maison could not load this view. Please try again.', retry: 'Try again',
@@ -262,7 +263,7 @@ const baseFrench: Record<keyof typeof baseEnglish, string> = {
   infoCareTitle: 'Laissez le temps révéler le caractère.',
   infoCareBody: 'Utilisez une brosse ou un chiffon doux pour l’entretien courant. Alternez les ports et utilisez des embauchoirs adaptés. Préservez le cuir et les textiles tissés de l’humidité prolongée et des sources de chaleur directe. Pour la patine, les talons ou les textiles délicats, demandez un diagnostic à l’atelier avant tout traitement.',
   infoPrivacyTitle: 'Une démonstration transparente.',
-  infoPrivacyBody: 'Cette démonstration conserve uniquement votre langue, votre devise et vos sélections dans le stockage local du navigateur. Le profil, les coordonnées, les rendez-vous et les commandes restent en mémoire dans l’onglet et disparaissent au rechargement. Les mots de passe ne sont ni envoyés ni conservés. Aucun suivi analytique, OAuth réel, paiement ni e-mail transactionnel n’est actif. Utilisez des coordonnées fictives. Le commerce réel exige des intégrations serveur sécurisées et des politiques commerciales et de confidentialité approuvées.',
+  infoPrivacyBody: 'Cette démonstration enregistre les comptes clients, mots de passe hachés, adresses, commandes, retours et demandes de service dans son backend. L’accès est limité à la session authentifiée ou invitée vérifiée concernée et à l’administrateur. Le navigateur conserve le panier, les envies, le pays, la langue et les choix de confidentialité. Les paiements et livraisons sont simulés : aucun montant réel n’est débité. Aucun e-mail commercial ou de récupération externe n’est envoyé. Utilisez des coordonnées fictives et un mot de passe de démonstration unique.',
   forgetPreferences: 'Effacer les préférences et le panier', preferencesCleared: 'Les préférences enregistrées et votre panier ont été effacés.',
   madeBetween: 'Cotonou · Paris · Dakar',
   errorTitle: 'Une brève interruption.', errorText: 'La Maison n’a pas pu charger cette vue. Veuillez réessayer.', retry: 'Réessayer',
@@ -274,8 +275,8 @@ const fr = { ...baseFrench, ...appFrench, ...accountFrench };
 export const dictionary: Record<Locale, Record<TranslationKey, string>> = { en, fr };
 export type Translate = (key: TranslationKey, values?: Record<string, string | number>) => string;
 
-export function translate(locale: Locale, key: TranslationKey, values: Record<string, string | number> = {}): string {
-  return dictionary[locale][key].replace(/\{(\w+)\}/g, (match, token: string) =>
+export function translate(locale: SiteLocale, key: TranslationKey, values: Record<string, string | number> = {}): string {
+  return siteText(locale, dictionary.en[key], dictionary.fr[key]).replace(/\{(\w+)\}/g, (match, token: string) =>
     Object.prototype.hasOwnProperty.call(values, token) ? String(values[token]) : match,
   );
 }

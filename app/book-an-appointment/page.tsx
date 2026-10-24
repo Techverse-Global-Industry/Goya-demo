@@ -6,9 +6,9 @@ import { Overlays } from '@/components/overlays';
 import { Toast } from '@/components/controls';
 
 export const metadata: Metadata = {title:'Appointments — Maison Goya'};
-export default async function Page({searchParams}:{searchParams:Promise<{mode?:string;location?:string}>}) {
-  const {mode,location}=await searchParams;
+export default async function Page({searchParams}:{searchParams:Promise<{mode?:string;location?:string;service?:string}>}) {
+  const {mode,location,service}=await searchParams;
   const initialMode=mode==='online'||mode==='boutique'?mode:undefined;
   const initialLocation=location==='paris'||location==='dakar'?location:'cotonou';
-  return <><Header /><AppointmentsPage initialMode={initialMode} initialLocation={initialLocation} /><Footer /><Overlays /><Toast /></>;
+  return <><Header /><AppointmentsPage initialMode={initialMode} initialLocation={initialLocation} initialService={service && ['bespoke','made-to-order','on-time','caring'].includes(service)?service:undefined} /><Footer /><Overlays /><Toast /></>;
 }

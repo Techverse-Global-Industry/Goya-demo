@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useShop } from '@/context/shop-context';
 import type { Country, PaymentMethod } from '@/lib/types';
+import { siteText } from '@/lib/international';
 import { Icon } from './icon';
 
 export function DemoPayment({ method, country, total, busy, onApprove, onBack }: { method: PaymentMethod; country: Country; total: number; busy: boolean; onApprove: () => void; onBack: () => void }) {
@@ -26,7 +27,7 @@ export function DemoPayment({ method, country, total, busy, onApprove, onBack }:
     <h3>{provider ? t(method) : t(method === 'mobile' ? 'momoTitle' : method === 'apple' ? 'walletTitle' : 'cardTitle')}</h3>
     <strong className="payment-amount">{money(total)}</strong>
     <p>{t(method === 'mobile' ? 'momoIntro' : 'cardDemoText')}</p>
-    {provider && <div className="provider-demo"><p>{fr ? 'Environnement de démonstration Goya. Aucun compte de paiement externe ni crédit réel n’est ouvert.' : 'Goya demonstration environment. No external payment account or real credit is opened.'}</p>{instalments ? <ol>{scheduled.map((amount, index) => <li key={index}><span>{index === 0 ? fr ? 'Aujourd’hui' : 'Today' : fr ? `Dans ${index * 30} jours` : `In ${index * 30} days`}</span><strong>{money(amount)}</strong></li>)}</ol> : <div><Icon name="shield" width={20} /><span>{fr ? 'Portefeuille PayPal de démonstration' : 'Demo PayPal wallet'}</span></div>}</div>}
+    {provider && <div className="provider-demo"><p>{fr ? 'Environnement de démonstration Goya. Aucun compte de paiement externe ni crédit réel n’est ouvert.' : 'Goya demonstration environment. No external payment account or real credit is opened.'}</p>{instalments ? <ol>{scheduled.map((amount, index) => <li key={index}><span>{index === 0 ? siteText(state.language,'Today','Aujourd’hui') : siteText(state.language,'In {value1} days','Dans {value1} jours').replace('{value1}',String(index * 30))}</span><strong>{money(amount)}</strong></li>)}</ol> : <div><Icon name="shield" width={20} /><span>{fr ? 'Portefeuille PayPal de démonstration' : 'Demo PayPal wallet'}</span></div>}</div>}
     {!requested && method === 'mobile' ? <div className="momo-fields">
       <label className="field"><span>{t('operator')}</span><select value={operator} onChange={(event) => setOperator(event.target.value)}>{operators.map((operator) => <option key={operator}>{operator}</option>)}</select></label>
       <label className="field"><span>{t('demoPhone')}</span><input type="tel" aria-label={t('demoPhone')} inputMode="tel" placeholder="01 00 00 00 00" value={phone} onChange={(event) => setPhone(event.target.value)} aria-describedby="momo-hint" maxLength={20} /><small id="momo-hint">{t('demoPhoneHint')}</small></label>

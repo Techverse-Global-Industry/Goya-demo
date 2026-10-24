@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRef } from 'react';
 import { useShop } from '@/context/shop-context';
 import { fashionCopy } from '@/lib/fashion-copy';
+import { localizedText, translatedCopy } from '@/lib/international';
 import { gsap, useGSAP } from '@/lib/gsap';
 import type { Category } from '@/lib/types';
 import { FeaturedProducts } from './featured-products';
@@ -18,7 +19,7 @@ const HOME_COLLECTIONS = [
 
 export function BrandCollection() {
   const { state, dispatch } = useShop();
-  const copy = fashionCopy[state.locale];
+  const copy = translatedCopy(fashionCopy[state.locale], state.language);
   const root = useRef<HTMLElement>(null);
   const choose = (filter: Category) => { dispatch({ type: 'resetFilters' }); dispatch({ type: 'filter', filter }); dispatch({ type: 'shoeType', shoeType: 'all' }); };
   useGSAP(() => {
@@ -36,8 +37,8 @@ export function BrandCollection() {
   }, { scope: root });
   return <section id="collection" className="fashion-collection reference-home-collection" ref={root} tabIndex={-1} aria-label={copy.new}>
     <div className="fashion-category-grid brand-category-grid">{HOME_COLLECTIONS.map(category => <article key={category.id} className={`fashion-category fashion-category--${category.id}`}><Link href={category.href} onClick={() => choose(category.category)}>
-      <Image src={category.image} alt={category.alt[state.locale]} fill sizes="(min-width: 700px) 25vw, 100vw" style={{ objectPosition: category.position }} />
-      <h2><span>{category.title[state.locale]}</span></h2>
+      <Image src={category.image} alt={localizedText(category.alt,state.language)} fill sizes="(min-width: 700px) 25vw, 100vw" style={{ objectPosition: category.position }} />
+      <h2><span>{localizedText(category.title,state.language)}</span></h2>
     </Link></article>)}</div>
     <FeaturedProducts />
     <div className="fashion-pair-grid">

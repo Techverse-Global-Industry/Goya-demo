@@ -159,7 +159,7 @@ export const faqCopy = {
         ],
         [
           "Which languages are available?",
-          "The Goya experience is available in French and English. Both languages are understood by product search."
+          "Choose one of the seven interface languages in the language selector. Product search understands English and French."
         ]
       ]
     },

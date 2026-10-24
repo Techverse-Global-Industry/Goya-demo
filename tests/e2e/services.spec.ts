@@ -40,10 +40,18 @@ async function sendSelection(page: Page, kind: ServiceRequest['kind'], email: st
 
 test.beforeEach(async ({ page }) => { await seedPrivacy(page); });
 
+async function openPersonalBrief(page: Page, service: 'made-to-order' | 'on-time' | 'bespoke') {
+  await page.goto(`/personalization/${service}`);
+  const conversion = service === 'on-time' ? '.exact-service-conversion-link' : '.experience-service-hero';
+  await page.locator(`${conversion} a[href^="/book-an-appointment"]`).click();
+  await page.locator('.consultation-landing a[href*="mode=online"]').click();
+  await page.getByRole('button', { name: 'Prepare a personal brief', exact: true }).click();
+}
+
 test('made-to-order, initials and bespoke selections remain distinct in the guest request history', async ({ page }) => {
   test.setTimeout(150000);
   const email = `creations-${crypto.randomUUID()}@example.test`;
-  await page.goto('/personalization/made-to-order');
+  await openPersonalBrief(page, 'made-to-order');
   const controls = page.locator('.experience-design-controls');
   await controls.getByRole('combobox', { name: 'Choose a creation', exact: true }).selectOption('mosaic-tassel-red');
   await controls.getByRole('combobox', { name: 'Usual EU size', exact: true }).selectOption('43');
@@ -57,7 +65,7 @@ test('made-to-order, initials and bespoke selections remain distinct in the gues
   expect(madeToOrder.productId).toBe('mosaic-tassel-red');
   expect(madeToOrder.details).toMatchObject({ Material: 'Suede', Colour: 'Midnight blue', Sole: 'Rubber sole', Finish: 'Patina study', 'Usual EU size': '43' });
 
-  await page.goto('/personalization/on-time');
+  await openPersonalBrief(page, 'on-time');
   await controls.getByRole('combobox', { name: 'Choose a creation', exact: true }).selectOption('mosaic-clutch');
   await controls.getByRole('button', { name: 'Continue', exact: true }).click();
   await controls.getByRole('textbox', { name: 'Your initials', exact: true }).fill('jd');
@@ -70,7 +78,7 @@ test('made-to-order, initials and bespoke selections remain distinct in the gues
   expect(initials.productId).toBe('mosaic-clutch');
   expect(initials.details).toMatchObject({ 'Your initials': 'JD', 'Stamp finish': 'Silver', 'Tassel colour': 'Chestnut' });
 
-  await page.goto('/personalization/bespoke');
+  await openPersonalBrief(page, 'bespoke');
   await controls.getByRole('combobox', { name: 'Choose a creation', exact: true }).selectOption('cobalt-lace-up');
   await controls.getByRole('combobox', { name: 'Usual EU size', exact: true }).selectOption('41');
   await controls.getByRole('button', { name: 'Continue', exact: true }).click();
@@ -95,25 +103,33 @@ test('French online consultation and consented newsletter preferences save to th
   const email = `consultation-${crypto.randomUUID()}@example.test`;
   await page.goto('/book-an-appointment?mode=online&location=paris');
   await changeLanguage(page, 'Français');
-  const form = page.locator('.consultation-form');
-  await expect(form.getByRole('button', { name: /^Conseil en ligne/ })).toHaveAttribute('aria-pressed', 'true');
-  await form.getByRole('combobox', { name: 'Choisir une Maison', exact: true }).selectOption('paris');
-  await form.getByRole('combobox', { name: 'De quoi souhaitez-vous parler ?', exact: true }).selectOption('personalization');
-  const dateInput = form.getByLabel('Date souhaitée *', { exact: true });
-  const minimum = await dateInput.getAttribute('min');
-  expect(minimum).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-  const preferred = new Date(`${minimum}T12:00:00Z`);
-  preferred.setUTCDate(preferred.getUTCDate() + 2);
-  while (preferred.getUTCDay() === 0) preferred.setUTCDate(preferred.getUTCDate() + 1);
-  const date = preferred.toISOString().slice(0, 10);
-  await dateInput.fill(date);
-  await form.getByRole('combobox', { name: 'Heure souhaitée', exact: true }).selectOption('14:00');
-  await form.getByRole('button', { name: 'Continuer', exact: true }).click();
-  const consultation = await sendSelection(page, 'consultation', email, 'Échanger sur les détails de personnalisation de cette démonstration.', 'fr');
+  const notes = 'Échanger sur les détails de personnalisation de cette démonstration.';
+  const service = page.locator('.exact-booking-service');
+  await service.getByRole('combobox', { name: 'Service souhaité *', exact: true }).selectOption('made-to-order');
+  await service.getByRole('textbox', { name: 'Précisez votre demande (facultatif)', exact: false }).fill(notes);
+  await service.getByRole('button', { name: 'Continuer', exact: true }).click();
+  await page.locator('.exact-calendar-days button:not([disabled])').first().click();
+  const slot = page.locator('.exact-booking-slot:not([disabled])').first();
+  const time = (await slot.textContent())!.trim();
+  await slot.click();
+  await page.locator('.exact-booking-date').getByRole('button', { name: 'Continuer', exact: true }).click();
+  const contact = page.locator('.exact-booking-contact');
+  await contact.getByRole('combobox', { name: 'Civilité *', exact: true }).selectOption('mr');
+  await contact.getByRole('textbox', { name: 'Prénom *', exact: true }).fill('Service');
+  await contact.getByRole('textbox', { name: 'Nom *', exact: true }).fill('Journey Demo');
+  await contact.getByRole('textbox', { name: 'E-mail *', exact: true }).fill(email);
+  await contact.getByRole('textbox', { name: 'Numéro de téléphone mobile *', exact: true }).fill('+229 01 00 00 00 00');
+  await contact.getByRole('combobox', { name: 'Pays *', exact: true }).selectOption('FR');
+  await contact.getByRole('checkbox').check();
+  const consultation = await saveThroughUI(page, 'consultation', () => contact.getByRole('button', { name: 'Confirmer ma demande de démonstration', exact: true }).click());
+  await expect(page.locator('.experience-receipt')).toContainText(consultation.id);
   expect(consultation.locale).toBe('fr');
-  expect(consultation.details).toMatchObject({ 'Prendre rendez-vous': 'Conseil en ligne', 'Choisir une Maison': 'Consultation vidéo · Paris', 'Date souhaitée': date, 'Heure souhaitée': '14:00 · Europe/Paris', 'De quoi souhaitez-vous parler ?': 'Personnalisation' });
+  expect(consultation.details).toMatchObject({ mode: 'online', location: 'paris', topic: 'made-to-order', additionalInfo: notes, time, country: 'FR' });
+  expect(consultation.details.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  const snapshot = await (await page.request.get('/api/shop')).json();
+  expect(snapshot.bookedSlots).toContainEqual({ date: consultation.details.date, time, location: 'paris' });
 
-  const newsletter = page.locator('.reference-footer-newsletter .reference-newsletter');
+  const newsletter = page.locator('.exact-footer-newsletter .reference-newsletter');
   await newsletter.getByRole('textbox', { name: 'E-mail *', exact: true }).fill(email);
   await newsletter.getByRole('checkbox', { name: 'Créations femme', exact: true }).uncheck();
   const consent = newsletter.getByRole('checkbox', { name: 'J’accepte d’enregistrer ma préférence de newsletter de démonstration auprès de la Maison.', exact: true });

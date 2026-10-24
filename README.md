@@ -1,8 +1,8 @@
 # Maison Goya
 
-A bilingual luxury boutique with an installable PWA, a working demonstration backend, and an owner workspace. Next.js 16, React 19, TypeScript, Tailwind 4 and GSAP.
+A luxury boutique with seven interface languages, an installable PWA, a working demonstration backend, and an owner workspace. Next.js 16, React 19, TypeScript, Tailwind 4 and GSAP.
 
-**Accounts, uploads, inventory, orders and account notifications are persistent. Payments, shipping, carrier tracking and atelier appointments are demonstrations. No money moves.**
+**Accounts, uploads, inventory, orders, private customer requests and account notifications are persistent. Payments, shipping, carrier tracking and atelier appointments are demonstrations. No money moves and no service email is sent.**
 
 ## Start
 
@@ -30,30 +30,30 @@ Use fictitious personal details and a unique demo password. Passwords are salted
 
 The public website combines brand storytelling with a working demonstration shop. Visitors can browse products, search in English or French, check per-size availability, save a wishlist and complete a simulated checkout without signing in. `/login` adds a protected customer workspace at `/app`: overview, account orders with delivery progress and invoice downloads, atelier appointments, updates, and saved personal details. It is separate from the protected owner workspace. Each customer sees only their own account data.
 
-Public pages include `/collections`, `/men`, `/women`, `/accessories`, `/new-arrivals`, `/gifts`, `/product/[id]`, `/wishlist`, `/bag`, `/checkout`, `/track-order`, `/maison`, `/shoe-care` and `/culture/[slug]`. The initial catalog contains eight actual Goya demo listings based on the supplied product photographs. Men’s and women’s footwear is grouped by style; filters and counts use the actual published catalog.
+Public pages include `/collections`, `/men`, `/women`, `/accessories`, `/new-arrivals`, `/gifts`, `/product/[id]`, `/wishlist`, `/bag`, `/checkout`, `/track-order`, `/maison`, `/shoe-care` and `/culture/[slug]`. The seeded catalog contains 25 Goya listings using actual supplied or historical Goya photographs. Prices, product names and stock remain illustrative. Men’s and women’s footwear is grouped by style; filters and counts use the actual published catalog.
 
-The presentation and interactions follow the client’s [Santoni reference](https://www.santonishoes.com/int-en/), with original Goya content, identity and supplied or Goya-based editorial assets. No Santoni logo, photography, film or source code is included.
+The presentation follows measured desktop/mobile shell, catalogue, service and editorial structures from the client’s [Santoni reference](https://www.santonishoes.com/int-en/), using Goya content, identity and photographs. This is not a claim of complete visual or functional equivalence. The shared Goya vector wordmark and PWA remain intact; the reference’s Avus Pro interface font awaits an appropriate licence. See [font licensing](docs/FONT-LICENSING.md).
 
-- Full-screen campaign films, four footwear categories, paired fashion stories, a browsable brand journal and a responsive customer shop.
-- English/French interface and catalog content; search across both languages.
-- EUR/USD/XOF demonstration price books.
-- Product galleries, per-size availability, bag quantities and saved preferences.
+- Campaign films, four men/women footwear-and-accessory destinations, product carousels, editorial pages and a responsive customer shop.
+- English, French, Italian, German, Spanish, Japanese and Arabic interface choices; 100 countries plus International; 12 illustrative demo currencies.
+- English/French original catalogue and editorial content, with an English/French admin editor. New admin uploads and text are not automatically translated into the other five languages.
+- Product galleries and zoom, related colour SKUs, per-size availability, a size drawer, an illustrative conversion chart and fit questionnaire, filters, sorting, bag quantities and saved preferences.
 - Public shopping, guest demo checkout, and optional account sign-in for saved details and account history.
 - Mobile Money operator/number entry followed by explicit demo approval or decline. No PIN, SMS or real wallet authorization.
-- Card and Apple Pay simulations without collecting card details.
+- Card and wallet demonstration choices without collecting card details. The bag's PayPal/Apple Pay actions preselect simulated checkout; no provider is connected. Demo code `GOYA10` is validated by the backend, and its product discount carries into checkout, saved orders and invoices.
 - Server-calculated totals, atomic stock allocation and duplicate-order protection.
 - Saved account order history, cookie-owned guest tracking at `/track-order`, immutable order details and downloadable text demo invoices.
-- Persistent demonstration atelier appointments.
+- Persistent demonstration atelier appointments, private contact/newsletter/availability requests and owner responses, plus return/refund processing.
 - Account updates and optional Web Push for orders and new arrivals.
 - Home-screen installation, app icons and an offline reconnection screen. The installed app starts at the public collection; ordering and current stock require connectivity.
 
-Guest orders are restricted to the browser’s valid guest session cookie; an order number alone grants no access. They are not automatically transferred to an account. Clearing cookies, session expiry or signing out can remove access to guest tracking. Guest wishlists stay on the device; signed-in wishlists sync to the account.
+Guest orders are restricted to their owning session or an explicit lookup using the exact order reference and checkout email; an order number alone grants no access. They are not automatically transferred to an account. Guest wishlists stay on the device; signed-in wishlists sync to the account.
 
-Footer newsletter and availability requests are demonstration preferences saved locally; account communication preferences may also be saved to the account. Contact and password-recovery forms are previews: they send no real email, and the recovery preview does not change an account password. Registration has no email verification. Use fictitious details throughout.
+Contact, newsletter and availability forms save private, persistent demonstration records in the backend. Owners can review service requests and respond through the admin workspace; no real email is sent. Demo password recovery can change a password only with previously issued browser proof and a single-use, expiring reset token. It is not a live email-recovery service. Registration has no email verification. Use fictitious details throughout.
 
 ## Owner workspace
 
-`/admin` provides a compact overview, bilingual product editor, image uploads, per-size quantities, publish/draft controls, order processing and new-arrival announcements.
+`/admin` provides a compact overview, bilingual product editor, image uploads, per-size quantities, publish/draft controls, order processing, private customer-service requests, return/refund stages and new-arrival announcements.
 
 Orders move through Confirmed → Preparing → On its way → Delivered. Cancellation before shipment returns stock once. The original name, image, price and size are saved on each order even if the catalog changes later.
 
@@ -76,8 +76,8 @@ See [deployment instructions](docs/DEMO-HOSTING.md) for required environment var
 | Storefront components and dialogs | `components/` |
 | Client state, persistence and refresh | `context/shop-context.tsx`, `lib/store.ts` |
 | Domain contracts and commerce helpers | `lib/types.ts`, `lib/commerce.ts` |
-| Initial demonstration catalog | `lib/catalog.ts` |
-| Bilingual copy and original journal | `lib/i18n.ts`, `lib/storefront.ts`, `lib/service-copy.ts`, `lib/culture-stories.ts` |
+| Initial demonstration catalog and historical Goya listings | `lib/catalog.ts`, `lib/archive-catalog.ts` |
+| Interface translations and original bilingual journal | `lib/i18n.ts`, `lib/international.ts`, `lib/translations/`, `lib/storefront.ts`, `lib/service-copy.ts`, `lib/culture-stories.ts` |
 | Auth, stock, orders, persistence and Web Push | `lib/server/` |
 | Public catalog, owner-scoped commerce API and protected uploads | `app/api/` |
 | Service worker and offline screen | `public/sw.js`, `public/offline.html` |
@@ -99,9 +99,9 @@ npm run test:e2e
 
 The Playwright suite uses the production build on port 3100. To use an installed Edge browser, set `PLAYWRIGHT_CHANNEL=msedge` before running the browser suite. Browser test data is separate from the local demonstration shop.
 
-Brand/product photos are present in all eleven initial slots. Slots 3, 4 and 11 use their supplied WebP files directly. The asset check verifies file signatures, not ownership, product accuracy or visual suitability.
+Supplied brand photographs and the historical Goya archive are retained. Product galleries use only available source photographs; they do not fabricate additional angles. The asset check verifies file signatures, not ownership, product accuracy or visual suitability. Source and demo boundaries are recorded in [experience notes](docs/DEMO-EXPERIENCE.md).
 
-The visual direction, campaign asset provenance and font licenses are documented in [design notes](docs/DESIGN-DIRECTION.md).
+The visual direction and campaign asset provenance are documented in [design notes](docs/DESIGN-DIRECTION.md); current interface-font licensing is documented in [font licensing](docs/FONT-LICENSING.md).
 
 Brand research and its uncertainties are recorded in [research notes](docs/BRAND-RESEARCH.md). Prices, stock, specific initial product descriptions, policies and appointment schedules remain illustrative. No brand authorization or live commercial capability is implied.
 

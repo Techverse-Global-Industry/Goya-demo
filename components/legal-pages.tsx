@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useShop } from '@/context/shop-context';
+import { localizedText, siteText } from '@/lib/international';
 import { LEGAL_DOCUMENTS } from '@/lib/legal-copy';
 import { StorefrontShell } from './storefront-pages';
 import { ExperienceSubmission } from './consultation';
@@ -12,7 +13,7 @@ import { Icon } from './icon';
 
 export function LegalDocumentPage({ topic }: { topic:string }) {
   const {state}=useShop();const document=LEGAL_DOCUMENTS.find(item=>item.slug===topic)!;
-  return <StorefrontShell className="experience-legal-page"><header className="reference-public-heading"><h1>{document.title[state.locale]}</h1><p>{document.intro[state.locale]}</p></header><div className="experience-legal-layout"><nav aria-label={state.locale==='fr'?'Informations':'Information'}>{LEGAL_DOCUMENTS.map(item=><Link key={item.slug} href={`/legal/${item.slug}`} aria-current={topic===item.slug?'page':undefined}>{item.title[state.locale]}<Icon name="chevron-right" width={13} /></Link>)}</nav><article>{document.sections.map((section,index)=><section key={index}><h2>{section.title[state.locale]}</h2>{section.body.map((body,paragraph)=><p key={paragraph}>{body[state.locale]}</p>)}{section.href && section.action && <Link href={section.href} className="reference-text-link">{section.action[state.locale]}<Icon name="arrow-right" width={15} /></Link>}</section>)}{topic==='cookies' && <button type="button" className="reference-button" onClick={()=>window.dispatchEvent(new Event('goya:privacy'))}>{state.locale==='fr'?'Gérer mes préférences':'Manage my preferences'}<Icon name="arrow-right" width={16} /></button>}</article></div></StorefrontShell>;
+  return <StorefrontShell className="experience-legal-page"><header className="reference-public-heading"><h1>{localizedText(document.title,state.language)}</h1><p>{localizedText(document.intro,state.language)}</p></header><div className="experience-legal-layout"><article>{document.sections.map((section,index)=><section key={index}><h2>{localizedText(section.title,state.language)}</h2>{section.body.map((body,paragraph)=><p key={paragraph}>{localizedText(body,state.language)}</p>)}{section.href && section.action && <Link href={section.href} className="reference-text-link">{localizedText(section.action,state.language)}<Icon name="arrow-right" width={15} /></Link>}</section>)}{topic==='cookies' && <button type="button" className="reference-button" onClick={()=>window.dispatchEvent(new Event('goya:privacy'))}>{siteText(state.language,'Manage my preferences','Gérer mes préférences')}<Icon name="arrow-right" width={16} /></button>}</article></div></StorefrontShell>;
 }
 
 export function CareersPage() {

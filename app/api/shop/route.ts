@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { after } from 'next/server';
 import { readDatabase, mutateDatabase } from '@/lib/server/database';
 import { apiFailure, ApiError, assertOrigin, beginDemoRecovery, bodyJson, checkPassword, COOKIE, GUEST_COOKIE, createSession, finishDemoRecovery, guestCookieToken, guestIdentityForToken, issueRecoveryCode, prepareGuestCheckout, provisionAdministrator, reservedAdministratorEmail, setGuestCookie, hashPassword, publicUser, rateLimit, requireUser, sessionUser, tokenHash, updateCredentials } from '@/lib/server/security';
-import { changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct } from '@/lib/server/shop';
+import { changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, quoteShopCart, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct } from '@/lib/server/shop';
 import { validEmail } from '@/lib/commerce';
 import { deliverPush } from '@/lib/server/push';
 import { localDemo } from '@/lib/server/config';
@@ -28,6 +28,10 @@ export async function POST(request: Request) {
     assertOrigin(request);
     const body = await bodyJson(request);
     const action = body.action;
+    if (action === 'cartQuote') {
+      const { data } = await readDatabase();
+      return Response.json({ quote: quoteShopCart(data, body) }, { headers });
+    }
     if (action === 'login' || action === 'register') {
       const ip = request.headers.get('x-nf-client-connection-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'local';
       await rateLimit(`auth:${ip}`, 60);
@@ -143,7 +147,14 @@ export async function POST(request: Request) {
       const result = await mutateDatabase(db => {
         const guest = !user || action === 'lookupOrder' ? prepareGuestCheckout(db, token) : null;
         if (action === 'lookupOrder') return { order: lookupCustomerOrder(db, body.reference, body.email, guest!.identity), guestToken: guest!.token };
-        const input = action === 'availabilityRequest' ? { kind: 'availability', name: user?.name ?? '', email: body.email, locale: body.locale, productId: body.productId, details: { size: typeof body.size === 'string' ? body.size : '' } } : body.request;
+        let input = body.request;
+        if (action === 'availabilityRequest') {
+          for (const field of ['firstName', 'lastName'] as const) if (body[field] !== undefined && (typeof body[field] !== 'string' || body[field].length > 50)) throw new ApiError('Please enter a shorter name.');
+          if (body.newsletter !== undefined && typeof body.newsletter !== 'boolean') throw new ApiError('Please check your communication preference.');
+          const firstName = typeof body.firstName === 'string' ? body.firstName.trim() : '';
+          const lastName = typeof body.lastName === 'string' ? body.lastName.trim() : '';
+          input = { kind: 'availability', name: typeof body.name === 'string' ? body.name : `${firstName} ${lastName}`.trim() || user?.name || '', email: body.email, locale: body.locale, productId: body.productId, details: { size: typeof body.size === 'string' ? body.size : '', ...(firstName ? { firstName } : {}), ...(lastName ? { lastName } : {}), ...(typeof body.newsletter === 'boolean' ? { newsletter: String(body.newsletter) } : {}) } };
+        }
         return { request: createServiceRequest(db, user, guest?.identity ?? null, input), guestToken: guest?.token };
       });
       if (result.guestToken) await setGuestCookie(result.guestToken);

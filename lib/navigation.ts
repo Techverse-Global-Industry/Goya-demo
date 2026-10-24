@@ -1,25 +1,21 @@
-import { ACCESSORY_LABELS, MEN_SHOE_STYLES, SHOE_STYLE_LABELS, WOMEN_SHOE_STYLES } from './catalog-edits';
-import { CURATED_EDITS } from './curated-edits';
+import { ACCESSORY_LABELS, SHOE_STYLE_LABELS } from './catalog-edits';
 import { storefrontCopy } from './storefront';
-import type { Locale } from './types';
+import type { Locale, ShoeType } from './types';
 export type MainMenu = 'new'|'men'|'women'|'accessories'|'gifts'|'personalization'|'culture';
 export type NavigationGroup = { title:string; href:string; items:{label:string;href:string}[] };
 export function navigationGroups(menu:MainMenu,locale:Locale):NavigationGroup[] {
- const c=storefrontCopy[locale];const fr=locale==='fr';
- const accessories=['bags-backpacks','small-leather-goods','belts','gloves-scarves','hats','socks','tassels','lifestyle'] as const;
- const shoeCare=['shoe-care','trees-horns','travel-kits','laces'] as const;
- const edits=CURATED_EDITS.map(edit=>({label:edit.title[locale],href:`/edits/${edit.slug}`}));
- if(menu==='men'||menu==='women') return [
-  {title:c.shoes,href:`/${menu}`,items:(menu==='men'?MEN_SHOE_STYLES:WOMEN_SHOE_STYLES).map(style=>({label:SHOE_STYLE_LABELS[style][locale],href:`/${menu}/${style}`}))},
-  {title:c.accessories,href:`/accessories?audience=${menu}`,items:accessories.filter(kind=>menu==='men'||kind!=='belts').map(kind=>({label:ACCESSORY_LABELS[kind][locale],href:`/accessories/${kind}?audience=${menu}`}))},
-  {title:fr?'À découvrir':'Highlights',href:'/edits/signature',items:edits},
- ];
- if(menu==='accessories')return [
-  ...(['men','women'] as const).map(gender=>({title:gender==='men'?c.man:c.woman,href:`/accessories?audience=${gender}`,items:accessories.filter(kind=>gender==='men'||kind!=='belts').map(kind=>({label:ACCESSORY_LABELS[kind][locale],href:`/accessories/${kind}?audience=${gender}`}))})),
-  {title:c.care,href:'/shoe-care',items:shoeCare.map(kind=>({label:ACCESSORY_LABELS[kind][locale],href:`/accessories/${kind}`}))},
- ];
- if(menu==='new')return [{title:c.man,href:'/new-arrivals/men',items:[{label:fr?'Tous les nouveaux souliers':'All new shoes',href:'/new-arrivals/men'},{label:c.accessories,href:'/new-arrivals/accessories'}]},{title:c.woman,href:'/new-arrivals/women',items:[{label:fr?'Tous les nouveaux souliers':'All new shoes',href:'/new-arrivals/women'},{label:c.accessories,href:'/new-arrivals/accessories'}]},{title:fr?'Les sélections':'The edits',href:'/new-arrivals',items:edits.slice(0,4)}];
- if(menu==='gifts')return [{title:c.gifts,href:'/gifts',items:[{label:c.forHim,href:'/gifts/men'},{label:c.forHer,href:'/gifts/women'},{label:fr?'Précieux cadeaux':'Precious gifts',href:'/gifts/accessories'}]},{title:fr?'Un cadeau personnel':'A personal gift',href:'/personalization',items:[{label:fr?'Vos initiales':'Your initials',href:'/personalization/on-time'},{label:fr?'Votre création':'Your creation',href:'/personalization/made-to-order'}]}];
- if(menu==='personalization')return [{title:fr?'L’art de faire vôtre':'Make it your own',href:'/personalization',items:[{label:fr?'Sur mesure':'Bespoke',href:'/personalization/bespoke'},{label:fr?'Commande personnalisée':'Made to order',href:'/personalization/made-to-order'},{label:fr?'Personnalisation immédiate':'On-time personalization',href:'/personalization/on-time'},{label:fr?'Soin & restauration':'Caring & restoration',href:'/personalization/caring'}]}];
- return [{title:c.culture,href:'/maison',items:[{label:c.maison,href:'/maison'},{label:fr?'Le savoir-faire':'Craftsmanship',href:'/craftsmanship'},{label:fr?'La transmission du geste':'Passing on the craft',href:'/culture/le-geste-et-la-transmission'},{label:fr?'Les collaborations':'Collaborations',href:'/collaborations'},{label:fr?'Le journal Goya':'Goya journal',href:'/journal'},{label:c.stores,href:'/stores'}]}];
+ const c=storefrontCopy[locale];const fr=locale==='fr';const item=(en:string,frText:string,href:string)=>({label:fr?frText:en,href});
+ const kinds=['bags-backpacks','small-leather-goods','belts','gloves-scarves','hats','socks','tassels','lifestyle'] as const;
+ const accessories=(audience:'men'|'women')=>kinds.filter(kind=>audience==='men'||kind!=='belts').map(kind=>({label:ACCESSORY_LABELS[kind][locale],href:`/accessories/${kind}?audience=${audience}`}));
+ const highlights=(audience:'men'|'women')=>{const edit=(en:string,frText:string,slug:string)=>item(en,frText,`/edits/${slug}?audience=${audience}`);return audience==='men'?[edit('Goya Easy','Goya Easy','easy'),edit('Winter Boots Edit','La sélection bottines','winter-boots'),edit('Formal selection','La sélection habillée','formal'),edit('Smart Casual Edit','L’élégance décontractée','smart-casual'),edit('Essentials','Les essentiels','essentials'),item('Francesco Loafer','Le mocassin Francesco','/product/francesco'),edit('The perfect guest','L’invité parfait','occasion'),edit('Travel','Voyage','travel'),edit('Woven Signature','La signature tissée','woven-signature'),item('Goya × Funkè','Goya × Funkè','/collaborations'),edit('Business','L’allure professionnelle','business'),edit('The Goya Archive','Les archives Goya','archive')]:[edit('Goya Easy','Goya Easy','easy'),edit('Elegance Edit','La sélection élégance','elegance'),edit('Winter Boots Edit','La sélection bottines','winter-boots'),item('Goya Éclat','Goya Éclat','/product/sparkle-pump'),edit('Weekend','Week-end','weekend'),edit('The perfect guest','L’invitée parfaite','occasion'),edit('Business','L’allure professionnelle','business'),edit('The Goya Archive','Les archives Goya','archive')];};
+ if(menu==='men'||menu==='women'){const styles:ShoeType[]=menu==='men'?['loafers','lace-ups','boots','sneakers','monk-straps','sandals','slippers']:['loafers','boots','pumps','sneakers','flats','sandals','heels'];return[
+  {title:c.shoes,href:`/${menu}`,items:[...styles.map(style=>({label:SHOE_STYLE_LABELS[style as Exclude<ShoeType,'all'>][locale],href:`/${menu}/${style}`})),item('View all shoes','Voir toutes les chaussures',`/${menu}`)]},
+  {title:c.accessories,href:`/accessories?audience=${menu}`,items:[...accessories(menu),item('View all accessories','Voir tous les accessoires',`/accessories?audience=${menu}`)]},
+  {title:fr?'Temps forts':'Highlights',href:'/edits/signature',items:highlights(menu)},
+ ];}
+ if(menu==='accessories')return[...(['men','women'] as const).map(audience=>({title:audience==='men'?c.man:c.woman,href:`/accessories?audience=${audience}`,items:[...accessories(audience),item('View all','Voir tout',`/accessories?audience=${audience}`)]})),{title:c.care,href:'/shoe-care',items:[...(['shoe-care','trees-horns','travel-kits','laces'] as const).map(kind=>({label:ACCESSORY_LABELS[kind][locale],href:`/accessories/${kind}`})),item('View all','Voir tout','/shoe-care')]}];
+ if(menu==='new')return[{title:c.newArrivals,href:'/new-arrivals',items:[item('Men’s new arrivals','Nouveautés homme','/new-arrivals/men'),item('Women’s new arrivals','Nouveautés femme','/new-arrivals/women')]}];
+ if(menu==='gifts')return[{title:c.gifts,href:'/gifts',items:[item('Our gift ideas for him','Nos idées de cadeaux pour lui','/gifts/men'),item('Our gift ideas for her','Nos idées cadeaux pour elle','/gifts/women'),item('Precious gifts','Cadeaux précieux','/gifts/accessories')]}];
+ if(menu==='personalization')return[{title:c.personalization,href:'/personalization',items:[item('One of One','One of One','/personalization'),item('Bespoke — One of a Kind','Sur mesure — Une création unique','/personalization/bespoke'),item('Made to Order — One Yours','Sur commande — Votre création','/personalization/made-to-order'),item('On-Time Personalization — One Live','Personnalisation — Votre signature','/personalization/on-time'),item('Caring — One Forever','Entretien — Pour toujours','/personalization/caring')]}];
+ return[{title:c.culture,href:'/maison',items:[item('Goya Is','Goya Is','/maison'),item('The art of craft','L’art du geste','/craftsmanship'),item('Store locator','Nos boutiques','/stores'),item('Creative encounters','Rencontres créatives','/collaborations')]}];
 }

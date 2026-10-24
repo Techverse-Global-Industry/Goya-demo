@@ -1,5 +1,6 @@
 import type { Product, AtelierLocation, AtelierService, Country, PaymentMethod } from './types';
 import { ARCHIVE_PRODUCTS } from './archive-catalog';
+import { INTERNATIONAL_MARKETS } from './international-markets';
 
 // Demo listings describe the supplied photographs. Prices and stock are illustrative.
 export const PRODUCTS: readonly Product[] = [
@@ -55,7 +56,7 @@ export const PRODUCTS: readonly Product[] = [
 ];
 
 export const PRODUCT_BY_ID = new Map(PRODUCTS.map((product) => [product.id, product]));
-export const COUNTRIES: readonly Country[] = ['BJ', 'FR', 'SN', 'US', 'GB'];
+export const COUNTRIES: readonly Country[] = INTERNATIONAL_MARKETS.filter(market => market.code !== 'WW').map(market => market.code);
 export const PAYMENT_METHODS: readonly PaymentMethod[] = ['card', 'apple', 'paypal', 'klarna', 'scalapay', 'mobile', 'pickup'];
 export const LOCATIONS: readonly AtelierLocation[] = ['cotonou', 'paris', 'dakar'];
 export const SERVICES: readonly AtelierService[] = ['polish', 'patina', 'heels', 'restoration'];

@@ -1,0 +1,65 @@
+{
+  "en": {
+    "en": "English",
+    "it": "Italian",
+    "fr": "French",
+    "de": "German",
+    "es": "Spanish",
+    "ja": "Japanese",
+    "ar": "Arabic"
+  },
+  "it": {
+    "en": "inglese",
+    "it": "italiano",
+    "fr": "francese",
+    "de": "tedesco",
+    "es": "spagnolo",
+    "ja": "giapponese",
+    "ar": "arabo"
+  },
+  "fr": {
+    "en": "anglais",
+    "it": "italien",
+    "fr": "français",
+    "de": "allemand",
+    "es": "espagnol",
+    "ja": "japonais",
+    "ar": "arabe"
+  },
+  "de": {
+    "en": "Englisch",
+    "it": "Italienisch",
+    "fr": "Französisch",
+    "de": "Deutsch",
+    "es": "Spanisch",
+    "ja": "Japanisch",
+    "ar": "Arabisch"
+  },
+  "es": {
+    "en": "inglés",
+    "it": "italiano",
+    "fr": "francés",
+    "de": "alemán",
+    "es": "español",
+    "ja": "japonés",
+    "ar": "árabe"
+  },
+  "ja": {
+    "en": "英語",
+    "it": "イタリア語",
+    "fr": "フランス語",
+    "de": "ドイツ語",
+    "es": "スペイン語",
+    "ja": "日本語",
+    "ar": "アラビア語"
+  },
+  "ar": {
+    "en": "الإنجليزية",
+    "it": "الإيطالية",
+    "fr": "الفرنسية",
+    "de": "الألمانية",
+    "es": "الإسبانية",
+    "ja": "اليابانية",
+    "ar": "العربية"
+  }
+}
