@@ -1,36 +1,46 @@
 /* Service and account geometry measured from the public reference storefront. */
-.exact-account-entry{padding:24px 24px 24px;min-height:447px;background:#fff;color:#000}
+.exact-account-entry{padding:calc(var(--store-header-height,103px) + 24px) 24px 24px;min-height:447px;background:#fff;color:#000}
 .exact-account-entry .reference-account-panels{display:block;width:min(502px,100%);margin:0 auto;border:0}
 .exact-account-entry .reference-account-form{padding:0;border:0;background:transparent}
 .exact-account-entry .reference-auth{padding:0}
 .exact-account-entry .reference-auth-heading{margin:0 0 24px;padding:0;text-align:center}
 .exact-account-entry .reference-auth-heading h2{font-family:var(--sans);font-size:24px;font-weight:400;line-height:1.4;letter-spacing:0;text-transform:uppercase;margin:0}
 .exact-account-entry .reference-auth-form fieldset{display:grid;gap:16px;margin:0;padding:0;border:0}
-.exact-account-entry .reference-auth-form .field{margin:0;gap:8px}
-.exact-account-entry .reference-auth-form label{font-size:12px;font-weight:400;letter-spacing:0;line-height:1.25;text-transform:none}
+.exact-account-entry .reference-auth-form .field{margin:0;gap:4px}
+.exact-account-entry .reference-auth-form label{margin:0;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.25;text-transform:none}
 .exact-account-entry .reference-auth-form input:not([type=checkbox]),.exact-account-entry .reference-auth-form select{height:45px;min-height:45px;border:1px solid #ded9d2;background:#fff;padding:8px;font-size:16px;box-shadow:none}
 .exact-account-entry .reference-auth-password{position:relative}
 .exact-account-entry .reference-auth-password>.field{width:100%}
-.exact-account-entry .reference-auth-password>button{font-size:9px;letter-spacing:.5px;right:10px;bottom:14px}
+.exact-account-entry .reference-auth-password>button{display:flex;align-items:center;justify-content:center;top:19px;bottom:auto;right:auto;left:auto;inset-inline-end:1px;width:44px;min-width:44px;max-width:44px;height:44px;min-height:44px;padding:12px;color:var(--goya-copper,#fe5000);text-decoration:none}
+.exact-account-entry .reference-auth-password .field input{padding-inline-end:44px}
+.exact-account-entry .reference-auth-password .field-hint{position:absolute;inset:100% 0 auto;z-index:2;padding:8px;background:#fff;border:1px solid #ded9d2;display:none}
+.exact-account-entry .reference-auth-password:focus-within .field-hint{display:block}
 .exact-account-entry .reference-auth-forgot{justify-self:stretch;text-align:right;margin:8px 0 0;padding:1px 15px 1px 6px;font-size:10px;font-weight:400;line-height:12px;letter-spacing:1px;text-transform:uppercase;border:0}
 .exact-account-entry .reference-auth-submit{height:48px;min-height:48px;background:#000;color:#fff;border:1px solid #000;padding:8px 16px;margin:8px 0 0;font-size:12px;font-weight:400;letter-spacing:1px;text-transform:uppercase;justify-content:center}
 .exact-account-entry .reference-auth-submit>svg{display:none}
 .exact-account-entry .reference-auth-actions{display:block;margin:24px 0 0;padding:0;border:0}
 .exact-account-entry .reference-auth-actions>button{display:flex;align-items:center;justify-content:center;width:100%;height:48px;padding:8px 16px;border:1px solid #000;background:#fff;color:#000;font-size:12px;font-weight:400;letter-spacing:1px;text-transform:uppercase}
 .exact-account-entry .reference-auth>.demo-note{margin-top:16px;font-size:10px;line-height:1.4}
-.exact-account-entry .reference-auth-names{gap:16px}
-.exact-account-entry .reference-auth-title{margin:0}
+.exact-account-entry .reference-auth-names{gap:24px}
+.exact-account-entry .reference-auth-title{margin:0;max-width:none;width:100%}
+.exact-account-entry .reference-auth--register .reference-auth-heading{text-align:start}
+.exact-account-entry .reference-auth--register .reference-auth-heading>small{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.exact-account-entry .reference-auth-form select{appearance:none;padding-inline-end:32px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23d67a4b' stroke-width='1.3'%3E%3Cpath d='m4 8 8 8 8-8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+.exact-account-entry .reference-auth-registration{padding-top:20px}
+.exact-account-entry .reference-auth-registration>label{margin-bottom:24px;gap:8px;font-size:12px;line-height:18px;letter-spacing:.3px}
+.exact-account-entry .reference-auth-registration>label>input{width:16px;height:16px;margin-top:0;border-radius:0}
+html[dir=rtl] .exact-account-entry .reference-auth-form select{background-position:left 16px center}
 .exact-account-entry .reference-auth-registration{font-size:11px;line-height:1.5}
 .exact-account-entry:has(.reference-auth--register) .reference-account-panels{width:min(732px,100%)}
 .reference-auth-credentials{display:grid;grid-template-columns:1fr;gap:16px}
 .reference-auth--register .reference-auth-credentials,.reference-auth-details{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-.reference-auth-birthday>span{display:block;margin-bottom:8px;font-size:12px;line-height:15px}
+.reference-auth-birthday>span{display:block;margin-bottom:4px;font-size:12px;line-height:15px}
 .reference-auth-birthday>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
 .reference-auth-birthday select{width:100%;min-width:0}
 .reference-auth-birthday select+select{border-inline-start:0!important}
 .exact-account-entry .reference-auth--register .reference-auth-submit{width:100%;max-width:354px;justify-self:center}
 .exact-account-entry .reference-auth--register .reference-auth-actions{max-width:354px;margin-inline:auto}
-@media(max-width:699px){.exact-account-entry{padding:24px 24px 32px;min-height:420px}.exact-account-entry .reference-account-panels{width:100%}.exact-account-entry .reference-auth-heading h2{font-size:22px}.exact-account-entry .reference-auth-names{grid-template-columns:1fr}}
+@media(max-width:699px){.exact-account-entry{padding:calc(var(--store-header-height,93px) + 24px) 24px 32px;min-height:420px}.exact-account-entry .reference-account-panels{width:100%}.exact-account-entry .reference-auth-heading h2{font-size:22px}.exact-account-entry .reference-auth-names,.exact-account-entry .reference-auth--register .reference-auth-credentials,.exact-account-entry .reference-auth-details{grid-template-columns:1fr}}
 
 .exact-personalization-hub,.exact-service-detail{background:#fff;color:#000}
 .exact-personalization-hub .experience-hub-intro,.exact-service-detail .experience-service-hero{position:relative;height:calc(100svh - var(--store-header-height,106px));min-height:600px;overflow:hidden}

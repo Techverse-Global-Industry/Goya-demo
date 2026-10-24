@@ -89,6 +89,8 @@ test('International customers explicitly choose an address destination and their
   await page.goto('/login?next=%2Fapp%2Fsettings');
   await registerCustomer(page, { email: `international-address-${crypto.randomUUID()}@example.test`, firstName: 'Private', lastName: 'Demo' });
   await expect(page).toHaveURL(/\/app\/settings$/);
+  await page.locator('.exact-personal-sidebar nav').getByRole('link', { name: 'Addresses', exact: true }).click();
+  await expect(page).toHaveURL(/\/app\/addresses$/);
   await page.getByRole('button', { name: 'Add an address', exact: true }).click();
   const editor = page.locator('.account-address-editor');
   const country = editor.getByRole('combobox', { name: 'Country', exact: true });

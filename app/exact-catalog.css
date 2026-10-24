@@ -4,6 +4,7 @@
 .reference-plp--standalone { padding-top:var(--store-header-height,103px); }
 .reference-plp-heading { min-height:60px;padding:4px 0 0;gap:0;flex-wrap:nowrap;border-bottom:1px solid #f8f6f4; }
 .reference-plp-heading>h1 { font:600 24px/36px var(--sans);letter-spacing:0;max-width:55%;padding:10px 16px; }
+.reference-plp-heading--department>h1 { flex:0 0 340px;max-width:340px; }
 .reference-plp-heading>.reference-style-rail { min-height:56px;gap:12px;padding:0 16px;align-items:center;justify-content:flex-end; }
 .reference-style-rail>a,.reference-style-rail>button { min-height:0;padding:5px 0;font:300 14px/19.6px var(--sans);letter-spacing:0;border-bottom:2px solid transparent; }
 .reference-style-rail>a[aria-current=page],.reference-style-rail>button[aria-pressed=true] { border-color:#fe5000;color:#000; }
@@ -36,17 +37,16 @@
 .reference-catalog-editorial { grid-column:span 2;grid-row:span 2;min-height:0; }
 .reference-catalog-editorial>div { display:none; }
 .reference-plp-pagination { padding:65px 16px;gap:32px; }
-.reference-plp-pagination .reference-load-more { min-width:0;min-height:48px;padding:8px 16px;border:0;gap:4px;background:none;color:#000;font:400 10px/11.5px var(--sans); }
-.reference-plp-pagination .reference-load-more:hover { color:#fe5000;background:none; }
+.reference-plp-pagination .reference-load-more { min-width:112px;min-height:48px;padding:8px 16px;border:1px solid #000;gap:4px;background:#fff;color:#000;font:400 12px/18px var(--sans);letter-spacing:1px; }
+.reference-plp-pagination .reference-load-more>span:last-child { display:none; }
+.reference-plp-pagination .reference-load-more:hover { color:#fff;background:#fe5000;border-color:#fe5000; }
 .reference-plp-pagination>p { font-size:10px; }
 .reference-plp-pagination>nav { display:flex;justify-content:center;gap:16px; }
 .reference-plp-pagination>nav>button { min-width:24px;min-height:32px;border:0;background:none;font:400 12px var(--sans); }
 .reference-plp-pagination>nav>button[aria-current=page] { text-decoration:underline;text-underline-offset:5px; }
-.reference-plp-description { padding:16px 16px 40px;border:0; }
-.reference-plp-description>nav { font:300 12px/18px var(--sans);margin-bottom:32px;text-transform:uppercase; }
-.reference-plp-description h2 { font:600 24px/33.6px var(--sans);letter-spacing:0;margin:0 0 16px; }
-.reference-plp-description>p { max-width:none;font:300 14px/21px var(--sans);letter-spacing:.5px; }
-.reference-plp-description>.reference-plp-demo { margin-top:20px;font-size:10px; }
+.reference-plp-description { display:flex;flex-direction:column;align-items:center;gap:48px;padding:72px 24px 40px;border:0;background:#f8f6f4;text-align:center; }
+.reference-plp-description h2 { width:100%;max-width:700px;font:600 24px/36px var(--sans);letter-spacing:0;margin:0;text-transform:uppercase; }
+.reference-plp-description>p { width:100%;max-width:700px;margin:0;font:300 14px/20px var(--sans);letter-spacing:.5px; }
 
 /* Side panels have the reference's separate narrow/large/mobile widths. */
 .maison-dialog:is(.reference-filters-dialog,.reference-sizes-dialog,.reference-chart-dialog,.reference-fit-dialog,.reference-product-info-dialog,.reference-notify-dialog) .dialog-positioner { padding:0;justify-content:flex-end;align-items:stretch; }
@@ -301,7 +301,10 @@
 @media(max-width:1023px) {
   .reference-plp-heading { flex-direction:column;align-items:stretch;min-height:100px;padding-top:0; }
   .reference-plp-heading>h1 { max-width:none;padding:10px 16px; }
+  .reference-plp-heading--department>h1 { flex:auto;max-width:none; }
   .reference-plp-heading>.reference-style-rail { flex:auto;justify-content:flex-start;min-height:44px;width:100%;padding:0 20px; }
+  .reference-plp-heading>.reference-department-rail { flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:20px; }
+  .reference-department-rail>a { flex-shrink:0; }
   .reference-plp-toolbar { min-height:49px; }
   .reference-plp-toolbar>div { gap:16px; }
   .reference-plp-grid { grid-template-columns:repeat(2,minmax(0,1fr));column-gap:0;row-gap:48px; }
@@ -360,6 +363,7 @@
   .maison-dialog:is(.reference-filters-dialog,.reference-sizes-dialog,.reference-chart-dialog,.reference-fit-dialog,.reference-product-info-dialog) .dialog-chrome { height:54px;min-height:54px;padding:16px; }
   .reference-filter-drawer { min-height:calc(100dvh - 54px); }
   .reference-plp-pagination { padding:48px 16px; }
+  .reference-plp-description { padding:48px 24px 40px;gap:32px; }
   .reference-plp-description h2 { font-size:24px;line-height:33.6px; }
   .reference-wishlist-footer>.pdp-add-button { width:100%;max-width:none; }
   .reference-wishlist-empty { flex-direction:column;align-items:flex-start;gap:16px; }

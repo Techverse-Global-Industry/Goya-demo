@@ -3,6 +3,7 @@ import { bookingDateRange, CURRENCIES, isTimeAvailable, normalizePromoCode, quot
 import type { AccountProfile, Announcement, BookingDetails, CartLine, CartQuote, Currency, DemoUser, Localized, Order, OrderStatus, PaymentMethod, Product, SavedAddress, ShippingDetails, StoreSnapshot } from '../types';
 import type { Account, Database } from './database';
 import { ApiError } from './security';
+import { isSiteLocale, MARKET_CODES } from '../international';
 import type { RequestAttachment, ReturnLine, ReturnRequest, ReturnStatus, ServiceRequest, ServiceRequestKind, ServiceRequestStatus } from '../experience-types';
 
 export const ORDER_STATUSES: OrderStatus[] = ['confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'];
@@ -29,6 +30,8 @@ function profileDefaults(account: Account): AccountProfile {
   return {
     phone: stored?.phone ?? '', birthDate: stored?.birthDate ?? '', title: stored?.title ?? '',
     preferredLocale: stored?.preferredLocale === 'fr' ? 'fr' : 'en', newsletter: stored?.newsletter === true,
+    ...(isSiteLocale(stored?.preferredLanguage) ? { preferredLanguage: stored.preferredLanguage } : {}),
+    ...(stored?.country && MARKET_CODES.includes(stored.country) ? { country: stored.country } : {}),
     ...(typeof stored?.personalization === 'boolean' ? { personalization: stored.personalization } : {}),
     addresses: structuredClone(stored?.addresses ?? []), wishlist: [...(stored?.wishlist ?? [])],
   };
@@ -52,6 +55,11 @@ export function saveCustomerProfile(db: Database, user: DemoUser, input: unknown
   const account = ownAccount(db, user);
   const value = input as Record<string, unknown>;
   const profile = profileDefaults(account);
+  let name = account.name;
+  if (Object.hasOwn(value, 'name')) {
+    if (typeof value.name !== 'string' || value.name.trim().length < 2 || value.name.trim().length > 100) throw new ApiError('Please enter a valid name.', 400, 'invalidName');
+    name = value.name.trim();
+  }
   if (Object.hasOwn(value, 'phone')) {
     if (typeof value.phone !== 'string' || value.phone.length > 40 || !/^[+()\d\s.-]*$/.test(value.phone)) throw new ApiError('Please enter a valid phone number.');
     profile.phone = value.phone.trim();
@@ -72,6 +80,14 @@ export function saveCustomerProfile(db: Database, user: DemoUser, input: unknown
     if (value.preferredLocale !== 'en' && value.preferredLocale !== 'fr') throw new ApiError('Please select a supported language.');
     profile.preferredLocale = value.preferredLocale;
   }
+  if (Object.hasOwn(value, 'preferredLanguage')) {
+    if (!isSiteLocale(value.preferredLanguage)) throw new ApiError('Please select a supported language.');
+    profile.preferredLanguage = value.preferredLanguage;
+  }
+  if (Object.hasOwn(value, 'country')) {
+    if (typeof value.country !== 'string' || !MARKET_CODES.includes(value.country as NonNullable<AccountProfile['country']>)) throw new ApiError('Please select a valid country.');
+    profile.country = value.country as NonNullable<AccountProfile['country']>;
+  }
   if (Object.hasOwn(value, 'newsletter')) {
     if (typeof value.newsletter !== 'boolean') throw new ApiError('Please check your communication preference.');
     profile.newsletter = value.newsletter;
@@ -80,6 +96,7 @@ export function saveCustomerProfile(db: Database, user: DemoUser, input: unknown
     if (typeof value.personalization !== 'boolean') throw new ApiError('Please check your personalization preference.');
     profile.personalization = value.personalization;
   }
+  account.name = name;
   account.profile = profile;
   return customerProfile(db, user)!;
 }

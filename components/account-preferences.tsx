@@ -70,7 +70,7 @@ function PreferenceForm({ initial }: { initial: ProfileFields }) {
   </section>;
 }
 
-function AddressBook() {
+export function AddressBook() {
   const { state, refresh } = useShop();
   const c = copy[state.locale];
   const addresses = state.profile?.addresses ?? [];

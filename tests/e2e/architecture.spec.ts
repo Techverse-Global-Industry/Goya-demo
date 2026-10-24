@@ -32,7 +32,7 @@ test('guests can explore public shopping while personal account and admin data s
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`/${route}$`));
   }
-  for (const section of ['shop', 'orders', 'atelier', 'updates', 'settings']) {
+  for (const section of ['shop', 'orders', 'atelier', 'updates', 'settings', 'addresses', 'wishlist']) {
     await page.goto(`/app/${section}`);
     await expect(page).toHaveURL(new RegExp(`/login\\?next=%2Fapp%2F${section}$`));
     await expect(page.locator('.reference-account-entry')).toBeVisible();
@@ -63,16 +63,16 @@ test('an account keeps private workspace routes while the brand logo and shoppin
   await expect(page).toHaveURL('/');
   await page.locator('.site-header .profile-button').click();
   await expect(page).toHaveURL(/\/app$/);
-  await page.locator('.account-sidebar nav').getByRole('button', { name: 'My orders', exact: true }).click();
+  await page.locator('.exact-personal-sidebar nav').getByRole('link', { name: 'Orders and returns', exact: true }).click();
   await expect(page).toHaveURL(/\/app\/orders$/);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'My orders', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Orders and returns', exact: true, level: 1 })).toBeVisible();
   const manifest = await (await page.request.get('/manifest.webmanifest')).json();
   expect(manifest.start_url).toBe('/collections');
   expect(manifest.display).toBe('standalone');
   await page.screenshot({ path: `test-results/account-routes-${isMobile ? 'mobile' : 'desktop'}.png`, fullPage: false });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.locator('.account-sidebar-end').getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.locator('.exact-personal-sidebar').getByRole('button', { name: 'Logout', exact: true }).click();
   await expect(page).toHaveURL(/\/login/);
   await page.goto('/app/orders');
   await expect(page).toHaveURL(/\/login/);

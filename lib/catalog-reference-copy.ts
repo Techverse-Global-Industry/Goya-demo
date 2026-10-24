@@ -1,0 +1,68 @@
+import type { SiteLocale } from './types';
+
+/** Department and editorial roles from the reference, written for Goya. */
+export const catalogReferenceCopy = {
+  en: {
+    menTitle: "Men's shoes and accessories", womenTitle: "Women's shoes and accessories", luxuryGifts: 'Luxury gifts', highlights: 'Highlights', newMen: "Men's new arrivals", newWomen: "Women's new arrivals", giftsMen: 'Our gift ideas for him', giftsWomen: 'Our gift ideas for her', preciousGifts: 'Precious gifts',
+    newHeading: 'New shoes, bags & accessories. A distinctive Goya point of view.',
+    newBody: 'Discover the latest Goya selection, where European elegance meets African expression. From loafers and expressive heels to easy everyday silhouettes, each piece brings a different rhythm to your wardrobe. Explore colour, woven accents and unexpected details, then find the shoes and accessories that feel like you. Bring together your favourites for the working day, a special evening or a moment away. A personal wardrobe begins with the details you choose.',
+    giftHeading: "The Goya gift guide for life's special occasions.",
+    giftBody: 'A birthday, a celebration, a thank you or a gesture just because. Discover Goya shoes and accessories for the people who make a difference in your life. Choose a distinctive silhouette, a favourite colour or a woven detail that reflects their personality. Explore our selections for him and for her, from expressive shoes to leather companions. A thoughtful choice is a way to share a little of your story and create a new memory together.',
+    collectionHeading: 'Shoes and accessories with a character of their own.',
+    collectionBody: 'Explore the Goya wardrobe through its silhouettes, colours and distinctive details. European elegance and African expression meet in shoes and accessories that invite a personal point of view. Discover a pair for the everyday, an expressive accent for the evening or a leather companion for your next departure. Follow your own rhythm, explore the collection and bring together the pieces that tell your story.',
+  },
+  fr: {
+    menTitle: 'Souliers et accessoires pour homme', womenTitle: 'Souliers et accessoires pour femme', luxuryGifts: 'Cadeaux de luxe', highlights: 'À la une', newMen: 'Nouveautés homme', newWomen: 'Nouveautés femme', giftsMen: 'Nos idées cadeaux pour lui', giftsWomen: 'Nos idées cadeaux pour elle', preciousGifts: 'Cadeaux précieux',
+    newHeading: 'Nouveaux souliers, sacs et accessoires. Le regard singulier de Goya.',
+    newBody: 'Découvrez la nouvelle sélection Goya, à la rencontre de l’élégance européenne et de l’expression africaine. Des mocassins aux talons expressifs, des lignes habillées aux silhouettes du quotidien, chaque pièce donne un autre rythme à votre vestiaire. Explorez les couleurs, les accents tissés et les détails inattendus, puis trouvez les souliers et accessoires qui vous ressemblent. Réunissez vos favoris pour une journée de travail, une soirée ou une escapade. Un vestiaire personnel commence par les détails que vous choisissez.',
+    giftHeading: 'Le guide des cadeaux Goya pour les grandes occasions.',
+    giftBody: 'Un anniversaire, une fête, un merci ou une attention spontanée. Découvrez les souliers et accessoires Goya pour les personnes qui comptent dans votre vie. Choisissez une silhouette singulière, une couleur préférée ou un détail tissé qui reflète leur personnalité. Explorez nos sélections pour lui et pour elle, des souliers expressifs aux compagnons de cuir. Un choix attentionné permet de partager un peu de votre histoire et de créer ensemble un nouveau souvenir.',
+    collectionHeading: 'Des souliers et accessoires au caractère singulier.',
+    collectionBody: 'Explorez le vestiaire Goya à travers ses silhouettes, ses couleurs et ses détails distinctifs. L’élégance européenne et l’expression africaine se rencontrent dans des souliers et accessoires qui invitent à un regard personnel. Découvrez une paire pour le quotidien, un accent expressif pour le soir ou un compagnon de cuir pour votre prochain départ. Suivez votre rythme, explorez la collection et réunissez les pièces qui racontent votre histoire.',
+  },
+  it: {
+    menTitle: 'Scarpe e accessori da uomo', womenTitle: 'Scarpe e accessori da donna', luxuryGifts: 'Regali di lusso', highlights: 'In evidenza', newMen: 'Novità uomo', newWomen: 'Novità donna', giftsMen: 'Le nostre idee regalo per lui', giftsWomen: 'Le nostre idee regalo per lei', preciousGifts: 'Regali preziosi',
+    newHeading: 'Nuove scarpe, borse e accessori. Il punto di vista Goya.',
+    newBody: 'Scopri la nuova selezione Goya, dove l’eleganza europea incontra l’espressione africana. Dai mocassini ai tacchi espressivi, dalle linee eleganti alle silhouette quotidiane, ogni creazione dà un ritmo diverso al guardaroba. Esplora colori, accenti intrecciati e dettagli inattesi, poi trova le scarpe e gli accessori che ti rappresentano. Abbina i tuoi preferiti per una giornata di lavoro, una serata speciale o una pausa lontano da casa. Un guardaroba personale inizia dai dettagli che scegli.',
+    giftHeading: 'La guida ai regali Goya per le occasioni speciali.',
+    giftBody: 'Un compleanno, una festa, un ringraziamento o un gesto spontaneo. Scopri scarpe e accessori Goya per le persone importanti della tua vita. Scegli una silhouette particolare, un colore preferito o un dettaglio intrecciato che ne rifletta la personalità. Esplora le nostre selezioni per lui e per lei, dalle scarpe espressive agli accessori in pelle. Una scelta attenta permette di condividere un po’ della propria storia e creare un nuovo ricordo insieme.',
+    collectionHeading: 'Scarpe e accessori dal carattere unico.',
+    collectionBody: 'Esplora il guardaroba Goya attraverso silhouette, colori e dettagli distintivi. L’eleganza europea e l’espressione africana si incontrano in scarpe e accessori che invitano a un punto di vista personale. Scopri un paio per ogni giorno, un accento espressivo per la sera o un compagno in pelle per la prossima partenza. Segui il tuo ritmo, esplora la collezione e riunisci le creazioni che raccontano la tua storia.',
+  },
+  de: {
+    menTitle: 'Herrenschuhe und Accessoires', womenTitle: 'Damenschuhe und Accessoires', luxuryGifts: 'Luxuriöse Geschenke', highlights: 'Highlights', newMen: 'Neuheiten für Herren', newWomen: 'Neuheiten für Damen', giftsMen: 'Unsere Geschenkideen für ihn', giftsWomen: 'Unsere Geschenkideen für sie', preciousGifts: 'Besondere Geschenke',
+    newHeading: 'Neue Schuhe, Taschen und Accessoires. Die eigene Sicht von Goya.',
+    newBody: 'Entdecken Sie die neue Goya Auswahl, in der europäische Eleganz auf afrikanischen Ausdruck trifft. Von Loafern und ausdrucksstarken Absätzen bis zu entspannten Alltagssilhouetten bringt jedes Stück einen neuen Rhythmus in Ihre Garderobe. Erkunden Sie Farben, gewebte Akzente und überraschende Details. Finden Sie Schuhe und Accessoires, die zu Ihnen passen. Kombinieren Sie Ihre Favoriten für den Arbeitstag, einen besonderen Abend oder eine kleine Auszeit. Eine persönliche Garderobe beginnt mit den Details, die Sie wählen.',
+    giftHeading: 'Der Goya Geschenkführer für besondere Anlässe.',
+    giftBody: 'Ein Geburtstag, ein Fest, ein Dankeschön oder eine spontane Aufmerksamkeit. Entdecken Sie Goya Schuhe und Accessoires für die Menschen, die Ihr Leben bereichern. Wählen Sie eine besondere Silhouette, eine Lieblingsfarbe oder ein gewebtes Detail, das ihre Persönlichkeit widerspiegelt. Erkunden Sie unsere Auswahl für ihn und für sie, von ausdrucksstarken Schuhen bis zu Begleitern aus Leder. Eine aufmerksame Wahl teilt ein Stück Ihrer Geschichte und schafft eine neue gemeinsame Erinnerung.',
+    collectionHeading: 'Schuhe und Accessoires mit eigenem Charakter.',
+    collectionBody: 'Erkunden Sie die Goya Garderobe durch Silhouetten, Farben und unverwechselbare Details. Europäische Eleganz und afrikanischer Ausdruck begegnen sich in Schuhen und Accessoires, die zu einer persönlichen Sicht einladen. Entdecken Sie ein Paar für jeden Tag, einen ausdrucksstarken Akzent für den Abend oder einen Lederbegleiter für Ihre nächste Reise. Folgen Sie Ihrem Rhythmus und finden Sie die Stücke, die Ihre Geschichte erzählen.',
+  },
+  es: {
+    menTitle: 'Zapatos y accesorios de hombre', womenTitle: 'Zapatos y accesorios de mujer', luxuryGifts: 'Regalos de lujo', highlights: 'Destacados', newMen: 'Novedades de hombre', newWomen: 'Novedades de mujer', giftsMen: 'Nuestras ideas de regalo para él', giftsWomen: 'Nuestras ideas de regalo para ella', preciousGifts: 'Regalos especiales',
+    newHeading: 'Nuevos zapatos, bolsos y accesorios. La mirada singular de Goya.',
+    newBody: 'Descubre la nueva selección de Goya, donde la elegancia europea se une a la expresión africana. Desde mocasines y tacones expresivos hasta siluetas cómodas para cada día, cada pieza aporta un ritmo diferente al armario. Explora colores, detalles tejidos y acentos inesperados, y encuentra los zapatos y accesorios que hablan de ti. Combina tus favoritos para el trabajo, una noche especial o una escapada. Un armario personal empieza por los detalles que eliges.',
+    giftHeading: 'La guía de regalos Goya para las ocasiones especiales.',
+    giftBody: 'Un cumpleaños, una celebración, un agradecimiento o un detalle espontáneo. Descubre zapatos y accesorios Goya para las personas que marcan tu vida. Elige una silueta singular, un color favorito o un detalle tejido que refleje su personalidad. Explora nuestras selecciones para él y para ella, desde zapatos expresivos hasta compañeros de piel. Una elección atenta permite compartir parte de tu historia y crear juntos un nuevo recuerdo.',
+    collectionHeading: 'Zapatos y accesorios con carácter propio.',
+    collectionBody: 'Explora el armario Goya a través de sus siluetas, colores y detalles distintivos. La elegancia europea y la expresión africana se encuentran en zapatos y accesorios que invitan a una mirada personal. Descubre un par para cada día, un acento expresivo para la noche o un compañero de piel para tu próxima salida. Sigue tu propio ritmo y reúne las piezas que cuentan tu historia.',
+  },
+  ja: {
+    menTitle: 'メンズシューズ＆アクセサリー', womenTitle: 'ウィメンズシューズ＆アクセサリー', luxuryGifts: 'ラグジュアリーギフト', highlights: 'ハイライト', newMen: 'メンズ新着アイテム', newWomen: 'ウィメンズ新着アイテム', giftsMen: '男性へのギフトアイデア', giftsWomen: '女性へのギフトアイデア', preciousGifts: '特別なギフト',
+    newHeading: '新しいシューズ、バッグ、アクセサリー。Goyaならではの視点。',
+    newBody: 'ヨーロッパのエレガンスとアフリカの表現が出会う、Goyaの新しいセレクションをご覧ください。ローファーや印象的なヒールから日常に寄り添うシルエットまで、それぞれのアイテムが装いに新しいリズムを添えます。色彩、織りのアクセント、意外性のあるディテールを探し、あなたらしいシューズやアクセサリーを見つけてください。仕事の日にも、特別な夜にも、気軽な旅にも。自分らしいワードローブは、選ぶディテールから始まります。',
+    giftHeading: '人生の特別な日のためのGoyaギフトガイド。',
+    giftBody: '誕生日、お祝い、感謝の気持ち、あるいは何気ない贈り物に。大切な人のためにGoyaのシューズやアクセサリーをお選びください。その人らしいシルエット、好きな色、個性を映す織りのディテール。男性向け、女性向けのセレクションには、表情豊かなシューズやレザーアイテムが揃います。心を込めた選択は、あなたの物語を少し分かち合い、新しい思い出を一緒につくるきっかけになります。',
+    collectionHeading: '独自の個性を持つシューズとアクセサリー。',
+    collectionBody: 'シルエット、色彩、特徴的なディテールを通してGoyaのワードローブをご覧ください。ヨーロッパのエレガンスとアフリカの表現が、一人ひとりの視点を大切にするシューズとアクセサリーで出会います。毎日の一足、夜の装いを彩るアクセント、次の旅に連れていくレザーアイテム。自分のリズムでコレクションを巡り、あなたの物語を語るアイテムを見つけてください。',
+  },
+  ar: {
+    menTitle: 'أحذية وإكسسوارات رجالية', womenTitle: 'أحذية وإكسسوارات نسائية', luxuryGifts: 'هدايا فاخرة', highlights: 'مختارات بارزة', newMen: 'جديد الرجال', newWomen: 'جديد النساء', giftsMen: 'أفكارنا لهدايا الرجال', giftsWomen: 'أفكارنا لهدايا النساء', preciousGifts: 'هدايا مميزة',
+    newHeading: 'أحذية وحقائب وإكسسوارات جديدة. رؤية Goya المميزة.',
+    newBody: 'اكتشف أحدث مختارات Goya، حيث تلتقي الأناقة الأوروبية بالتعبير الأفريقي. من أحذية اللوفر والكعوب المعبرة إلى التصاميم المريحة للحياة اليومية، تضيف كل قطعة إيقاعًا مختلفًا إلى إطلالتك. استكشف الألوان واللمسات المنسوجة والتفاصيل غير المتوقعة، ثم اختر الأحذية والإكسسوارات التي تعبر عنك. نسّق قطعك المفضلة ليوم العمل أو لأمسية خاصة أو لرحلة قصيرة. تبدأ خزانة الملابس الشخصية بالتفاصيل التي تختارها.',
+    giftHeading: 'دليل هدايا Goya للمناسبات الخاصة في الحياة.',
+    giftBody: 'عيد ميلاد أو احتفال أو كلمة شكر أو لفتة عفوية. اكتشف أحذية وإكسسوارات Goya للأشخاص الذين يضيفون معنى إلى حياتك. اختر تصميمًا مميزًا أو لونًا مفضلًا أو تفصيلًا منسوجًا يعكس شخصيتهم. استكشف مختاراتنا للرجال والنساء، من الأحذية المعبرة إلى الرفقاء الجلديين. يتيح لك الاختيار المدروس مشاركة جزء من قصتك وصنع ذكرى جديدة معًا.',
+    collectionHeading: 'أحذية وإكسسوارات ذات شخصية خاصة.',
+    collectionBody: 'استكشف عالم Goya من خلال التصاميم والألوان والتفاصيل المميزة. تلتقي الأناقة الأوروبية بالتعبير الأفريقي في أحذية وإكسسوارات تدعو إلى رؤية شخصية. اكتشف زوجًا لكل يوم أو لمسة معبرة للمساء أو رفيقًا جلديًا لرحلتك المقبلة. اتبع إيقاعك الخاص، واستكشف المجموعة واختر القطع التي تروي قصتك.',
+  },
+} satisfies Record<SiteLocale, Record<string, string>>;

@@ -569,6 +569,27 @@ test('profile validation rejects impossible dates and invalid preferences withou
   }
 });
 
+test('personal information saves display name, country and international language atomically for its owner', () => {
+  const db = seedDatabase();
+  db.users.push({ ...user, passwordHash: 'unused' }, { ...other, passwordHash: 'unused' });
+  const beforeOther = structuredClone(db.users[1]);
+  const profile = saveCustomerProfile(db, user, { name: 'Demo International Shopper', country: 'NL', preferredLanguage: 'ja', preferredLocale: 'en', phone: '+31 20 123 4567', birthDate: '1994-06-15', title: 'mx' });
+  assert.equal(db.users[0].name, 'Demo International Shopper');
+  assert.equal(profile.country, 'NL');
+  assert.equal(profile.preferredLanguage, 'ja');
+  assert.equal(profile.preferredLocale, 'en');
+  assert.deepEqual(db.users[1], beforeOther);
+  assert.equal(snapshot(db, 1, null).profile, null);
+  const saved = structuredClone(db.users[0]);
+  for (const invalid of [{ country: 'WW' }, { country: 'ZZ' }, { preferredLanguage: 'pt' }, { name: 'x' }, { birthDate: '2025-02-30' }]) {
+    assert.throws(() => saveCustomerProfile(db, user, { name: 'An unsaved replacement', country: 'BJ', preferredLanguage: 'fr', ...invalid }));
+    assert.deepEqual(db.users[0], saved);
+  }
+  const partial = saveCustomerProfile(db, user, { newsletter: true });
+  assert.equal(partial.country, 'NL');
+  assert.equal(partial.preferredLanguage, 'ja');
+});
+
 test('address books are owned by one account and keep one default after editing or deleting', () => {
   const db = seedDatabase();
   db.users.push({ ...user, passwordHash: 'unused' }, { ...other, passwordHash: 'unused' });

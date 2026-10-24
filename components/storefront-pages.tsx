@@ -36,13 +36,13 @@ export function StorefrontShell({ children, className = '' }: { children: ReactN
   return <><Header /><main id="public-content" className={`reference-storefront-page ${className}`}>{children}</main><Footer /><Overlays /><Toast /></>;
 }
 
-export function CatalogPage({ category = 'all', style = 'all', edit = 'collection', initialQuery, accessoryType, accessoryAudience, selection, heading, intro }: { category?: Category; style?: ShoeType; edit?: CatalogEdit; initialQuery?: string; accessoryType?:string; accessoryAudience?:'men'|'women'; selection?:readonly string[]; heading?:Localized; intro?:Localized }) {
+export function CatalogPage({ category = 'all', style = 'all', edit = 'collection', initialQuery, accessoryType, accessoryAudience, selection, heading, intro, departmentView }: { category?: Category; style?: ShoeType; edit?: CatalogEdit; initialQuery?: string; accessoryType?:string; accessoryAudience?:'men'|'women'; selection?:readonly string[]; heading?:Localized; intro?:Localized; departmentView?:'shoes' }) {
   const { dispatch } = useShop();
   useEffect(() => {
     if (edit !== 'search') dispatch({ type: 'resetFilters' });
     else if (initialQuery !== undefined) dispatch({ type: 'query', query: initialQuery });
-  }, [category, style, edit, initialQuery, accessoryType, accessoryAudience, selection, dispatch]);
-  return <StorefrontShell className="reference-storefront-page--catalog"><Collection category={category} style={style} edit={edit} accessoryType={accessoryType} accessoryAudience={accessoryAudience} selection={selection} heading={heading} intro={intro} standalone /></StorefrontShell>;
+  }, [category, style, edit, initialQuery, accessoryType, accessoryAudience, selection, departmentView, dispatch]);
+  return <StorefrontShell className="reference-storefront-page--catalog"><Collection category={category} style={style} edit={edit} accessoryType={accessoryType} accessoryAudience={accessoryAudience} selection={selection} heading={heading} intro={intro} departmentView={departmentView} standalone /></StorefrontShell>;
 }
 
 export function WishlistPage() {

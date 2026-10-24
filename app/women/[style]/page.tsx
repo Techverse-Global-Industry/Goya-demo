@@ -3,10 +3,11 @@ import { CatalogPage } from '@/components/storefront-pages';
 import { WOMEN_SHOE_STYLES } from '@/lib/catalog-edits';
 import type { ShoeType } from '@/lib/types';
 
-export function generateStaticParams() { return WOMEN_SHOE_STYLES.map(style => ({ style })); }
+export function generateStaticParams() { return [...WOMEN_SHOE_STYLES, 'shoes'].map(style => ({ style })); }
 
 export default async function Page({ params }: { params: Promise<{ style: string }> }) {
   const { style } = await params;
+  if (style === 'shoes') return <CatalogPage category="women" departmentView="shoes" />;
   if (!WOMEN_SHOE_STYLES.includes(style as Exclude<ShoeType, 'all'>)) notFound();
   return <CatalogPage category="women" style={style as ShoeType} />;
 }

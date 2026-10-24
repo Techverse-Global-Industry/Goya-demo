@@ -1,0 +1,75 @@
+import type { SiteLocale } from './types';
+
+const en = {
+  welcome: 'Welcome', area: 'Personal area', summary: 'Summary', orders: 'Orders and returns',
+  personal: 'Personal information', addresses: 'Addresses', wishlist: 'Wishlist', logout: 'Logout',
+  orderIntro: 'Check the status of your orders and view past orders',
+  personalIntro: 'View and update your personal information',
+  addressIntro: 'Check your shipping and billing address', wishlistIntro: 'View the articles you like',
+  appointments: 'My appointments', updates: 'My updates', requests: 'My requests',
+  services: 'Your Goya services', noOrders: 'You have no orders yet.', shopping: 'Continue shopping',
+  collection: 'Collection', accountNav: 'Personal area navigation',
+};
+type AccountReferenceCopy = { [Key in keyof typeof en]: string };
+
+export const accountReferenceCopy: Record<SiteLocale, AccountReferenceCopy> = {
+  en,
+  fr: {
+    welcome: 'Bienvenue', area: 'Espace personnel', summary: 'Résumé', orders: 'Commandes et retours',
+    personal: 'Informations personnelles', addresses: 'Adresses', wishlist: 'Liste de souhaits', logout: 'Déconnexion',
+    orderIntro: 'Consultez le statut de vos commandes et vos commandes précédentes',
+    personalIntro: 'Consultez et mettez à jour vos informations personnelles',
+    addressIntro: 'Vérifiez vos adresses de livraison et de facturation', wishlistIntro: 'Retrouvez les articles que vous aimez',
+    appointments: 'Mes rendez-vous', updates: 'Mes actualités', requests: 'Mes demandes',
+    services: 'Vos services Goya', noOrders: 'Vous n’avez pas encore de commande.', shopping: 'Continuer vos achats',
+    collection: 'Collection', accountNav: 'Navigation de l’espace personnel',
+  },
+  it: {
+    welcome: 'Benvenuto', area: 'Area personale', summary: 'Riepilogo', orders: 'Ordini e resi',
+    personal: 'Informazioni personali', addresses: 'Indirizzi', wishlist: 'Lista dei desideri', logout: 'Esci',
+    orderIntro: 'Controlla lo stato dei tuoi ordini e consulta gli ordini precedenti',
+    personalIntro: 'Visualizza e aggiorna le tue informazioni personali',
+    addressIntro: 'Controlla i tuoi indirizzi di spedizione e fatturazione', wishlistIntro: 'Visualizza gli articoli che ami',
+    appointments: 'I miei appuntamenti', updates: 'I miei aggiornamenti', requests: 'Le mie richieste',
+    services: 'I tuoi servizi Goya', noOrders: 'Non hai ancora effettuato ordini.', shopping: 'Continua gli acquisti',
+    collection: 'Collezione', accountNav: 'Navigazione dell’area personale',
+  },
+  de: {
+    welcome: 'Willkommen', area: 'Persönlicher Bereich', summary: 'Übersicht', orders: 'Bestellungen und Rücksendungen',
+    personal: 'Persönliche Angaben', addresses: 'Adressen', wishlist: 'Wunschliste', logout: 'Abmelden',
+    orderIntro: 'Prüfen Sie den Status Ihrer Bestellungen und sehen Sie frühere Bestellungen ein',
+    personalIntro: 'Sehen Sie Ihre persönlichen Angaben ein und aktualisieren Sie diese',
+    addressIntro: 'Prüfen Sie Ihre Liefer- und Rechnungsadressen', wishlistIntro: 'Sehen Sie die Artikel an, die Ihnen gefallen',
+    appointments: 'Meine Termine', updates: 'Meine Mitteilungen', requests: 'Meine Anfragen',
+    services: 'Ihre Goya Services', noOrders: 'Sie haben noch keine Bestellungen.', shopping: 'Weiter einkaufen',
+    collection: 'Kollektion', accountNav: 'Navigation des persönlichen Bereichs',
+  },
+  es: {
+    welcome: 'Bienvenido', area: 'Área personal', summary: 'Resumen', orders: 'Pedidos y devoluciones',
+    personal: 'Información personal', addresses: 'Direcciones', wishlist: 'Lista de deseos', logout: 'Cerrar sesión',
+    orderIntro: 'Consulta el estado de tus pedidos y tus pedidos anteriores',
+    personalIntro: 'Consulta y actualiza tu información personal',
+    addressIntro: 'Comprueba tus direcciones de envío y facturación', wishlistIntro: 'Consulta los artículos que te gustan',
+    appointments: 'Mis citas', updates: 'Mis novedades', requests: 'Mis solicitudes',
+    services: 'Tus servicios Goya', noOrders: 'Todavía no tienes pedidos.', shopping: 'Seguir comprando',
+    collection: 'Colección', accountNav: 'Navegación del área personal',
+  },
+  ja: {
+    welcome: 'ようこそ', area: 'マイアカウント', summary: '概要', orders: 'ご注文と返品',
+    personal: 'お客様情報', addresses: '住所', wishlist: 'ウィッシュリスト', logout: 'ログアウト',
+    orderIntro: 'ご注文状況と過去のご注文をご確認いただけます',
+    personalIntro: 'お客様情報の確認・変更', addressIntro: '配送先住所と請求先住所の確認',
+    wishlistIntro: 'お気に入りの商品をご覧いただけます', appointments: 'ご予約', updates: 'お知らせ', requests: 'お問い合わせ履歴',
+    services: 'Goyaのサービス', noOrders: 'ご注文履歴はありません。', shopping: 'お買い物を続ける',
+    collection: 'コレクション', accountNav: 'マイアカウントのナビゲーション',
+  },
+  ar: {
+    welcome: 'مرحباً', area: 'المساحة الشخصية', summary: 'الملخص', orders: 'الطلبات والإرجاع',
+    personal: 'المعلومات الشخصية', addresses: 'العناوين', wishlist: 'قائمة الأمنيات', logout: 'تسجيل الخروج',
+    orderIntro: 'تحقق من حالة طلباتك واطلع على طلباتك السابقة',
+    personalIntro: 'اطلع على معلوماتك الشخصية وحدّثها', addressIntro: 'تحقق من عنوان الشحن والفوترة',
+    wishlistIntro: 'اطلع على المنتجات التي تعجبك', appointments: 'مواعيدي', updates: 'إشعاراتي', requests: 'طلباتي للخدمات',
+    services: 'خدمات Goya الخاصة بك', noOrders: 'ليس لديك أي طلبات بعد.', shopping: 'متابعة التسوق',
+    collection: 'المجموعة', accountNav: 'التنقل في المساحة الشخصية',
+  },
+};

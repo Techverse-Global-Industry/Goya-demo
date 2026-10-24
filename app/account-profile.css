@@ -1,0 +1,33 @@
+.reference-profile { width: 100%; color: #090909; }
+.reference-profile h2 { margin: 0 0 32px; font: 400 24px/1.3 var(--sans); letter-spacing: 0; text-transform: uppercase; }
+.reference-profile-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 24px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.reference-profile-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.reference-profile-field > span:first-child { font: 300 12px/1.5 var(--sans); letter-spacing: .02em; }
+.reference-profile input:not([type=checkbox]), .reference-profile select { width: 100%; min-width: 0; height: 45px; border: 1px solid #d6d6d6; border-radius: 0; background-color: #fff; color: #171717; padding: 0 8px; font: 300 14px/1.4 var(--sans); box-shadow: none; }
+.reference-profile select { appearance: none; padding-inline-end: 32px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23ce794f' stroke-width='1'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+.reference-profile input:focus-visible, .reference-profile select:focus-visible, .reference-profile button:focus-visible, .reference-profile summary:focus-visible { outline: 2px solid #222; outline-offset: 3px; }
+.reference-profile-wide { grid-column: 1 / -1; }
+.reference-profile-email { position: relative; display: block; }
+.reference-profile .reference-profile-email input { border-color: #f6f5f3; background: #f6f5f3; color: #777; padding-inline-end: 38px; }
+.reference-profile-email > svg { position: absolute; inset-inline-end: 18px; top: 50%; transform: translateY(-50%); color: #8d8b84; }
+.reference-profile-birthday { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+.reference-profile-birthday select + select { border-inline-start: 0; }
+.reference-profile-consents { display: grid; gap: 14px; margin: 30px 0; padding: 0; border: 0; min-width: 0; }
+.reference-profile-consents label { display: flex; align-items: flex-start; gap: 10px; font: 300 12px/1.65 var(--sans); }
+.reference-profile-consents input { margin: 3px 0 0; width: 14px; height: 14px; flex: 0 0 14px; accent-color: #111; }
+.reference-profile-save { display: inline-flex; align-items: center; justify-content: center; width: min(100%, 453px); min-height: 48px; border: 1px solid #111; border-radius: 0; padding: 12px 24px; background: #111; color: #fff; font: 400 12px/1.5 var(--sans); letter-spacing: .045em; text-transform: uppercase; }
+.reference-profile-save:disabled { opacity: .5; }
+.reference-profile-feedback { font: 400 13px/1.7 var(--sans); color: #31543c; margin: 20px 0; }
+.reference-profile-feedback.is-error { color: #903e30; }
+.reference-profile-security { margin-top: 48px; border-top: 1px solid #eee; }
+.reference-profile-security > summary { cursor: pointer; padding: 22px 0; font: 400 14px/1.5 var(--sans); text-transform: uppercase; }
+.reference-profile-security .account-security { margin-top: 0; }
+[dir=rtl] .reference-profile select { background-position: left 14px center; }
+@media (max-width: 767px) {
+  .reference-profile h2 { font-size: 20px; margin-bottom: 26px; }
+  .reference-profile-fields { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .reference-profile-spacer { display: none; }
+  .reference-profile input:not([type=checkbox]), .reference-profile select { height: 48px; font-size: 16px; }
+  .reference-profile-save { width: 100%; }
+  .reference-profile-consents { margin-block: 26px; }
+}

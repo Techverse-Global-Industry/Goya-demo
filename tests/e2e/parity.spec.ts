@@ -137,6 +137,7 @@ test('account credentials require the current password and recovery works only i
   await page.goto('/login?next=%2Fapp%2Fsettings');
   await registerCustomer(page, { email: originalEmail, password, firstName: 'Security', lastName: 'Demo' });
   await expect(page).toHaveURL(/\/app\/settings$/);
+  await page.locator('.reference-profile-security > summary').click();
   const security = page.locator('.account-security');
   await security.getByLabel('New email address', { exact: true }).fill(updatedEmail);
   await security.getByLabel('Current password', { exact: true }).fill('IncorrectDemo2026!');
@@ -146,7 +147,7 @@ test('account credentials require the current password and recovery works only i
   await security.getByRole('button', { name: 'Save changes', exact: true }).click();
   await expect(security.getByRole('status')).toHaveText('Your login details have been updated.');
   expect((await (await page.request.get('/api/shop')).json()).user.email).toBe(updatedEmail);
-  await page.locator('.account-sidebar-end').getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.locator('.exact-personal-sidebar').getByRole('button', { name: 'Logout', exact: true }).click();
   await page.locator('.reference-auth-forgot').click();
   const recovery = page.locator('.demo-recovery-flow');
   await recovery.getByLabel('Email address', { exact: true }).fill(updatedEmail);
@@ -176,7 +177,7 @@ test('account credentials require the current password and recovery works only i
   await login.getByLabel('Email *', { exact: true }).fill(updatedEmail);
   await login.getByLabel('Password *', { exact: true }).fill(newPassword);
   await login.getByRole('button', { name: 'Login', exact: true }).click();
-  await expect(page.locator('.account-identity')).toContainText('Security Demo');
+  await expect(page.locator('.exact-personal-heading')).toContainText('Welcome Security');
 });
 
 test('availability and caring requests persist, receive an owner response and remain private to their guest', async ({ page, browser }) => {

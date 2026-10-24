@@ -59,6 +59,8 @@ export interface AccountProfile {
   birthDate: string;
   title: '' | 'mr' | 'ms' | 'mx';
   preferredLocale: Locale;
+  preferredLanguage?: SiteLocale;
+  country?: Exclude<Country, 'WW'>;
   newsletter: boolean;
   personalization?: boolean;
   addresses: SavedAddress[];

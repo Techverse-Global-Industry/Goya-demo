@@ -40,7 +40,9 @@ English/French matching is retained, including accent normalization. Selected-la
 
 ## Services, account and editorial pages
 
-Login uses a single centred form, approximately 502px wide at the measured desktop viewport, rather than a split editorial layout. Registration has its own wider form. Recovery uses a right drawer. Goya's backend keeps recovery restricted to previously issued browser proof and a single-use, expiring reset; entering an email alone does not authorize a reset, and no recovery email is sent.
+Login uses a single centred form, approximately 502px wide at the measured desktop viewport. Registration has its own 732px form, full-width title selector, two-column names, day/month/year selectors and an accessible password eye control. Recovery uses a right drawer. Goya's backend keeps recovery restricted to previously issued browser proof and a single-use, expiring reset; entering an email alone does not authorize a reset, and no recovery email is sent.
+
+The 25 comparison screenshots subsequently supplied by the owner exposed remaining differences in the signed-in area, Culture menu and catalogue text blocks. The personal area now has the screenshot's centred heading, 25% plain sidebar, four bordered summary panels, separate protected Addresses and Wishlist pages, and the full storefront footer. Personal information uses a two-column edit form with read-only email, title, separate names, mobile number, birthday, country and seven-language preference; changes are validated and saved atomically for the signed-in owner. Existing service, notification and order actions remain reachable through Orders and returns. The Culture menu uses a vertical text list. Department pages use broad View all / Shoes / Accessories / Highlights navigation; New arrivals and Luxury Gifts use audience tabs, followed by centred pale-grey editorial text panels with original Goya copy.
 
 Personalization is an editorial sequence with distinct bespoke, made-to-order, on-time and caring pages. Implemented structures include full-height media heroes, centred statements, alternating media/copy, process columns and consultation destinations. On-time links to eligible products rather than presenting an unsupported instant configurator. Caring includes a service carousel and an optional assessment brief with photos.
 
@@ -64,7 +66,7 @@ Original catalogue/editorial content and admin editing remain English/French. Ne
 - Reference fit capture reached the external calculation loader; Goya's local illustrative recommendation is an explicit substitute.
 - The full bag includes a promo-code accordion with backend validation, apply/remove/error feedback and quote-based totals. Demo code `GOYA10` discounts products; checkout, saved orders and invoices retain the server-calculated discount. PayPal/Apple Pay bag actions preselect the corresponding simulated checkout. These additions await final regression verification; no live wallet provider is connected. Card/wallet/MoMo and installment presentations do not transfer money or issue credit.
 - Original Goya media differs from Santoni campaign media, available product angles differ, and Avus Pro is pending a licence. Those differences prevent a claim of complete visual equivalence.
-- Private Santoni account systems, order-management tools and provider contracts were not accessible and are not claimed as replicated.
+- The signed-in visual structure is based on the owner's comparison screenshots. Private Santoni account systems, order-management tools and provider contracts were not accessible and are not claimed as replicated.
 
 ## Primary reference pages
 
@@ -89,3 +91,10 @@ Verified locally on 24 October 2026:
 - Final PWA checks passed: the country logo fits its header, shared wordmark paths match, Arabic/Japanese menus retain brand names, the offline Japanese screen works, and Cache Storage contains no private account/API pages.
 
 Browser writes used fresh local demo data, never the hosted inventory. Physical-device installation and real push delivery are separate device checks. The exact Avus Pro interface font still requires the publisher-issued webfont licence and kit described in [font licensing](FONT-LICENSING.md).
+
+
+## Supplied-screenshot follow-up validation
+
+The final production build generates 117 pages and passes strict TypeScript. All 119 core tests pass. Full lint passed for 190 files; the five subsequently adjusted form and browser files also pass targeted lint. Twelve focused desktop/mobile journeys passed in the main browser run. Both complete account journeys then passed after correcting a stale read-only-email test locator, waiting for the wishlist save acknowledgement, and adding the product wishlist loading guard. This is an aggregate across runs, rather than a claim of one uninterrupted green run. Browser writes used isolated local demo data.
+
+The follow-up public layout matrix also passes 24 desktop/mobile views in English, French and Arabic, including registration clearance below the fixed header, the full-width title field, day/month/year order, vertical Culture navigation and centred catalogue text panels. No detected runtime errors or horizontal overflow.

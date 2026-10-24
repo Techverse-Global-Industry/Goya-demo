@@ -100,7 +100,7 @@ test('owner publishes a product, customer pays with demo MoMo, owner fulfills, c
   }
   await customerPage.bringToFront();
   await expect(customerPage.locator('.customer-order .status-delivered')).toBeVisible({ timeout: 20000 });
-  await customerPage.locator('.account-sidebar nav').getByRole('button', { name: /^My updates/ }).click();
+  await customerPage.locator('.exact-personal-services').getByRole('link', { name: /^My updates/ }).click();
   await expect(customerPage.getByText('Your order has arrived', { exact: true })).toBeVisible();
   const manifest = await customerPage.request.get('/manifest.webmanifest');
   expect(manifest.ok()).toBe(true);

@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { sessionUser } from '@/lib/server/security';
 import CustomerWorkspace, { type Section } from '@/components/customer-workspace';
 
-const sections: Record<string, Section> = { '': 'accountOverview', shop: 'collection', orders: 'myOrders', atelier: 'myAppointments', updates: 'myUpdates', settings: 'myDetails' };
+const sections: Record<string, Section> = { '': 'accountOverview', shop: 'collection', orders: 'myOrders', atelier: 'myAppointments', updates: 'myUpdates', settings: 'myDetails', addresses: 'addresses', wishlist: 'wishlist' };
 export default async function CustomerPage({ params, searchParams }: { params: Promise<{ section?: string[] }>; searchParams: Promise<{ product?: string }> }) {
   const { section = [] } = await params;
   const key = section.join('/');

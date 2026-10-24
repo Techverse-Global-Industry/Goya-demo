@@ -32,6 +32,8 @@ import './exact-services.css';
 import './exact-shell.css';
 import './exact-catalog.css';
 import './exact-editorial.css';
+import './exact-account.css';
+import './account-profile.css';
 
 const inter = localFont({ src: '../public/fonts/inter-normal-100-900.woff2', variable: '--font-inter', display: 'swap', weight: '100 900', style: 'normal' });
 const playfair = localFont({ src: [
