@@ -23,6 +23,8 @@ test.beforeEach(async ({ page }) => { await seedPrivacy(page); });
 
 test('homepage keeps the four reference destinations, a real product carousel and thirteen bilingual stories', async ({ page, isMobile }) => {
   await page.goto('/');
+  await expect(page.locator('header[data-ready="true"]')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const collections = page.locator('.brand-category-grid a');
   await expect(collections).toHaveCount(4);
   expect(await collections.evaluateAll(links => links.map(link => link.getAttribute('href')))).toEqual(['/new-arrivals/men', '/accessories?audience=men', '/new-arrivals/women', '/accessories?audience=women']);
