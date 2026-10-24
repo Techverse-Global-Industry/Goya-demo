@@ -4,8 +4,8 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { mutateDatabase, readDatabase, reconcileDemoCatalog, seedDatabase } from '../lib/server/database';
-import { changeOrderStatus, createAnnouncement, createBooking, customerProfile, deleteCustomerAddress, placeOrder, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, validateProduct } from '../lib/server/shop';
-import { checkPassword, guestIdentityForToken, hashPassword, prepareGuestCheckout, userForToken, tokenHash } from '../lib/server/security';
+import { accessibleOrder, changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, customerProfile, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct } from '../lib/server/shop';
+import { beginDemoRecovery, checkPassword, finishDemoRecovery, guestIdentityForToken, hashPassword, issueRecoveryCode, prepareGuestCheckout, provisionAdministrator, updateCredentials, userForToken, tokenHash } from '../lib/server/security';
 import { matchesProduct } from '../lib/commerce';
 import type { DemoUser } from '../lib/types';
 
@@ -18,6 +18,151 @@ process.env.DATABASE_URL = '';
 process.env.DEMO_LOCAL = 'true';
 process.env.DEMO_DATA_FILE = testFile;
 after(async () => { await rm(testFile, { force: true }); delete process.env.DEMO_DATA_FILE; });
+
+test('customer credential changes reject reserved administrator addresses without changing the account', () => {
+  const previousAdminEmail = process.env.ADMIN_EMAIL;
+  try {
+    process.env.ADMIN_EMAIL = 'owner@example.test';
+    const db = seedDatabase();
+    const passwordHash = hashPassword('CustomerPassword2026!');
+    db.users.push({ ...user, passwordHash });
+    const token = 'a'.repeat(64);
+    db.sessions.push({ hash: tokenHash(token), userId: user.id, expiresAt: Date.now() + 60000 });
+    assert.throws(() => updateCredentials(db, user, { currentPassword: 'CustomerPassword2026!', email: ' OWNER@EXAMPLE.TEST ', newPassword: 'AnotherPassword2026!' }), /unavailable/);
+    assert.equal(db.users[0].email, user.email);
+    assert.equal(db.users[0].role, 'customer');
+    assert.equal(db.users[0].passwordHash, passwordHash);
+    assert.equal(userForToken(db, token)?.id, user.id);
+    delete process.env.ADMIN_EMAIL;
+    assert.throws(() => updateCredentials(db, user, { currentPassword: 'CustomerPassword2026!', email: 'admin@goya.demo' }), /unavailable/);
+    assert.equal(db.users[0].email, user.email);
+  } finally {
+    if (previousAdminEmail === undefined) delete process.env.ADMIN_EMAIL;
+    else process.env.ADMIN_EMAIL = previousAdminEmail;
+  }
+});
+
+test('administrator provisioning revokes a former customer session and recovery proof before promotion', () => {
+  const db = seedDatabase();
+  const previous = { ...user, email: 'owner@example.test', passwordHash: hashPassword('CustomerPassword2026!') };
+  db.users.push(previous, { ...other, email: 'other@example.test', passwordHash: 'unused' });
+  const oldToken = 'b'.repeat(64); const unrelatedToken = 'c'.repeat(64);
+  db.sessions.push({ hash: tokenHash(oldToken), userId: user.id, expiresAt: Date.now() + 60000 }, { hash: tokenHash(unrelatedToken), userId: other.id, expiresAt: Date.now() + 60000 });
+  const recoveryCode = issueRecoveryCode(db, user.id);
+  const resetToken = beginDemoRecovery(db, previous.email, recoveryCode)!;
+  const adminHash = hashPassword('AdministratorPassword2026!');
+  const admin = provisionAdministrator(db, previous.email, adminHash);
+  assert.equal(admin.id, user.id);
+  assert.equal(admin.role, 'admin');
+  assert.equal(db.users[0].passwordHash, adminHash);
+  assert.equal(userForToken(db, oldToken), null);
+  assert.equal(userForToken(db, unrelatedToken)?.id, other.id);
+  assert.equal(db.users[0].recoveryHash, undefined);
+  assert.equal(db.users[0].recoveryExpiresAt, undefined);
+  assert.equal(beginDemoRecovery(db, previous.email, recoveryCode), null);
+  assert.throws(() => finishDemoRecovery(db, resetToken, 'ResetPassword2026!'), /expired/);
+  const adminToken = 'd'.repeat(64);
+  db.sessions.push({ hash: tokenHash(adminToken), userId: admin.id, expiresAt: Date.now() + 60000 });
+  provisionAdministrator(db, previous.email, adminHash);
+  assert.equal(userForToken(db, adminToken)?.role, 'admin');
+});
+
+test('guest order lookup opens only the exact order matching both reference and email', () => {
+  const db = seedDatabase();
+  const first = placeOrder(db, user, input());
+  placeOrder(db, user, { ...input(), cart: [{ productId: 'francesco', size: '42', quantity: 1 }] });
+  const guest = prepareGuestCheckout(db, null);
+  const stranger = prepareGuestCheckout(db, null);
+  assert.throws(() => lookupCustomerOrder(db, first.id, 'wrong@example.test', guest.identity), /No matching/);
+  assert.equal(snapshot(db, 1, null, false, guest.identity).orders.length, 0);
+  assert.equal(lookupCustomerOrder(db, first.id.toLowerCase(), user.email.toUpperCase(), guest.identity).id, first.id);
+  assert.deepEqual(snapshot(db, 1, null, false, guest.identity).orders.map(value => value.id), [first.id]);
+  assert.equal(snapshot(db, 1, null, false, stranger.identity).orders.length, 0);
+  assert.equal(userForToken(db, guest.token), null);
+  assert.throws(() => accessibleOrder(db, other, stranger.identity, first.id), /not found/);
+  assert.equal(accessibleOrder(db, null, guest.identity, first.id).id, first.id);
+});
+
+test('returns are owned, quantity-bound, idempotent and restore stock once on receipt', () => {
+  const db = seedDatabase(); const order = placeOrder(db, user, input());
+  const guest = prepareGuestCheckout(db, null);
+  const payload = { orderId: order.id, lines: [{ productId: 'francesco', size: '45', quantity: 1, reason: 'size' }], idempotencyKey: randomUUID(), comment: 'Demo fit request' };
+  assert.throws(() => requestCustomerReturn(db, user, null, payload), /delivered/);
+  for (const status of ['preparing', 'shipped', 'delivered'] as const) changeOrderStatus(db, order.id, status);
+  assert.throws(() => requestCustomerReturn(db, other, guest.identity, payload), /not found/);
+  const record = requestCustomerReturn(db, user, null, payload);
+  assert.equal(requestCustomerReturn(db, user, null, payload).id, record.id);
+  assert.throws(() => requestCustomerReturn(db, user, null, { ...payload, idempotencyKey: randomUUID() }), /already/);
+  assert.equal(record.refundAmount, order.lines[0].unitPrice);
+  assert.equal(db.products[0].stock['45'], 0);
+  assert.throws(() => updateReturnStatus(db, record.id, 'refunded'), /unavailable/);
+  updateReturnStatus(db, record.id, 'approved'); updateReturnStatus(db, record.id, 'received'); updateReturnStatus(db, record.id, 'received');
+  assert.equal(db.products[0].stock['45'], 1);
+  updateReturnStatus(db, record.id, 'refunded'); updateReturnStatus(db, record.id, 'refunded');
+  assert.equal(db.products[0].stock['45'], 1);
+  assert.deepEqual(record.events.map(value => value.status), ['requested', 'approved', 'received', 'refunded']);
+  assert.equal(snapshot(db, 1, other).returns?.length, 0);
+  lookupCustomerOrder(db, order.id, user.email, guest.identity);
+  assert.equal(snapshot(db, 1, null, false, guest.identity).returns?.[0].id, record.id);
+});
+
+test('invalid return lines never create records and rejection releases only its reserved quantity', () => {
+  const db = seedDatabase(); const order = placeOrder(db, user, input());
+  for (const status of ['preparing', 'shipped', 'delivered'] as const) changeOrderStatus(db, order.id, status);
+  const payload = { orderId: order.id, lines: [{ productId: 'francesco', size: '45', quantity: 1, reason: 'style' }] };
+  assert.throws(() => requestCustomerReturn(db, user, null, { ...payload, lines: [{ ...payload.lines[0], quantity: 2 }] }), /quantity/);
+  assert.throws(() => requestCustomerReturn(db, user, null, { ...payload, lines: [payload.lines[0], payload.lines[0]] }), /Check|Select/);
+  const record = requestCustomerReturn(db, user, null, payload); updateReturnStatus(db, record.id, 'rejected');
+  assert.equal(db.products[0].stock['45'], 0);
+  assert.notEqual(requestCustomerReturn(db, user, null, payload).id, record.id);
+});
+
+test('service requests persist privately, bound details and support a real demo status response', () => {
+  const db = seedDatabase(); const guest = prepareGuestCheckout(db, null); const stranger = prepareGuestCheckout(db, null);
+  const request = createServiceRequest(db, null, guest.identity, { kind: 'care', name: 'Demo Guest', email: 'care@example.test', locale: 'fr', details: { service: 'patina', message: 'Restore the colour' } });
+  assert.equal(snapshot(db, 1, null, false, guest.identity).requests?.[0].id, request.id);
+  assert.equal(snapshot(db, 1, null, false, stranger.identity).requests?.length, 0);
+  assert.throws(() => ownServiceRequest(db, null, stranger.identity, request.id), /not found/);
+  assert.equal(ownServiceRequest(db, null, guest.identity, request.id).email, 'care@example.test');
+  updateServiceRequest(db, request.id, 'reviewing', 'Nous préparons votre devis de démonstration.');
+  assert.equal(request.status, 'reviewing'); assert.ok(request.note?.includes('devis'));
+  assert.throws(() => createServiceRequest(db, null, guest.identity, { ...request, details: { message: 'x'.repeat(3001) } }), /shorten/);
+  assert.throws(() => createServiceRequest(db, null, guest.identity, { ...request, attachments: [{ name: 'bad.svg', type: 'image/svg+xml', dataUrl: 'data:image/svg+xml;base64,PHN2Zz4=' }] }), /JPEG/);
+});
+
+test('restocking resolves availability requests and creates only the requesting account notification', () => {
+  const db = seedDatabase(); const product = db.products[0]; product.stock = { ...product.stock, '42': 0 };
+  const record = createServiceRequest(db, user, null, { kind: 'availability', name: user.name, email: user.email, locale: 'en', productId: product.id, details: { size: '42' } });
+  processAvailability(db, product); assert.equal(record.status, 'received');
+  product.stock = { ...product.stock, '42': 2 }; processAvailability(db, product); processAvailability(db, product);
+  assert.equal(record.status, 'confirmed'); assert.equal(db.notifications.length, 1); assert.equal(db.notifications[0].userId, user.id);
+  assert.equal(snapshot(db, 1, other).requests?.length, 0);
+});
+
+test('credential changes require current password, reject duplicate email and revoke old sessions', () => {
+  const db = seedDatabase(); db.users.push({ ...user, passwordHash: hashPassword('OriginalDemo2026!') }, { ...other, email: 'taken@example.test', passwordHash: 'unused' });
+  db.sessions.push({ hash: tokenHash('old-token'), userId: user.id, expiresAt: Date.now() + 60000 });
+  assert.throws(() => updateCredentials(db, user, { currentPassword: 'wrong', email: 'updated@example.test' }), /incorrect/);
+  assert.throws(() => updateCredentials(db, user, { currentPassword: 'OriginalDemo2026!', email: 'taken@example.test' }), /unavailable/);
+  const result = updateCredentials(db, user, { currentPassword: 'OriginalDemo2026!', email: 'updated@example.test', newPassword: 'UpdatedDemo2026!' });
+  assert.equal(result.user.email, 'updated@example.test'); assert.ok(checkPassword('UpdatedDemo2026!', db.users[0].passwordHash));
+  assert.equal(userForToken(db, 'old-token'), null); assert.match(result.recoveryCode, /^[a-f0-9]{64}$/);
+});
+
+test('recovery requires proof issued after authentication and consumes reset links once', () => {
+  const db = seedDatabase(); db.users.push({ ...user, passwordHash: hashPassword('OriginalDemo2026!') });
+  const proof = issueRecoveryCode(db, user.id);
+  assert.equal(beginDemoRecovery(db, user.email, undefined), null);
+  assert.equal(beginDemoRecovery(db, user.email, 'a'.repeat(64)), null);
+  assert.equal(beginDemoRecovery(db, other.email + '.wrong', proof), null);
+  const token = beginDemoRecovery(db, user.email, proof)!; assert.match(token, /^[a-f0-9]{64}$/);
+  assert.ok(!JSON.stringify(db).includes(token));
+  db.sessions.push({ hash: tokenHash('existing-session'), userId: user.id, expiresAt: Date.now() + 60000 });
+  finishDemoRecovery(db, token, 'RecoveredDemo2026!');
+  assert.ok(checkPassword('RecoveredDemo2026!', db.users[0].passwordHash)); assert.equal(userForToken(db, 'existing-session'), null);
+  assert.throws(() => finishDemoRecovery(db, token, 'AnotherDemo2026!'), /expired/);
+  assert.equal(beginDemoRecovery(db, user.email, proof), null);
+});
 
 test('backend calculates totals and takes stock using its own prices', () => {
   const db = seedDatabase();
@@ -223,6 +368,46 @@ test('archive photo correction preserves sold stock and owner uploads', () => {
   assert.equal(db.products[0].stock['42'], 0);
   assert.deepEqual(db.products[1].images, ['/api/media/owner-photo.jpg']);
   assert.equal(db.products[1].name.en, 'L’Artisan Kanvo Oxford');
+});
+
+test('metadata edits distinguish omitted fields from explicit clearing and remove irrelevant shoe fields', () => {
+  const product = { ...seedDatabase().products[0], style: 'loafers' as const, fit: 'regular' as const, audience: 'men' as const, construction: 'Hand-finished', colorGroup: 'brown', edits: ['new'] as const };
+  const existing = { ...product, edits: [...product.edits] };
+  const omitted: Record<string, unknown> = { ...existing };
+  for (const field of ['style', 'fit', 'audience', 'construction', 'colorGroup', 'edits']) delete omitted[field];
+  const preserved = validateProduct(omitted, existing);
+  assert.equal(preserved.style, 'loafers'); assert.equal(preserved.fit, 'regular'); assert.equal(preserved.audience, 'men');
+  assert.equal(preserved.construction, 'Hand-finished'); assert.equal(preserved.colorGroup, 'brown'); assert.deepEqual(preserved.edits, ['new']);
+  const cleared = validateProduct({ ...existing, style: '', fit: '', audience: '', construction: '', colorGroup: '', edits: [] }, existing);
+  for (const field of ['style', 'fit', 'audience', 'construction', 'colorGroup'] as const) assert.equal(cleared[field], undefined);
+  assert.deepEqual(cleared.edits, []);
+  const accessory = validateProduct({ ...existing, kind: 'accessory', stock: { OS: 3 }, accessoryType: 'wallets' }, existing);
+  assert.equal(accessory.style, undefined); assert.equal(accessory.fit, undefined); assert.equal(accessory.construction, undefined);
+  assert.equal(accessory.accessoryType, 'wallets');
+});
+
+test('archive images can be saved while external images and traversal paths are rejected', () => {
+  const product = seedDatabase().products.find(value => value.images?.some(image => image.startsWith('/images/archive/')))!;
+  assert.ok(product);
+  assert.deepEqual(validateProduct({ ...product }).images, product.images);
+  for (const image of ['/images/archive/../private.jpg', '/images/./private.jpg', '/images/..', 'https://example.test/product.jpg']) {
+    assert.throws(() => validateProduct({ ...product, images: [image] }), /images/);
+  }
+});
+
+test('catalogue reconciliation adds missing archive products without changing edited archive records', () => {
+  const db = seedDatabase();
+  const archive = db.products.filter(value => value.images?.some(image => image.startsWith('/images/archive/')));
+  assert.ok(archive.length > 1);
+  const edited = archive[0]; const missing = archive[1];
+  edited.prices = { EUR: 12345, USD: 23456, XOF: 34567 }; edited.stock = { '42': 0 };
+  edited.images = ['/api/media/owner-photo.jpg']; edited.published = false; edited.style = 'boots';
+  const before = structuredClone(edited);
+  db.products = db.products.filter(value => value.id !== missing.id);
+  reconcileDemoCatalog(db); reconcileDemoCatalog(db);
+  assert.deepEqual(db.products.find(value => value.id === edited.id), before);
+  assert.equal(db.products.filter(value => value.id === missing.id).length, 1);
+  assert.equal(db.products.find(value => value.id === missing.id)?.published, true);
 });
 
 test('legacy accounts receive private profile defaults and partial updates preserve other preferences', () => {

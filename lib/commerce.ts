@@ -91,6 +91,8 @@ export function isPaymentAvailable(payment: PaymentMethod, country: Country): bo
   if (!PAYMENT_METHODS.includes(payment) || !COUNTRIES.includes(country)) return false;
   if (payment === 'mobile') return country === 'BJ' || country === 'SN';
   if (payment === 'pickup') return country === 'BJ';
+  if (payment === 'klarna') return country === 'FR' || country === 'GB' || country === 'US';
+  if (payment === 'scalapay') return country === 'FR';
   return true;
 }
 
@@ -147,10 +149,10 @@ export function normalizeSearch(value: string): string {
 export function matchesProduct(product: Product, query: string): boolean {
   const words = normalizeSearch(query).replace(/[^\p{L}\p{N}\s-]/gu, ' ').split(/\s+/).filter(word => word && !['and', 'et'].includes(word));
   const category = { men: 'men homme hommes', women: 'women femme femmes', accessories: 'accessories accessoires' }[product.category];
-  const kinds = { footwear: 'shoe shoes chaussure chaussures soulier souliers', bag: 'bag bags sac sacs', belt: 'belt belts ceinture ceintures' }[product.kind];
+  const kinds = { footwear: 'shoe shoes chaussure chaussures soulier souliers', bag: 'bag bags sac sacs', belt: 'belt belts ceinture ceintures', accessory: 'accessory accessories accessoires', care: 'care shoe care entretien cirage' }[product.kind];
   const shoeStyle = shoeTypeOf(product);
-  const styles = { loafers: 'loafer loafers mocassin mocassins slip-on', sneakers: 'sneaker sneakers basket baskets', heels: 'heel heels pump pumps talon talons escarpin escarpins', boots: 'boot boots bottine bottines ankle' };
-  const text = normalizeSearch([product.id, category, kinds, shoeStyle ? styles[shoeStyle] : '', ...Object.values(product.name), ...Object.values(product.description), ...Object.values(product.material), ...Object.values(product.color)].join(' '));
+  const styles = { loafers: 'loafer loafers mocassin mocassins slip-on', 'lace-ups': 'lace-up lace-ups oxford derby richelieu lacets', 'monk-straps': 'monk straps buckles boucles', slippers: 'slipper slippers chaussons', sandals: 'sandal sandals sandales nu-pieds', pumps: 'pump pumps escarpin escarpins heel heels talons', flats: 'flat flats ballerines plates', mules: 'mule mules', sneakers: 'sneaker sneakers basket baskets', heels: 'heel heels pump pumps talon talons escarpin escarpins', boots: 'boot boots bottine bottines ankle' };
+  const text = normalizeSearch([product.id, category, kinds, product.accessoryType ?? '', product.construction ?? '', shoeStyle ? styles[shoeStyle] : '', ...Object.values(product.name), ...Object.values(product.description), ...Object.values(product.material), ...Object.values(product.color)].join(' '));
   return words.every((word) => text.includes(word));
 }
 

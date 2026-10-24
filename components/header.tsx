@@ -5,13 +5,16 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useShop } from '@/context/shop-context';
-import { catalogPath, storefrontCopy } from '@/lib/storefront';
+import { storefrontCopy } from '@/lib/storefront';
+import { navigationGroups } from '@/lib/navigation';
+import type { MainMenu } from '@/lib/navigation';
+import { SHIPPING_THRESHOLD } from '@/lib/commerce';
 import { Icon } from './icon';
 
-type Menu = 'new' | 'men' | 'women' | 'accessories' | 'gifts' | 'personalization' | 'culture';
+type Menu = MainMenu;
 
 export function Header({ workspace = false }: { workspace?: boolean }) {
-  const { state, dispatch, t, itemCount } = useShop();
+  const { state, dispatch, t, itemCount, money } = useShop();
   const pathname = usePathname();
   const copy = storefrontCopy[state.locale];
   const home = pathname === '/';
@@ -35,7 +38,8 @@ export function Header({ workspace = false }: { workspace?: boolean }) {
   const close = () => { setMenu(null); dispatch({ type: 'close' }); };
   return <>
     <a className="skip-link" href={workspace || pathname === '/login' ? '#account-content' : '#public-content'}>{t('skip')}</a>
-    <header ref={header} className={`site-header reference-header ${home && !scrolled && !menu ? 'reference-header--over-film' : ''} ${home && !scrolled ? 'reference-header--searchbar' : ''}`} data-ready={state.ready} onMouseLeave={() => setMenu(null)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setMenu(null); }} onKeyDown={event => { if (event.key === 'Escape') { header.current?.querySelector<HTMLElement>('[aria-expanded="true"]')?.focus(); setMenu(null); setAccountTip(false); } }}>
+    <header ref={header} className={`site-header reference-header ${scrolled ? 'reference-header--compact' : ''} ${home && !scrolled && !menu ? 'reference-header--over-film' : ''} ${home && !scrolled ? 'reference-header--searchbar' : ''}`} data-ready={state.ready} data-menu-open={!!menu} onMouseLeave={() => setMenu(null)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setMenu(null); }} onKeyDown={event => { if (event.key === 'Escape') { header.current?.querySelector<HTMLElement>('[aria-expanded="true"]')?.focus(); setMenu(null); setAccountTip(false); } }}>
+      {!scrolled && <Link href="/shipping-returns" className="reference-promotion">{state.locale === 'fr' ? `LIVRAISON OFFERTE DÈS ${money(SHIPPING_THRESHOLD[state.currency])} · RETOURS ACCOMPAGNÉS` : `COMPLIMENTARY SHIPPING OVER ${money(SHIPPING_THRESHOLD[state.currency])} · RETURNS WITH CARE`}</Link>}
       <div className="reference-navigation">
         <Link className="wordmark" href="/" aria-label="Maison Goya" onClick={close}><span>Goya</span></Link>
         <nav className="reference-desktop-nav" aria-label={t('menu')}>
@@ -63,28 +67,32 @@ export function Header({ workspace = false }: { workspace?: boolean }) {
 
 function MegaMenu({ menu, close }: { menu: Menu; close: () => void }) {
   const { state } = useShop(); const copy = storefrontCopy[state.locale];
-  const audiences = menu === 'men' || menu === 'women' ? [menu] as const : ['men', 'women'] as const;
+  const groups = navigationGroups(menu, state.locale);
+  const campaigns = menu === 'men' ? [{ src: '/images/campaign/goya-movement-men.webp', label: copy.loafers, href: '/men/loafers' }, { src: '/images/campaign/goya-sneakers.webp', label: copy.sneakers, href: '/men/sneakers' }]
+    : menu === 'accessories' ? [{ src: '/images/archive/goya-20.jpg', label: copy.man, href: '/accessories?audience=men' }, { src: '/images/archive/goya-08.jpg', label: copy.woman, href: '/accessories?audience=women' }]
+    : menu === 'culture' || menu === 'personalization' ? [{ src: '/images/img1.jpg', label: copy.craft, href: '/craftsmanship' }, { src: '/images/campaign/goya-movement-men.webp', label: copy.signature, href: '/personalization' }]
+    : menu === 'gifts' ? [{ src: '/images/archive/goya-18.jpg', label: copy.forHim, href: '/gifts/men' }, { src: '/images/archive/goya-21.jpg', label: copy.forHer, href: '/gifts/women' }]
+    : menu === 'new' ? [{ src: '/images/archive/goya-07.jpg', label: copy.man, href: '/new-arrivals/men' }, { src: '/images/archive/goya-11.jpg', label: copy.woman, href: '/new-arrivals/women' }]
+    : [{ src: '/images/campaign/goya-movement-women.webp', label: copy.heels, href: '/women/heels' }, { src: '/images/campaign/goya-boots.webp', label: copy.boots, href: '/women/boots' }];
   return <div className="reference-mega-inner">
     <div className="reference-mega-columns">
-      {menu === 'accessories' ? <div><Link href="/accessories" className="reference-mega-title" onClick={close}>{copy.accessories}</Link><Link href="/accessories" onClick={close}>{state.locale === 'fr' ? 'Sacs' : 'Bags'}</Link><Link href="/gifts/accessories" onClick={close}>{copy.gifts}</Link><Link href="/accessories" onClick={close}>{copy.viewAll}</Link></div> : menu === 'culture' ? <div><Link href="/maison" onClick={close}>{copy.maison}</Link><Link href="/culture/l-heritage-croise" onClick={close}>{copy.signature}</Link><Link href="/culture/le-geste-du-soin" onClick={close}>{copy.craft}</Link><Link href="/shoe-care" onClick={close}>{copy.care}</Link><Link href="/stores" onClick={close}>{copy.stores}</Link></div> : menu === 'personalization' ? <div><Link href="/personalization" onClick={close}>{copy.personalization}</Link><Link href="/personalization" onClick={close}>{state.locale === 'fr' ? 'Votre signature personnelle' : 'Your personal signature'}</Link><Link href="/shoe-care" onClick={close}>{copy.appointment}</Link></div> : audiences.map(audience => <div key={audience}>
-        <Link href={menu === 'gifts' ? `/gifts/${audience}` : menu === 'new' ? `/new-arrivals/${audience}` : catalogPath(audience)} className="reference-mega-title" onClick={close}>{menu === 'gifts' ? audience === 'men' ? copy.forHim : copy.forHer : menu === 'new' ? `${audience === 'men' ? copy.man : copy.woman} — ${copy.newArrivals}` : copy.shoes}</Link>
-        {(audience === 'men' ? ['loafers', 'sneakers'] : ['heels', 'boots']).map(style => <Link key={style} href={catalogPath(audience, style)} onClick={close}>{copy[style as 'loafers' | 'sneakers' | 'heels' | 'boots']}</Link>)}
-        <Link href={catalogPath(audience)} onClick={close}>{copy.viewAll}</Link>
-      </div>)}
-      {!['culture', 'personalization', 'accessories'].includes(menu) && <div><Link href="/accessories" className="reference-mega-title" onClick={close}>{copy.accessories}</Link><Link href="/gifts" onClick={close}>{copy.gifts}</Link><Link href="/personalization" onClick={close}>{copy.personalization}</Link><Link href="/shoe-care" onClick={close}>{copy.care}</Link></div>}
+      {groups.map(group => <div key={group.title}><Link href={group.href} className="reference-mega-title" onClick={close}>{group.title}</Link>{group.items.map(item => <Link key={`${item.href}-${item.label}`} href={item.href} onClick={close}>{item.label}</Link>)}<Link href={group.href} onClick={close}>{copy.viewAll}</Link></div>)}
     </div>
-    <div className="reference-mega-images">{(menu === 'men' ? [{ src: '/images/campaign/goya-movement-men.webp', label: copy.loafers, href: '/men/loafers' }, { src: '/images/campaign/goya-sneakers.webp', label: copy.sneakers, href: '/men/sneakers' }] : menu === 'culture' || menu === 'personalization' ? [{ src: '/images/img1.jpg', label: copy.craft, href: '/maison' }, { src: '/images/campaign/goya-movement-men.webp', label: copy.signature, href: '/personalization' }] : [{ src: '/images/campaign/goya-movement-women.webp', label: copy.heels, href: '/women/heels' }, { src: '/images/campaign/goya-boots.webp', label: copy.boots, href: '/women/boots' }]).map(image => <Link key={image.label} href={image.href} onClick={close}><div><Image src={image.src} alt={image.label} fill sizes="25vw" className="object-cover" /></div><span>{image.label}</span></Link>)}</div>
+    <div className="reference-mega-images">{campaigns.map(image => <Link key={image.label} href={image.href} onClick={close}><div><Image src={image.src} alt={image.label} fill sizes="25vw" className="object-cover" /></div><span>{image.label}</span></Link>)}</div>
   </div>;
 }
 
 export function MobileMenu() {
   const { state, dispatch, t } = useShop(); const copy = storefrontCopy[state.locale];
   const [active, setActive] = useState<Menu | null>(null);
+  const [groupIndex, setGroupIndex] = useState<number | null>(null);
   const close = () => dispatch({ type: 'close' });
   const items: { id: Menu; label: string; href: string }[] = [{ id: 'new', label: copy.newArrivals, href: '/new-arrivals' }, { id: 'men', label: copy.man, href: '/men' }, { id: 'women', label: copy.woman, href: '/women' }, { id: 'accessories', label: copy.accessories, href: '/accessories' }, { id: 'gifts', label: copy.gifts, href: '/gifts' }, { id: 'personalization', label: copy.personalization, href: '/personalization' }, { id: 'culture', label: copy.culture, href: '/maison' }];
+  const groups = active ? navigationGroups(active, state.locale) : [];
+  const selected = groupIndex === null ? null : groups[groupIndex];
   return <div className="reference-mobile-menu">
-    {active ? <><button type="button" className="reference-mobile-back" onClick={() => setActive(null)}><Icon name="arrow-left" />{items.find(item => item.id === active)?.label}</button><Link href={items.find(item => item.id === active)!.href} onClick={close}>{copy.viewAll}</Link><MegaMenu menu={active} close={close} /></> : <>
-      <nav aria-label={t('menu')}>{items.map(item => <div key={item.id}><Link href={item.href} onClick={close}>{item.label}</Link><button type="button" aria-label={`${copy.viewAll} — ${item.label}`} onClick={() => setActive(item.id)}><Icon name="chevron-right" /></button></div>)}</nav>
+    {active ? <><button type="button" className="reference-mobile-back" onClick={() => { if (groupIndex !== null && groups.length > 1) setGroupIndex(null); else { setActive(null); setGroupIndex(null); } }}><Icon name="arrow-left" />{selected?.title ?? items.find(item => item.id === active)?.label}</button><nav aria-label={items.find(item => item.id === active)?.label}>{selected ? <><div><Link href={selected.href} onClick={close}>{copy.viewAll}</Link></div>{selected.items.map(item => <div key={item.href}><Link href={item.href} onClick={close}>{item.label}</Link><Icon name="arrow-up-right" width={15} /></div>)}</> : groups.map((group,index) => <div key={group.title}><Link href={group.href} onClick={close}>{group.title}</Link><button type="button" aria-label={`${copy.viewAll} — ${group.title}`} onClick={() => setGroupIndex(index)}><Icon name="chevron-right" /></button></div>)}</nav></> : <>
+      <nav aria-label={t('menu')}>{items.map(item => <div key={item.id}><Link href={item.href} onClick={close}>{item.label}</Link><button type="button" aria-label={`${copy.viewAll} — ${item.label}`} onClick={() => { setActive(item.id); setGroupIndex(navigationGroups(item.id,state.locale).length === 1 ? 0 : null); }}><Icon name="chevron-right" /></button></div>)}</nav>
       <div className="reference-mobile-utilities"><Link href="/wishlist" onClick={close}><Icon name="heart" />{copy.wishlist}</Link><Link href={state.user ? '/app' : '/login'} onClick={close}><Icon name="user" />{state.user ? copy.account : copy.signIn}</Link><Link href="/customer-service" onClick={close}>{copy.customerCare}</Link><Link href="/stores" onClick={close}>{copy.stores}</Link><button type="button" onClick={() => dispatch({ type: 'open', overlay: { kind: 'region' } })}><Icon name="globe" />{state.locale === 'fr' ? 'Français' : 'English'} / {state.currency}</button></div>
     </>}
   </div>;

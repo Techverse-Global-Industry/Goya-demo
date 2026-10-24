@@ -14,9 +14,10 @@ import { MaisonImage } from '@/components/maison-image';
 import { ProductEditor } from '@/components/admin/product-editor';
 import { AnnouncementEditor } from '@/components/admin/announcement-editor';
 import { OrderJourney } from '@/components/order-journey';
+import { ExperienceConsole } from '@/components/admin/experience-console';
 
-type Tab = 'overview' | 'products' | 'orders' | 'announcements';
-const tabs: { id: Tab; icon: IconName }[] = [{ id: 'overview', icon: 'store' }, { id: 'products', icon: 'bag' }, { id: 'orders', icon: 'package' }, { id: 'announcements', icon: 'spark' }];
+type Tab = 'overview' | 'products' | 'orders' | 'experience' | 'announcements';
+const tabs: { id: Tab; icon: IconName }[] = [{ id: 'overview', icon: 'store' }, { id: 'products', icon: 'bag' }, { id: 'orders', icon: 'package' }, { id: 'experience', icon: 'mail' }, { id: 'announcements', icon: 'spark' }];
 
 export default function AdminPage() {
   const { state, t, money, refresh } = useShop();
@@ -29,6 +30,7 @@ export default function AdminPage() {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const isAdmin = state.user?.role === 'admin';
+  const tabName = (value: Tab) => value === 'experience' ? (state.locale === 'fr' ? 'Service client' : 'Customer service') : t(value);
 
   const load = useCallback(async () => {
     if (!isAdmin) return;
@@ -63,13 +65,13 @@ export default function AdminPage() {
   const filteredOrders = orders.filter((order) => orderFilter === 'all' || order.status === orderFilter);
   return <div className="admin-app">
     <aside className="admin-sidebar"><Link className="wordmark" href="/"><span>MAISON GOYA<span className="wordmark-dot">.</span></span><small>{t('admin')}</small></Link>
-      <nav aria-label={t('admin')}>{tabs.map(({ id, icon }) => <button type="button" key={id} aria-current={tab === id ? 'page' : undefined} onClick={() => changeTab(id)}><Icon name={icon} /><span>{t(id)}</span>{id === 'orders' && orders.filter((order) => order.status === 'confirmed').length > 0 && <span className="admin-nav-count">{orders.filter((order) => order.status === 'confirmed').length}</span>}</button>)}</nav>
+      <nav aria-label={t('admin')}>{tabs.map(({ id, icon }) => <button type="button" key={id} aria-current={tab === id ? 'page' : undefined} onClick={() => changeTab(id)}><Icon name={icon} /><span>{tabName(id)}</span>{id === 'orders' && orders.filter((order) => order.status === 'confirmed').length > 0 && <span className="admin-nav-count">{orders.filter((order) => order.status === 'confirmed').length}</span>}</button>)}</nav>
       <div className="admin-sidebar-bottom"><span className="mini-badge">{t('demoWorkspace')}</span><Link className="text-link" href="/">{state.locale === 'fr' ? 'Site de la marque' : 'Brand website'}<Icon name="arrow-up-right" /></Link><button className="quiet-link" onClick={async () => { try { await shopRequest('logout'); setData(null); await refresh(); } catch { setError(t('requestFailed')); } }}>{t('logout')}</button></div>
     </aside>
     <main className="admin-main">
-      <header className="admin-topbar"><span className="eyebrow">Maison Goya / {t(tab)}</span><div><span className={`connection-dot ${state.connected ? 'is-live' : ''}`} aria-hidden="true" /><span className="admin-live-label">{state.connected ? t('refreshed') : t('loading')}</span><LanguageSwitch /></div></header>
+      <header className="admin-topbar"><span className="eyebrow">Maison Goya / {tabName(tab)}</span><div><span className={`connection-dot ${state.connected ? 'is-live' : ''}`} aria-hidden="true" /><span className="admin-live-label">{state.connected ? t('refreshed') : t('loading')}</span><LanguageSwitch /></div></header>
       <div className="admin-content">
-        <div className="admin-page-heading"><div><p className="eyebrow">{t('demoWorkspace')}</p><h1>{editing ? t(editing === 'new' ? 'addProduct' : 'editProduct') : t(tab)}</h1><p>{t(tab === 'announcements' ? 'announcementIntro' : 'adminIntro')}</p></div>{tab === 'products' && !editing && <button className="button button-gold" onClick={() => setEditing('new')}>{t('addProduct')}<Icon name="plus" /></button>}</div>
+        <div className="admin-page-heading"><div><p className="eyebrow">{t('demoWorkspace')}</p><h1>{editing ? t(editing === 'new' ? 'addProduct' : 'editProduct') : tabName(tab)}</h1><p>{t(tab === 'announcements' ? 'announcementIntro' : 'adminIntro')}</p></div>{tab === 'products' && !editing && <button className="button button-gold" onClick={() => setEditing('new')}>{t('addProduct')}<Icon name="plus" /></button>}</div>
         {error && <p className="admin-alert is-error" role="alert">{error}</p>}{notice && <p className="admin-alert" role="status"><Icon name="check" width={16} />{notice}</p>}
         {!data ? <p className="admin-empty">{t('loading')}</p> : <>
           {tab === 'overview' && <>
@@ -83,6 +85,7 @@ export default function AdminPage() {
             <div className="admin-products">{filteredProducts.map((product) => <article className="admin-product" key={product.id}><div className="admin-product-image"><MaisonImage key={product.images?.join()} index={product.image} sources={product.images} alt={product.name[state.locale]} sizes="(max-width: 639px) 42vw, 24vw" className="object-cover" /><span className={`admin-publish-badge ${product.published === false ? 'is-draft' : ''}`}>{t(product.published === false ? 'draft' : 'published')}</span></div><div className="admin-product-copy"><p className="eyebrow">{t(product.category)}</p><h2>{product.name[state.locale]}</h2><div><span>{money(product.prices[state.currency])}</span><span>{Object.values(product.stock).reduce((a, b) => a + b, 0)} {t('stock').toLowerCase()}</span></div><button className="button button-outline button-full" onClick={() => { setEditing(structuredClone(product)); setNotice(''); }}>{t('edit')}<Icon name="arrow-right" /></button></div></article>)}</div>{!filteredProducts.length && <p className="admin-empty">{t('noResults')}</p>}
           </>)}
           {tab === 'orders' && <><div className="admin-order-filters" role="group" aria-label={t('orderStatus')}>{(['all', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'] as const).map((status) => <button key={status} aria-pressed={orderFilter === status} onClick={() => setOrderFilter(status)}>{t(status)}</button>)}</div><div className="admin-orders">{filteredOrders.map((order) => <AdminOrder key={order.id} order={order} busy={busy} onStatus={async (status) => { await action('orderStatus', { orderId: order.id, status }); }} />)}{!filteredOrders.length && <div className="admin-empty"><Icon name="package" width={36} height={36} /><p>{t('noOrdersAdmin')}</p></div>}</div></>}
+          {tab === 'experience' && <ExperienceConsole data={data} busy={busy} onAction={action} />}
           {tab === 'announcements' && <><AnnouncementEditor products={products} busy={busy} onPublish={async (body) => { await action('announce', body); }} /><div className="admin-announcements">{data.announcements.map((announcement) => <article className="admin-panel" key={announcement.id}><p className="eyebrow">{formatDate(announcement.createdAt, state.locale)}</p><h2>{announcement.title[state.locale]}</h2><p>{announcement.body[state.locale]}</p><button className="quiet-link" disabled={busy} onClick={() => void action('deleteAnnouncement', { id: announcement.id }).catch(() => undefined)}>{t('removeAnnouncement')}</button></article>)}</div></>}
         </>}
         <footer className="admin-footer">{t('demoOnly')}</footer>

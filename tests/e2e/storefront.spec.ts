@@ -140,9 +140,9 @@ test('guest checkout saves billing and gift details, confirms once and restricts
   await page.getByRole('link', { name: 'Track this order', exact: true }).click();
   await expect(page).toHaveURL(/\/track-order$/);
   await expect(page.locator('.reference-tracked-order')).toContainText(orderId);
-  await page.getByLabel('Order or tracking number', { exact: true }).fill('DEMO-MG-NOT-MINE');
+  await page.getByLabel('Filter these orders', { exact: true }).fill('DEMO-MG-NOT-MINE');
   await expect(page.getByRole('status')).toContainText('No matching order is available in this session.');
-  await page.getByLabel('Order or tracking number', { exact: true }).fill(orderId);
+  await page.getByLabel('Filter these orders', { exact: true }).fill(orderId);
   await expect(page.locator('.reference-tracked-order')).toContainText(orderId);
   await page.screenshot({ path: `test-results/guest-tracking-${isMobile ? 'mobile' : 'desktop'}.png`, fullPage: true });
   const cookies = await page.context().cookies();
@@ -195,6 +195,11 @@ test('public search ignores accents and filters, sorting and shoe-category route
   await filters.getByRole('checkbox', { name: 'Black', exact: true }).check();
   await filters.getByRole('button', { name: /^Show \d+ results?$/ }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  while (!await page.locator('[data-product-id="francesco"]').count()) {
+    const previousCount = await page.locator('.reference-plp-grid .product-card').count();
+    await page.getByRole('button', { name: 'Load more', exact: true }).click();
+    await expect.poll(() => page.locator('.reference-plp-grid .product-card').count()).toBeGreaterThan(previousCount);
+  }
   await expect(page.locator('[data-product-id="francesco"]')).toBeVisible();
   await expect(page.locator('.reference-active-filters')).toContainText('Black');
   const filteredIds = await page.locator('.product-card').evaluateAll(cards => cards.map(card => card.getAttribute('data-product-id')));
@@ -279,7 +284,7 @@ test('reduced motion keeps campaign media and category navigation accessible', a
   await expect(page.locator('.brand-category-grid')).toBeInViewport();
   await expect(page.locator('.pin-spacer')).toHaveCount(0);
   await page.locator('.brand-category-grid a').first().click();
-  await expect(page).toHaveURL(/\/men\/loafers$/);
+  await expect(page).toHaveURL(/\/new-arrivals\/men$/);
   await expect(page.locator('.product-card').first()).toBeVisible();
 });
 

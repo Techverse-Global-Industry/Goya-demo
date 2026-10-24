@@ -20,7 +20,7 @@ import { Auth } from './auth';
 import { DemoPayment } from './demo-payment';
 import { OrderJourney } from './order-journey';
 
-const PAYMENT_ICONS: Record<PaymentMethod, IconName> = { card: 'card', apple: 'phone', mobile: 'phone', pickup: 'store' };
+const PAYMENT_ICONS: Record<PaymentMethod, IconName> = { card: 'card', apple: 'phone', paypal: 'shield', klarna: 'card', scalapay: 'card', mobile: 'phone', pickup: 'store' };
 const CHECKOUT_SESSION = 'maison.checkout.session';
 type CheckoutSession = { owner: string | null; confirmedId?: string; pending?: { key: string; startedAt: string } };
 const copy = {

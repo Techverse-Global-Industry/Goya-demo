@@ -2,12 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PRODUCT_IMAGES, STORY_IMAGES, imageSources } from '../lib/assets';
 import { PRODUCTS } from '../lib/catalog';
+import { ARCHIVE_PRODUCTS } from '../lib/archive-catalog';
+import { belongsToEdit, matchesAccessoryAudience, recommendDemoSize } from '../lib/catalog-edits';
+import { CURATED_EDITS } from '../lib/curated-edits';
+import { rankedSearch, safeRecentSearches, searchScore } from '../lib/search';
 import { addDays, availableStock, bookingDateRange, createOrder, formatDate, formatMoney, isPaymentAvailable, isTimeAvailable, localDateTime, matchesProduct, normalizeSearch, readPreferences, remainingStock, sanitizeCart, shippingCost, subtotal, validateBooking, validateShipping } from '../lib/commerce';
 import { invoiceText } from '../lib/browser';
 import { INITIAL_STATE, shopReducer } from '../lib/store';
 import { shoeTypeOf } from '../lib/merchandising';
-import { productColors } from '../lib/storefront';
-import type { Booking, BookingDetails, CartLine, ShippingDetails, StoreSnapshot } from '../lib/types';
+import { EMPTY_FILTERS, matchesCatalogFilters, productColors } from '../lib/storefront';
+import type { Booking, BookingDetails, CartLine, Product, ShippingDetails, StoreSnapshot } from '../lib/types';
 
 const shipping: ShippingDetails = { name: 'Demo Guest', email: 'guest@example.test', address: '12 Demo Avenue', city: 'Cotonou', country: 'BJ' };
 const cart: CartLine[] = [{ productId: 'francesco', size: '42', quantity: 1 }];
@@ -18,7 +22,7 @@ const orderOptions = { id: 'DEMO-MG-TEST0001', createdAt: now.toISOString(), car
 const hydrated = () => shopReducer(INITIAL_STATE, { type: 'hydrate', raw: null });
 
 test('shoe navigation separates loafers, sneakers, heels and boots without treating bags as shoes', () => {
-  assert.deepEqual(PRODUCTS.map(shoeTypeOf), ['loafers', 'sneakers', 'heels', 'heels', 'boots', 'loafers', 'heels', null]);
+  assert.deepEqual(PRODUCTS.slice(0, 8).map(shoeTypeOf), ['loafers', 'sneakers', 'heels', 'pumps', 'boots', 'loafers', 'heels', null]);
 });
 
 test('bilingual search recognises the displayed shoe-style suggestions', () => {
@@ -43,8 +47,9 @@ test('changing the collection clears its previous shoe style and reset clears th
 test('exact narrative and catalog image assignments', () => {
   assert.deepEqual(STORY_IMAGES, [1, 2, 3, 4]);
   assert.deepEqual(PRODUCT_IMAGES, [3, 7, 6, 5, 9, 10, 8, 11]);
-  assert.deepEqual(PRODUCTS.map((product) => product.image), [...PRODUCT_IMAGES]);
-  assert.equal(PRODUCTS.length, 8);
+  assert.deepEqual(PRODUCTS.slice(0, 8).map((product) => product.image), [...PRODUCT_IMAGES]);
+  assert.ok(ARCHIVE_PRODUCTS.length > 0);
+  for (const product of ARCHIVE_PRODUCTS) assert.ok(product.images?.every(image => /^\/images\/archive\/goya-\d{2}\.jpg$/.test(image)), product.id);
 });
 
 test('routing matches supplied WebP slots and preserves JPEG alternatives', () => {
@@ -60,12 +65,97 @@ test('all prices are positive integers in their currency minor units', () => {
   for (const product of PRODUCTS) for (const value of Object.values(product.prices)) assert.ok(Number.isSafeInteger(value) && value > 0);
 });
 
-test('footwear uses all eight EU sizes; bags use one size; belts use centimetres', () => {
+test('footwear uses valid EU sizes; archive womenswear has its own size run; accessories use OS or belt centimetres', () => {
   for (const product of PRODUCTS) {
-    if (product.kind === 'footwear') assert.deepEqual(Object.keys(product.stock), ['39','40','41','42','43','44','45','46']);
-    if (product.kind === 'bag') assert.deepEqual(Object.keys(product.stock), ['OS']);
-    if (product.kind === 'belt') assert.deepEqual(Object.keys(product.stock), ['85','90','95','100','105']);
+    const sizes = Object.keys(product.stock);
+    assert.ok(sizes.length > 0);
+    assert.equal(new Set(sizes).size, sizes.length);
+    if (product.kind === 'footwear') assert.ok(sizes.every(size => Number(size) >= 20 && Number(size) <= 50 && Number(size) * 2 % 1 === 0), product.id);
+    if (['bag', 'accessory', 'care'].includes(product.kind)) assert.deepEqual(sizes, ['OS']);
+    if (product.kind === 'belt') assert.ok(sizes.every(size => Number(size) >= 50 && Number(size) <= 150), product.id);
   }
+  for (const product of ARCHIVE_PRODUCTS.filter(product => product.category === 'women' && product.kind === 'footwear')) assert.deepEqual(Object.keys(product.stock), ['36','37','38','39','40','41','42'], product.id);
+});
+
+test('curated selections have distinct membership and only link real creations', () => {
+  const formal = CURATED_EDITS.find(edit => edit.slug === 'formal')!;
+  const travel = CURATED_EDITS.find(edit => edit.slug === 'travel')!;
+  assert.ok(formal.productIds.includes('midnight-slingback'));
+  assert.ok(!formal.productIds.includes('archive-crossbody'));
+  assert.ok(travel.productIds.includes('archive-crossbody'));
+  assert.equal(new Set(CURATED_EDITS.map(edit => [...edit.productIds].sort().join('|'))).size, CURATED_EDITS.length);
+  const ids = new Set(PRODUCTS.map(product => product.id));
+  for (const edit of CURATED_EDITS) for (const id of edit.productIds) assert.ok(ids.has(id), `${edit.slug}: ${id}`);
+});
+
+test('explicit empty edits remove legacy merchandising assignments', () => {
+  const francesco = PRODUCTS.find(product => product.id === 'francesco')!;
+  assert.equal(belongsToEdit(francesco, 'featured'), true);
+  assert.equal(belongsToEdit(francesco, 'gifts'), true);
+  for (const edit of ['new', 'featured', 'gifts'] as const) assert.equal(belongsToEdit({ ...francesco, edits: [] }, edit), false);
+  assert.equal(belongsToEdit({ ...francesco, edits: ['new'] }, 'new'), true);
+  assert.equal(belongsToEdit({ ...francesco, edits: ['new'] }, 'featured'), false);
+});
+
+test('actual colour siblings retain separate IDs, colours and stock allocation', () => {
+  const siblings = PRODUCTS.filter(product => product.colorGroup === 'mosaic-tassel');
+  assert.equal(siblings.length, 3);
+  assert.equal(new Set(siblings.map(product => product.id)).size, 3);
+  assert.equal(new Set(siblings.map(product => product.color.en)).size, 3);
+  assert.notEqual(siblings[0].stock, siblings[1].stock);
+  const red = siblings.find(product => product.id === 'mosaic-tassel-red')!;
+  const black = siblings.find(product => product.id === 'mosaic-tassel-black')!;
+  const used = { [`${red.id}:42`]: red.stock['42'] };
+  assert.equal(availableStock(red.id, '42', used), 0);
+  assert.equal(availableStock(black.id, '42', used), black.stock['42']);
+  assert.deepEqual(sanitizeCart([{ productId: red.id, size: '42', quantity: 1 }, { productId: black.id, size: '42', quantity: 1 }]), [{ productId: red.id, size: '42', quantity: 1 }, { productId: black.id, size: '42', quantity: 1 }]);
+});
+
+test('fit finder converts measurements, reports unavailable sizes and rejects unsupported pieces', () => {
+  const man = PRODUCTS.find(product => product.id === 'francesco')!;
+  const woman = PRODUCTS.find(product => product.id === 'leaf-mule')!;
+  const common = { width: 'regular' as const, preference: 'regular' as const };
+  assert.deepEqual(recommendDemoSize(man, { ...common, system: 'CM', value: 26.3 }), { size: '41', available: true, withinRange: true });
+  assert.deepEqual(recommendDemoSize(man, { ...common, system: 'US', value: 9 }), { size: '42', available: true, withinRange: true });
+  assert.deepEqual(recommendDemoSize(woman, { ...common, system: 'EU', value: 42 }), { size: '42', available: false, withinRange: true });
+  const outside = recommendDemoSize(man, { ...common, system: 'EU', value: 55 });
+  assert.equal(outside?.available, false);
+  assert.equal(outside?.withinRange, false);
+  assert.equal(recommendDemoSize(man, { ...common, system: 'CM', value: 99 }), null);
+  assert.equal(recommendDemoSize(PRODUCTS.find(product => product.kind === 'bag')!, { ...common, system: 'EU', value: 42 }), null);
+});
+
+test('metadata filters and accessory audiences honour explicit assignments', () => {
+  const base = PRODUCTS.find(product => product.id === 'francesco')!;
+  const assigned: Product = { ...base, style: 'lace-ups', construction: 'blake' };
+  assert.equal(matchesCatalogFilters(assigned, { ...EMPTY_FILTERS, styles: ['lace-ups'], constructions: ['blake'] }), true);
+  assert.equal(matchesCatalogFilters(base, { ...EMPTY_FILTERS, constructions: ['blake'] }), false);
+  const bag = PRODUCTS.find(product => product.id === 'archive-crossbody')!;
+  const belt = PRODUCTS.find(product => product.id === 'mosaic-belt')!;
+  assert.equal(matchesCatalogFilters(bag, { ...EMPTY_FILTERS, accessoryTypes: ['bags-backpacks'] }), true);
+  assert.equal(matchesCatalogFilters(belt, { ...EMPTY_FILTERS, accessoryTypes: ['bags-backpacks'] }), false);
+  assert.equal(matchesAccessoryAudience(bag, 'women'), true);
+  assert.equal(matchesAccessoryAudience(bag, 'men'), false);
+  assert.equal(matchesAccessoryAudience({ ...bag, audience: 'unisex' }, 'men'), true);
+  assert.equal(matchesAccessoryAudience({ ...bag, audience: 'unisex' }, 'women'), true);
+});
+
+test('ranked search prioritises bilingual names over descriptive mentions and excludes unpublished items', () => {
+  const base = PRODUCTS[0];
+  const exact: Product = { ...base, id: 'search-exact', name: { en: 'Goya Blue', fr: 'Goya Bleu' } };
+  const prefix: Product = { ...base, id: 'search-prefix', name: { en: 'Goya Blue Atelier', fr: 'Goya Bleu Atelier' } };
+  const mention: Product = { ...base, id: 'search-description', name: { en: 'Another creation', fr: 'Une autre création' }, description: { en: 'A Goya Blue detail.', fr: 'Un détail Goya Bleu.' } };
+  const hidden: Product = { ...exact, id: 'search-hidden', published: false };
+  assert.ok(searchScore(exact, 'Goya Bleu') > searchScore(prefix, 'Goya Bleu'));
+  assert.ok(searchScore(prefix, 'Goya Bleu') > searchScore(mention, 'Goya Bleu'));
+  assert.equal(searchScore(base, 'unfindableword'), 0);
+  assert.deepEqual(rankedSearch([mention, hidden, prefix, exact], 'Goya Bleu').map(product => product.id), [exact.id, prefix.id, mention.id]);
+  assert.equal(searchScore(PRODUCTS.find(product => product.id === 'sparkle-pump')!, 'L’Escarpin Éclat'), 100);
+});
+
+test('recent searches reject malformed and oversized storage and limit valid unique entries', () => {
+  for (const value of [null, '', 'broken', '{}', 'null', 'x'.repeat(3001)]) assert.deepEqual(safeRecentSearches(value), []);
+  assert.deepEqual(safeRecentSearches(JSON.stringify(['Mocassins', 'Mocassins', '', null, 7, 'x'.repeat(121), 'Bottines', 'Baskets', 'Sandales', 'Escarpins', 'Mules'])), ['Mocassins', 'Bottines', 'Baskets', 'Sandales', 'Escarpins']);
 });
 
 test('cart sanitizer merges variants and caps stock', () => {
@@ -131,6 +221,10 @@ test('country-specific payment availability', () => {
   assert.equal(isPaymentAvailable('pickup', 'SN'), false);
   assert.equal(isPaymentAvailable('apple', 'GB'), true);
   assert.equal(isPaymentAvailable('card', 'US'), true);
+  for (const country of ['FR', 'GB', 'US'] as const) assert.equal(isPaymentAvailable('klarna', country), true);
+  for (const country of ['BJ', 'SN'] as const) assert.equal(isPaymentAvailable('klarna', country), false);
+  assert.equal(isPaymentAvailable('scalapay', 'FR'), true);
+  for (const country of ['BJ', 'SN', 'GB', 'US'] as const) assert.equal(isPaymentAvailable('scalapay', country), false);
 });
 
 test('shipping validation returns translation keys, not captured English messages', () => {

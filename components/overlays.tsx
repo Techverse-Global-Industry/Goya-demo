@@ -9,7 +9,10 @@ import { BookingModal } from './booking';
 import { SearchModal } from './search';
 import { MobileMenu } from './header';
 import { DemoNote, InlineNotice } from './controls';
-import { RegionSelector, DemoPasswordRecovery, SizeGuide } from './reference-services';
+import { RegionSelector, NewsletterForm } from './reference-services';
+import { DemoRecovery } from './account-security';
+import { FitFinder, ProductSizeGuide } from './fit-guide';
+import { NewsletterPopup } from './promotion';
 import { AvailabilityNotice } from './product-detail';
 import { CatalogFilterDrawer } from './catalog-filters';
 
@@ -27,10 +30,12 @@ export function Overlays() {
     case 'search': return <ModalShell key="search" title={t('search')} className="reference-search-dialog" chrome={false}>{(close) => <SearchModal close={close} />}</ModalShell>;
     case 'menu': return <ModalShell key="menu" title={t('menu')} drawer>{() => <MobileMenu />}</ModalShell>;
     case 'region': return <ModalShell key="region" title={state.locale === 'fr' ? 'Pays et langue' : 'Country and language'}>{close => <RegionSelector onComplete={close} />}</ModalShell>;
-    case 'recovery': return <ModalShell key="recovery" title={state.locale === 'fr' ? 'Mot de passe oublié' : 'Forgotten password'}>{close => <DemoPasswordRecovery onComplete={close} />}</ModalShell>;
-    case 'sizeGuide': return <ModalShell key="sizeGuide" title={state.locale === 'fr' ? 'Guide des pointures' : 'Size guide'} wide>{() => <SizeGuide />}</ModalShell>;
+    case 'recovery': return <ModalShell key="recovery" title={state.locale === 'fr' ? 'Mot de passe oublié' : 'Forgotten password'}>{close => <DemoRecovery onComplete={close} />}</ModalShell>;
+    case 'sizeGuide': return <ModalShell key={`sizeGuide-${overlay.productId ?? ''}`} title={state.locale === 'fr' ? 'Guide des pointures' : 'Size guide'} wide>{() => <ProductSizeGuide productId={overlay.productId} />}</ModalShell>;
+    case 'fit': return <ModalShell key={`fit-${overlay.productId}`} title={state.locale === 'fr' ? 'Trouvez votre pointure' : 'Find your size'}>{() => <FitFinder productId={overlay.productId} />}</ModalShell>;
+    case 'newsletter': return <ModalShell key="newsletter" title={state.locale === 'fr' ? 'Les nouvelles Goya' : 'Goya newsletter'} className="newsletter-dialog" chrome={false}>{close => <NewsletterPopup close={close}><NewsletterForm /></NewsletterPopup>}</ModalShell>;
     case 'availability': return <ModalShell key={`availability-${overlay.productId}:${overlay.size ?? ''}`} title={state.locale === 'fr' ? 'Disponibilité' : 'Availability'}>{() => <AvailabilityNotice productId={overlay.productId} size={overlay.size} />}</ModalShell>;
-    case 'filters': return <ModalShell key="filters" title={state.locale === 'fr' ? 'Filtres' : 'Filters'} drawer>{close => <CatalogFilterDrawer close={close} category={overlay.category} style={overlay.style} />}</ModalShell>;
+    case 'filters': return <ModalShell key="filters" title={state.locale === 'fr' ? 'Filtres' : 'Filters'} drawer>{close => <CatalogFilterDrawer close={close} category={overlay.category} style={overlay.style} accessoryType={overlay.accessoryType} accessoryAudience={overlay.accessoryAudience} edit={overlay.edit} selection={overlay.selection} />}</ModalShell>;
     case 'info': {
       const info = {
         shipping: { title: 'infoShippingTitle', body: 'infoShippingBody', label: 'shippingInfo' },

@@ -1,0 +1,108 @@
+/* Final shared proportions for the complete Goya demonstration experience. */
+:root{--store-header-height:106px;--reference-header-height:var(--store-header-height);--goya-navigation-height:64px;--goya-promotion-height:42px}
+.reference-header.site-header{--header-current:var(--store-header-height);height:var(--header-current)}
+.reference-header.site-header.reference-header--compact{--header-current:var(--goya-navigation-height)}
+.reference-header.site-header[data-menu-open=true]{transition:none}
+.reference-promotion{display:flex;align-items:center;justify-content:center;height:var(--goya-promotion-height);padding:0 20px;background:#f5f4f1;color:#171717;font:400 10px/1.5 var(--sans);letter-spacing:.11em;text-align:center;border-bottom:1px solid #e9e7e2}
+.reference-promotion:hover{text-decoration:underline;text-underline-offset:4px}
+.reference-navigation{height:var(--goya-navigation-height)}
+.maison-public{overflow-x:clip}
+.reference-mobile-menu{padding:8px 24px 24px}
+.reference-header--over-film .reference-navigation{background:linear-gradient(#0003,transparent)}
+.reference-inline-search{top:var(--header-current)}
+.reference-mega-menu{top:var(--header-current);max-height:calc(100dvh - var(--header-current));overflow-y:auto;overscroll-behavior:contain}
+.reference-mega-inner{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:3vw;padding:32px 3vw 40px}
+.reference-mega-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2vw}
+.reference-mega-columns>div{gap:11px;min-width:0}
+.reference-mega-columns a{font-size:12px;line-height:1.7}
+.reference-mega-columns .reference-mega-title{font-size:14px;font-weight:500;margin-bottom:9px}
+.reference-mega-columns>div>a:last-child{margin-top:7px;text-decoration:underline;text-underline-offset:4px}
+.reference-mega-images>a>div{aspect-ratio:4/5}
+.reference-mega-images span{font-size:12px}
+.maison-public>.fashion-campaign.campaign-hero{margin-top:var(--goya-promotion-height);height:calc(100svh - var(--goya-promotion-height));min-height:620px}
+.reference-footer .fashion-footer-main{grid-template-columns:1.7fr 1fr 1fr 1fr;gap:3.5vw}
+.reference-footer h2{font-size:13px}
+.reference-footer .fashion-footer-column>a,.reference-footer .fashion-footer-column>button,.reference-install>button{font-size:12px;line-height:1.7;min-height:30px}
+.reference-footer-newsletter .reference-newsletter>p{font-size:12px;line-height:1.8}
+.reference-country{font-size:12px}
+.reference-footer .fashion-footer-legal{font-size:10px}
+.reference-search-categories{display:flex;flex-wrap:wrap;gap:12px 25px;padding:0 0 20px;font-size:12px}
+.reference-search-categories a{display:flex;gap:12px;align-items:center;text-decoration:underline;text-underline-offset:4px}
+.reference-recent-searches{margin-top:40px;position:relative}
+.reference-recent-searches>h2{margin-bottom:12px}
+.reference-recent-searches>button{position:absolute;right:0;top:0;font-size:11px}
+.reference-recent-searches>div{display:flex;flex-wrap:wrap;gap:18px}
+.reference-recent-searches>div>button{display:flex;align-items:center;gap:12px;border:0;background:none;color:#555;font-size:12px;min-height:38px}
+.provider-demo{padding:20px;margin:20px 0;background:#f7f6f3;text-align:left;border:1px solid #e5e3de}
+.provider-demo>p{font-size:11px;line-height:1.8;color:#666}
+.provider-demo>div{display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;margin-top:18px}
+.provider-demo ol{list-style:none;padding:0;margin:18px 0 0}
+.provider-demo li{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-top:1px solid #ddd;font-size:12px}
+.provider-demo li strong{font-weight:500}
+.newsletter-dialog.maison-dialog .dialog-positioner{justify-content:flex-end;align-items:flex-end;padding:24px}
+.newsletter-dialog.maison-dialog .dialog-panel{width:min(760px,100%);max-height:calc(100dvh - 48px);margin:0;background:#fff;color:#171717;border:0}
+.newsletter-dialog .dialog-content{padding:0}
+.newsletter-popup{display:grid;grid-template-columns:42% minmax(0,1fr)}
+.newsletter-popup-image{position:relative;min-height:520px;background:#e6e1da;overflow:hidden}
+.newsletter-popup-image img{object-fit:cover}
+.newsletter-popup-content{position:relative;padding:55px 32px 30px}
+.newsletter-popup-content>.reference-kicker{font-size:10px;letter-spacing:.15em;margin-bottom:20px}
+.newsletter-popup-content>h2{font:500 27px/1.2 var(--sans);letter-spacing:-.03em;max-width:300px;margin-bottom:20px}
+.newsletter-popup-content>p{font:400 12px/1.8 var(--sans);margin-bottom:18px}
+.newsletter-popup-content .reference-newsletter{padding:0}
+.newsletter-popup-content .reference-newsletter>h2,.newsletter-popup-content .reference-newsletter>p{display:none}
+.newsletter-popup-content .reference-newsletter form{margin-top:20px}
+.newsletter-popup-close,.promotion-prompt-close{display:grid;place-items:center;position:absolute;right:13px;top:13px;width:32px;height:32px;border:0;background:#fff;color:#171717}
+.newsletter-popup-later{font-size:11px;margin-top:22px}
+.promotion-prompt{position:fixed;z-index:90;right:22px;bottom:22px;display:grid;grid-template-columns:105px minmax(0,1fr);width:min(440px,calc(100% - 32px));background:#fff;color:#171717;border:1px solid #ddd;box-shadow:0 8px 35px #0002;animation:goya-prompt-in .4s both}
+.promotion-prompt-image{position:relative;min-height:150px;overflow:hidden;background:#eee}
+.promotion-prompt-image img{object-fit:cover}
+.promotion-prompt-content{padding:26px 24px}
+.promotion-prompt-content .reference-kicker{font-size:9px;letter-spacing:.12em;margin-bottom:12px}
+.promotion-prompt-content h2{font:400 19px/1.25 var(--sans);margin:0 0 18px}
+.promotion-prompt-content .reference-text-link{font-size:10px;display:flex;gap:8px;align-items:center}
+.promotion-prompt-close{right:3px;top:3px;width:27px;height:27px;background:transparent}
+.goya-journal-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:55px 5px;padding:0 3vw 70px}
+.goya-journal-grid article{min-width:0}
+.goya-journal-photo{position:relative;aspect-ratio:3/4;overflow:hidden;background:#d6d0c8;color:#fff}
+.goya-journal-photo:after{content:'';position:absolute;inset:40% 0 0;background:linear-gradient(transparent,#0009)}
+.goya-journal-photo img{object-fit:cover;transition:transform .7s}
+.goya-journal-grid a:hover img{transform:scale(1.035)}
+.goya-journal-photo>span{position:absolute;z-index:1;bottom:28px;left:25px;right:25px;display:flex;align-items:center;justify-content:space-between;gap:18px;font:400 18px/1.4 var(--sans);text-decoration:underline;text-underline-offset:5px}
+.goya-journal-grid .fashion-kicker{margin:23px 24px 12px;font-size:9px}
+.goya-journal-grid article>a>p:last-child{margin:0 24px;font-size:12px;line-height:1.9;color:#666}
+.reference-story-source{font-size:11px;line-height:1.8;margin-top:6px;gap:12px}
+@keyframes goya-prompt-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@media(min-width:1250px){.reference-nav-item>a{font-size:clamp(14px,1.17vw,18px)}}
+@media(max-width:999px){.goya-journal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:699px){
+ :root{--store-header-height:90px;--goya-navigation-height:60px;--goya-promotion-height:30px}
+ .reference-promotion{font-size:8px;letter-spacing:.055em;padding:0 12px}
+ .maison-public>.fashion-campaign.campaign-hero{height:calc(100svh - 30px);min-height:590px}
+ .reference-inline-search{top:var(--header-current)}
+ .reference-mobile-menu nav a{font-size:19px;padding:17px 0}
+ .reference-mobile-back{font-size:16px;line-height:1.5}
+ .reference-footer .fashion-footer-main{grid-template-columns:1fr 1fr;gap:30px 20px}
+ .reference-footer .fashion-footer-column>a,.reference-footer .fashion-footer-column>button,.reference-install>button{font-size:11px;min-height:31px}
+ .reference-footer .fashion-footer-main>.fashion-footer-column:last-child{display:flex;gap:0}
+ .reference-recent-searches{margin-top:30px}
+ .reference-recent-searches>h2{padding-right:85px}
+ .newsletter-dialog.maison-dialog .dialog-positioner{padding:14px;align-items:center}
+ .newsletter-dialog.maison-dialog .dialog-panel{max-height:calc(100dvh - 28px)}
+ .newsletter-popup{grid-template-columns:1fr}
+ .newsletter-popup-image{min-height:0;height:155px}
+ .newsletter-popup-image img{object-position:50% 58%}
+ .newsletter-popup-content{padding:28px 25px}
+ .newsletter-popup-content>h2{font-size:25px;max-width:250px;margin-bottom:16px}
+ .newsletter-popup-content>p{font-size:11px}
+ .newsletter-popup-content>.reference-kicker{margin-bottom:14px}
+ .newsletter-popup-close{top:10px;right:10px}
+ .promotion-prompt{right:16px;bottom:16px;grid-template-columns:90px minmax(0,1fr)}
+ .promotion-prompt-content{padding:24px 20px}
+ .promotion-prompt-content h2{font-size:17px}
+ .goya-journal-grid{grid-template-columns:1fr;padding:0 20px 45px;gap:40px}
+ .goya-journal-photo{aspect-ratio:4/5}
+ .goya-journal-photo>span{font-size:19px;left:24px;bottom:25px;right:24px}
+ .goya-journal-grid .fashion-kicker,.goya-journal-grid article>a>p:last-child{margin-left:3px;margin-right:3px}
+}
+@media(prefers-reduced-motion:reduce){.promotion-prompt{animation:none}.goya-journal-photo img{transition:none}}

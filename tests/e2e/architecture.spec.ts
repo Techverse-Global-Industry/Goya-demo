@@ -19,7 +19,7 @@ test('guests can explore public shopping while personal account and admin data s
   expect(guest).not.toHaveProperty('users');
   expect(guest).not.toHaveProperty('sessions');
   await page.locator('.brand-category-grid a').first().click();
-  await expect(page).toHaveURL(/\/men\/loafers$/);
+  await expect(page).toHaveURL(/\/new-arrivals\/men$/);
   await expect(page.locator('.product-card').first()).toBeVisible();
   for (const route of ['collections', 'men', 'women', 'accessories', 'new-arrivals', 'gifts']) {
     await page.goto(`/${route}`);

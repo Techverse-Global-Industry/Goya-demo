@@ -1,8 +1,9 @@
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { mutateDatabase, readDatabase } from './database';
 import type { Account, Database } from './database';
 import type { DemoUser } from '../types';
+import { localDemo } from './config';
 
 export const COOKIE = 'mg_session';
 export const GUEST_COOKIE = 'mg_guest';
@@ -13,6 +14,26 @@ export class ApiError extends Error {
 export function publicUser(account: Account): DemoUser {
   const { id, name, email, provider, role } = account;
   return { id, name, email, provider, role };
+}
+export function reservedAdministratorEmail(): string {
+  return process.env.ADMIN_EMAIL?.trim().toLowerCase() || (localDemo() ? 'admin@goya.demo' : '');
+}
+/** A former customer session must never inherit an administrator's privileges. */
+export function provisionAdministrator(db: Database, email: string, passwordHash: string): DemoUser {
+  let account = db.users.find(value => value.email === email);
+  if (!account) {
+    account = { id: randomUUID(), name: 'Maison Goya', email, provider: 'email', role: 'admin', passwordHash };
+    db.users.push(account);
+  } else if (account.role !== 'admin') {
+    const accountId = account.id;
+    db.sessions = db.sessions.filter(value => value.userId !== accountId);
+    db.passwordResets = (db.passwordResets ?? []).filter(value => value.userId !== accountId);
+    delete account.recoveryHash;
+    delete account.recoveryExpiresAt;
+  }
+  account.role = 'admin';
+  account.passwordHash = passwordHash;
+  return publicUser(account);
 }
 export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString('hex');
@@ -88,7 +109,7 @@ export function assertOrigin(request: Request) {
 export async function bodyJson(request: Request): Promise<Record<string, unknown>> {
   if (!request.headers.get('content-type')?.includes('application/json')) throw new ApiError('Expected JSON.');
   const text = await request.text();
-  if (text.length > 100_000) throw new ApiError('Request too large.', 413);
+  if (text.length > 2_000_000) throw new ApiError('Request too large.', 413);
   try {
     const value = JSON.parse(text);
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error();
@@ -110,4 +131,51 @@ export function apiFailure(error: unknown): Response {
   if (error instanceof ApiError) return Response.json({ error: error.message, code: error.code }, { status: error.status });
   console.error('Boutique API:', error instanceof Error ? error.message : 'Unknown error');
   return Response.json({ error: 'The boutique is temporarily unavailable. Please try again.', code: 'unavailable' }, { status: 503 });
+}
+
+export function issueRecoveryCode(db: Database, userId: string): string {
+  const account = db.users.find(value => value.id === userId && value.role !== 'admin');
+  if (!account) return '';
+  const code = randomBytes(32).toString('hex');
+  account.recoveryHash = tokenHash(code);
+  account.recoveryExpiresAt = Date.now() + SESSION_LIFETIME;
+  return code;
+}
+
+/** Email alone never authorizes recovery: this proof was saved after authentication. */
+export function beginDemoRecovery(db: Database, email: unknown, code: unknown): string | null {
+  const account = typeof email === 'string' ? db.users.find(value => value.email === email.trim().toLowerCase() && value.role !== 'admin') : undefined;
+  if (!account || typeof code !== 'string' || !/^[a-f0-9]{64}$/.test(code) || !account.recoveryHash || (account.recoveryExpiresAt ?? 0) <= Date.now() || tokenHash(code) !== account.recoveryHash) return null;
+  const token = randomBytes(32).toString('hex');
+  db.passwordResets = (db.passwordResets ?? []).filter(value => value.expiresAt > Date.now() && value.userId !== account.id);
+  db.passwordResets.push({ hash: tokenHash(token), userId: account.id, expiresAt: Date.now() + 15 * 60000 });
+  return token;
+}
+
+export function finishDemoRecovery(db: Database, token: unknown, password: unknown): void {
+  if (typeof password !== 'string' || password.length < 8 || password.length > 128) throw new ApiError('Use a password of 8–128 characters.', 400, 'credentials');
+  if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) throw new ApiError('This recovery link has expired.', 400, 'recoveryExpired');
+  const reset = db.passwordResets?.find(value => value.hash === tokenHash(token) && value.expiresAt > Date.now());
+  const account = reset && db.users.find(value => value.id === reset.userId && value.role !== 'admin');
+  if (!reset || !account) throw new ApiError('This recovery link has expired.', 400, 'recoveryExpired');
+  account.passwordHash = hashPassword(password);
+  delete account.recoveryHash; delete account.recoveryExpiresAt;
+  db.sessions = db.sessions.filter(value => value.userId !== account.id);
+  db.passwordResets = db.passwordResets!.filter(value => value.userId !== account.id);
+}
+
+export function updateCredentials(db: Database, user: DemoUser, input: Record<string, unknown>): { user: DemoUser; recoveryCode: string } {
+  const account = db.users.find(value => value.id === user.id && value.role !== 'admin');
+  if (!account || typeof input.currentPassword !== 'string' || !checkPassword(input.currentPassword, account.passwordHash)) throw new ApiError('Your current password is incorrect.', 401, 'credentials');
+  const email = input.email === undefined ? account.email : typeof input.email === 'string' ? input.email.trim().toLowerCase() : '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) throw new ApiError('Enter a valid email address.', 400, 'credentials');
+  if (email === reservedAdministratorEmail()) throw new ApiError('This email is unavailable.', 409, 'emailTaken');
+  if (db.users.some(value => value.id !== account.id && value.email === email)) throw new ApiError('This email is unavailable.', 409, 'emailTaken');
+  const password = input.newPassword;
+  if (password !== undefined && (typeof password !== 'string' || password.length < 8 || password.length > 128)) throw new ApiError('Use a password of 8–128 characters.', 400, 'credentials');
+  account.email = email;
+  if (typeof password === 'string') account.passwordHash = hashPassword(password);
+  db.sessions = db.sessions.filter(value => value.userId !== account.id);
+  db.passwordResets = (db.passwordResets ?? []).filter(value => value.userId !== account.id);
+  return { user: publicUser(account), recoveryCode: issueRecoveryCode(db, account.id) };
 }

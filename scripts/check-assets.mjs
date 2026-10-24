@@ -20,8 +20,15 @@ for (let index = 1; index <= 11; index++) {
   }
   if (!found) failures.push(`Missing approved image: ${allowed.join(' or ')}.`);
 }
+for (let index = 1; index <= 22; index++) {
+  const filename = `archive/goya-${String(index).padStart(2, '0')}.jpg`;
+  try {
+    const bytes = await readFile(path.join(root, filename));
+    if (bytes.length <= 100 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) failures.push(`${filename} is not a valid JPEG.`);
+  } catch { failures.push(`Missing Goya archive photograph: ${filename}`); }
+}
 if (failures.length) {
   console.error('\nAsset preflight failed:\n' + failures.map((line) => `  - ${line}`).join('\n'));
   console.error('\nCopy approved brand photographs into public/images/ before release.');
   process.exitCode = 1;
-} else console.log('\nAll 11 image slots are present. Check resolution, crop and usage rights manually.');
+} else console.log('\nAll 11 original image slots and 22 Goya archive photographs are present.');

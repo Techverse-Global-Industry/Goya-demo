@@ -47,6 +47,7 @@ test('owner publishes a product, customer pays with demo MoMo, owner fulfills, c
   await registerCustomer(customerPage, { email: `journey-${unique}@example.test`, firstName: 'Demo', lastName: 'Journey', password: 'JourneyDemo2026!' });
   await expect(customerPage).toHaveURL(/\/app\/shop$/);
   await customerPage.goto('/collections');
+  await expect(customerPage.locator('.reference-plp-grid')).toHaveCount(1);
   await expect(customerPage.locator('.reference-plp-grid')).toBeVisible();
   await customerPage.locator('.reference-search-trigger').click();
   await customerPage.locator('#maison-search').fill(`voyage ${unique}`);

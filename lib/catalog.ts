@@ -1,4 +1,5 @@
 import type { Product, AtelierLocation, AtelierService, Country, PaymentMethod } from './types';
+import { ARCHIVE_PRODUCTS } from './archive-catalog';
 
 // Demo listings describe the supplied photographs. Prices and stock are illustrative.
 export const PRODUCTS: readonly Product[] = [
@@ -49,12 +50,13 @@ export const PRODUCTS: readonly Product[] = [
     description: {"en": "A compact patterned shoulder bag with pale green trim and a gold-tone chain. The photograph shows its coordinating shoe; this listing is for the bag only.", "fr": "Un sac compact à motif, finitions vert pâle et chaîne dorée. La photo présente le soulier assorti ; cette fiche concerne uniquement le sac."},
     material: {"en": "Patterned exterior · Chain shoulder strap", "fr": "Extérieur à motif · Bandoulière chaîne"}, color: {"en": "Cream, pale green & gold", "fr": "Crème, vert pâle et or"},
     prices: { EUR: 79000, USD: 85500, XOF: 518000 }, stock: { OS: 4 },
-  }
+  },
+  ...ARCHIVE_PRODUCTS,
 ];
 
 export const PRODUCT_BY_ID = new Map(PRODUCTS.map((product) => [product.id, product]));
 export const COUNTRIES: readonly Country[] = ['BJ', 'FR', 'SN', 'US', 'GB'];
-export const PAYMENT_METHODS: readonly PaymentMethod[] = ['card', 'apple', 'mobile', 'pickup'];
+export const PAYMENT_METHODS: readonly PaymentMethod[] = ['card', 'apple', 'paypal', 'klarna', 'scalapay', 'mobile', 'pickup'];
 export const LOCATIONS: readonly AtelierLocation[] = ['cotonou', 'paris', 'dakar'];
 export const SERVICES: readonly AtelierService[] = ['polish', 'patina', 'heels', 'restoration'];
 export const TIME_SLOTS = ['10:00', '11:30', '14:00', '15:30', '17:00'] as const;

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { rememberRecovery } from '@/lib/demo-recovery';
 import { useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useShop } from '@/context/shop-context';
@@ -59,7 +60,8 @@ export function Auth({ checkout = false, destination = '/app', admin = false, in
     submitting.current = true;
     setBusy(true);
     try {
-      const { user } = await shopRequest<{ user: DemoUser }>(mode, { name: name.trim(), email: email.trim(), password });
+      const { user, recoveryCode } = await shopRequest<{ user: DemoUser; recoveryCode?: string }>(mode, { name: name.trim(), email: email.trim(), password });
+      if (recoveryCode) rememberRecovery(user.email, recoveryCode);
       setPassword('');
       dispatch({ type: 'signIn', user });
       if (mode === 'register') {

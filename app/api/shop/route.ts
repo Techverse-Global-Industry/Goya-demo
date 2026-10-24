@@ -2,8 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { after } from 'next/server';
 import { readDatabase, mutateDatabase } from '@/lib/server/database';
-import { apiFailure, ApiError, assertOrigin, bodyJson, checkPassword, COOKIE, GUEST_COOKIE, createSession, guestCookieToken, guestIdentityForToken, prepareGuestCheckout, setGuestCookie, hashPassword, publicUser, rateLimit, requireUser, sessionUser, tokenHash } from '@/lib/server/security';
-import { changeOrderStatus, createAnnouncement, createBooking, deleteCustomerAddress, placeOrder, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, validateProduct } from '@/lib/server/shop';
+import { apiFailure, ApiError, assertOrigin, beginDemoRecovery, bodyJson, checkPassword, COOKIE, GUEST_COOKIE, createSession, finishDemoRecovery, guestCookieToken, guestIdentityForToken, issueRecoveryCode, prepareGuestCheckout, provisionAdministrator, reservedAdministratorEmail, setGuestCookie, hashPassword, publicUser, rateLimit, requireUser, sessionUser, tokenHash, updateCredentials } from '@/lib/server/security';
+import { changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct } from '@/lib/server/shop';
 import { validEmail } from '@/lib/commerce';
 import { deliverPush } from '@/lib/server/push';
 import { localDemo } from '@/lib/server/config';
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const admin = new URL(request.url).searchParams.get('admin') === '1';
     const user = admin ? await requireUser(true) : await sessionUser();
     const { data, revision } = await readDatabase();
-    const guestIdentity = user ? null : guestIdentityForToken(data, await guestCookieToken());
+    const guestIdentity = guestIdentityForToken(data, await guestCookieToken());
     return Response.json(snapshot(data, revision, user, admin, guestIdentity), { headers });
   } catch (error) { return apiFailure(error); }
 }
@@ -35,41 +35,51 @@ export async function POST(request: Request) {
       const password = typeof body.password === 'string' ? body.password : '';
       const name = typeof body.name === 'string' ? body.name.trim() : '';
       if (!validEmail(email) || password.length < 8 || password.length > 128) throw new ApiError('Use a valid email and a password of 8–128 characters.', 400, 'credentials');
-      const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase() || (localDemo() ? 'admin@goya.demo' : '');
+      const adminEmail = reservedAdministratorEmail();
       const adminPassword = process.env.ADMIN_PASSWORD || (localDemo() ? 'MaisonDemo2026!' : '');
       // Never silently provision a hosted administrator with a public default password.
       if (adminEmail && adminPassword && email === adminEmail && action === 'login') {
         if (password !== adminPassword) throw new ApiError('Email or password is incorrect.', 401, 'credentials');
         const passwordHash = hashPassword(adminPassword);
-        const user = await mutateDatabase((db) => {
-          let account = db.users.find((account) => account.email === adminEmail);
-          if (!account) { account = { id: randomUUID(), name: 'Maison Goya', email: adminEmail, provider: 'email', role: 'admin', passwordHash }; db.users.push(account); }
-          account.role = 'admin'; account.passwordHash = passwordHash;
-          return publicUser(account);
-        });
-        await createSession(user.id);
-        return Response.json({ user }, { headers });
+        const result = await mutateDatabase((db) => ({ user: provisionAdministrator(db, adminEmail, passwordHash), recoveryCode: '' }));
+        await createSession(result.user.id);
+        return Response.json(result, { headers });
       }
       if (action === 'register') {
         if (name.length < 2 || name.length > 100) throw new ApiError('Please enter your name.', 400, 'invalidName');
         if (email === adminEmail) throw new ApiError('This email is unavailable.', 409, 'emailTaken');
         const passwordHash = hashPassword(password);
-        const user = await mutateDatabase((db) => {
+        const result = await mutateDatabase((db) => {
           if (db.users.some((account) => account.email === email)) throw new ApiError('An account with this email already exists. Please sign in.', 409, 'emailTaken');
           const account = { id: randomUUID(), name, email, provider: 'email' as const, role: 'customer' as const, passwordHash };
           db.users.push(account);
-          return publicUser(account);
+          return { user: publicUser(account), recoveryCode: issueRecoveryCode(db, account.id) };
         });
-        await createSession(user.id);
-        return Response.json({ user }, { headers });
+        await createSession(result.user.id);
+        return Response.json(result, { headers });
       }
       const { data } = await readDatabase();
       const account = data.users.find((account) => account.email === email);
       // Equalize password work for unknown accounts.
       const matches = checkPassword(password, account?.passwordHash || '0123456789abcdef:'.concat('00'.repeat(64)));
       if (!account || !matches || account.role === 'admin') throw new ApiError('Email or password is incorrect.', 401, 'credentials');
+      const recoveryCode = await mutateDatabase(db => {
+        const latest = db.users.find(value => value.id === account.id);
+        if (!latest || latest.passwordHash !== account.passwordHash) throw new ApiError('Please sign in again.', 401, 'credentials');
+        return issueRecoveryCode(db, account.id);
+      });
       await createSession(account.id);
-      return Response.json({ user: publicUser(account) }, { headers });
+      return Response.json({ user: publicUser(account), recoveryCode }, { headers });
+    }
+    if (action === 'recoveryRequest' || action === 'resetPassword') {
+      const ip = request.headers.get('x-nf-client-connection-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'local';
+      await rateLimit(`recovery:${ip}`, 20);
+      if (action === 'recoveryRequest') {
+        const token = await mutateDatabase(db => beginDemoRecovery(db, body.email, body.recoveryCode));
+        return Response.json({ ok: true, ...(token ? { token } : {}) }, { headers });
+      }
+      await mutateDatabase(db => finishDemoRecovery(db, body.token, body.newPassword));
+      return Response.json({ ok: true }, { headers });
     }
     if (action === 'logout') {
       const token = (await cookies()).get(COOKIE)?.value;
@@ -125,7 +135,37 @@ export async function POST(request: Request) {
       if (result.guestToken) await setGuestCookie(result.guestToken);
       return Response.json({ booking: result.booking }, { headers });
     }
+    if (action === 'lookupOrder' || action === 'serviceRequest' || action === 'availabilityRequest') {
+      const user = await sessionUser();
+      const ip = request.headers.get('x-nf-client-connection-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'local';
+      await rateLimit(`${action}:${ip}`, action === 'lookupOrder' ? 20 : 40);
+      const token = await guestCookieToken();
+      const result = await mutateDatabase(db => {
+        const guest = !user || action === 'lookupOrder' ? prepareGuestCheckout(db, token) : null;
+        if (action === 'lookupOrder') return { order: lookupCustomerOrder(db, body.reference, body.email, guest!.identity), guestToken: guest!.token };
+        const input = action === 'availabilityRequest' ? { kind: 'availability', name: user?.name ?? '', email: body.email, locale: body.locale, productId: body.productId, details: { size: typeof body.size === 'string' ? body.size : '' } } : body.request;
+        return { request: createServiceRequest(db, user, guest?.identity ?? null, input), guestToken: guest?.token };
+      });
+      if (result.guestToken) await setGuestCookie(result.guestToken);
+      const { guestToken: _privateToken, ...response } = result;
+      void _privateToken;
+      return Response.json(response, { headers });
+    }
+    if (action === 'requestReturn' || action === 'requestDetail') {
+      const user = await sessionUser();
+      const token = await guestCookieToken();
+      const result = await mutateDatabase(db => {
+        const identity = guestIdentityForToken(db, token);
+        return action === 'requestReturn' ? { returnRequest: requestCustomerReturn(db, user, identity, body) } : { request: ownServiceRequest(db, user, identity, body.id) };
+      });
+      return Response.json(result, { headers });
+    }
     const user = await requireUser();
+    if (action === 'accountCredentials') {
+      const result = await mutateDatabase(db => updateCredentials(db, user, body));
+      await createSession(result.user.id);
+      return Response.json(result, { headers });
+    }
     if (action === 'saveProfile') {
       const profile = await mutateDatabase((db) => saveCustomerProfile(db, user, body.profile));
       return Response.json({ profile }, { headers });
@@ -153,7 +193,7 @@ export async function POST(request: Request) {
       });
       return Response.json({ user: updated }, { headers });
     }
-    const adminAction = ['saveProduct', 'orderStatus', 'announce', 'deleteAnnouncement'].includes(String(action));
+    const adminAction = ['saveProduct', 'orderStatus', 'announce', 'deleteAnnouncement', 'returnStatus', 'requestStatus'].includes(String(action));
     if (adminAction && user.role !== 'admin') throw new ApiError('Administrator access required.', 403);
     if (action === 'saveProduct') {
       const product = await mutateDatabase((db) => {
@@ -165,9 +205,14 @@ export async function POST(request: Request) {
         const product = validateProduct(input, existing);
         if (existing) db.products[db.products.indexOf(existing)] = product;
         else db.products.push(product);
+        processAvailability(db, product);
         return product;
       });
       return Response.json({ product }, { headers });
+    }
+    if (action === 'returnStatus' || action === 'requestStatus') {
+      const result = await mutateDatabase(db => action === 'returnStatus' ? { returnRequest: updateReturnStatus(db, body.id, body.status, body.note) } : { request: updateServiceRequest(db, body.id, body.status, body.note) });
+      return Response.json(result, { headers });
     }
     if (action === 'orderStatus' || action === 'announce') {
       const result = await mutateDatabase((db) => {

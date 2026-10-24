@@ -14,7 +14,7 @@ Open http://localhost:3000 and http://localhost:3000/admin.
 
 Local administrator: `admin@goya.demo` / `MaisonDemo2026!`.
 
-Customers can shop and request atelier appointments as guests. Optional demonstration accounts provide saved details, account history and notifications. Use fictitious names, email addresses and delivery details, and a unique demo password when registering. There is no email verification or real password-reset email service; recovery is a labelled preview and changes no password.
+Customers can shop and request services as guests. Optional demonstration accounts provide saved details, account history, requests and notifications. Use fictitious names, email addresses and delivery details, and a unique demo password when registering. Recovery changes the demo password through an expiring, single-use link shown only in a browser that previously authenticated the account; no recovery email is sent. See [the completed demonstration journeys](DEMO-EXPERIENCE.md) for the current feature scope.
 
 `setup:demo` creates private Web Push keys in the ignored `.env.local` file and enables local storage with `DEMO_LOCAL=true`. Never commit this file or set `DEMO_LOCAL` on hosting.
 

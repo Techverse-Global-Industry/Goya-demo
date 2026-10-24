@@ -119,6 +119,11 @@
 .pdp-availability-success h3 { font: 500 21px/1.3 var(--sans); letter-spacing: -.025em; }
 .pdp-availability-success p { font-size: 12px; line-height: 1.8; }
 .pdp-availability-success .pdp-add-button { width: 100%; margin-top: 10px; }
+.pdp-main-information h1{font-size:27px;line-height:1.35}
+.pdp-price{font-size:16px}
+.pdp-color>p{font-size:14px}
+.pdp-size-heading>label{font-size:14px}
+.pdp-detail-panel{font-size:14px;line-height:1.9}
 @media(max-width:1023px) {
   .pdp-information { gap: 5vw; padding-left: 28px; padding-right: 28px; }
   .pdp-detail-section { padding-left: 28px; padding-right: 28px; }

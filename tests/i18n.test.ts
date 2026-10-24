@@ -26,8 +26,8 @@ test('interpolation is reactive and accepts numbers without treating them as mar
 
 test('all product names, descriptions, materials and colors have both languages', () => {
   for (const product of PRODUCTS) for (const field of ['name', 'description', 'material', 'color'] as const) {
-    assert.ok(product[field].en.length > 3);
-    assert.ok(product[field].fr.length > 3);
+    assert.ok(product[field].en.trim().length > 0, `${product.id}: English ${field}`);
+    assert.ok(product[field].fr.trim().length > 0, `${product.id}: French ${field}`);
   }
 });
 

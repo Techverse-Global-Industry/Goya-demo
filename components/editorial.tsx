@@ -32,16 +32,30 @@ export function Atelier() {
 
 export function Footer() {
   const top = usePathname() === '/login' ? '#account-content' : '#public-content';
-  const { state, dispatch, t } = useShop();
+  const { state, t } = useShop();
   const copy = storefrontCopy[state.locale];
-  const info = (topic: 'shipping' | 'care' | 'privacy') => dispatch({ type: 'open', overlay: { kind: 'info', topic } });
+  const fr = state.locale === 'fr';
+  const careLinks = [
+    ['/customer-service', copy.contact], ['/shipping-returns', copy.shipping], ['/returns', copy.returns],
+    ['/repairs', fr ? 'Entretien et réparations' : 'Care and repairs'], ['/book-an-appointment', fr ? 'Prendre rendez-vous' : 'Book an appointment'],
+    ['/withdrawal', fr ? 'Demande de rétractation' : 'Withdrawal request'], ['/track-order', copy.tracking], ['/faq', copy.faq],
+  ];
+  const worldLinks = [
+    ['/maison', copy.maison], ['/craftsmanship', fr ? 'Le savoir-faire' : 'Craftsmanship'], ['/collaborations', fr ? 'Collaborations' : 'Collaborations'],
+    ['/journal', fr ? 'Le journal' : 'The journal'], ['/careers', fr ? 'Carrières' : 'Careers'], ['/stores', copy.stores], ['/personalization', copy.personalization],
+  ];
+  const legalLinks = [
+    ['/legal/terms-of-use', fr ? 'Conditions d’utilisation' : 'Terms of use'], ['/legal/sale-terms', fr ? 'Conditions de vente' : 'Terms of sale'],
+    ['/legal/telephone-sales', fr ? 'Vente à distance assistée' : 'Assisted telephone sales'], ['/legal/privacy', fr ? 'Confidentialité' : 'Privacy information'],
+    ['/legal/cookies', fr ? 'Informations sur les cookies' : 'Cookie information'], ['/legal/corporate', fr ? 'Informations de la Maison' : 'Corporate information'],
+  ];
   return <footer className="fashion-footer reference-footer">
     <div className="fashion-footer-main"><div className="reference-footer-newsletter"><h2>{copy.newsletter}</h2><NewsletterForm /></div>
-      <div className="fashion-footer-column"><h2>{copy.customerCare}</h2><Link href="/customer-service">{copy.contact}</Link><Link href="/shipping-returns">{copy.shipping}</Link><Link href="/shipping-returns#returns">{copy.returns}</Link><Link href="/track-order">{copy.tracking}</Link><Link href="/faq">{copy.faq}</Link></div>
-      <div className="fashion-footer-column"><h2>{copy.world}</h2><Link href="/maison">{copy.maison}</Link><Link href="/stores">{copy.stores}</Link><Link href="/personalization">{copy.personalization}</Link><Link href="/shoe-care">{copy.care}</Link><InstallPanel compact /></div>
-      <div className="fashion-footer-column"><h2>{copy.legal}</h2><button type="button" onClick={() => info('privacy')}>{t('privacyInfo')}</button><Link href="/shipping-returns">{state.locale === 'fr' ? 'Conditions de démonstration' : 'Demo terms & conditions'}</Link><button type="button" onClick={() => { window.dispatchEvent(new Event('goya:privacy')); }}>{state.locale === 'fr' ? 'Préférences cookies' : 'Cookie preferences'}</button><Link href="/login">{copy.account}</Link></div>
+      <div className="fashion-footer-column"><h2>{copy.customerCare}</h2>{careLinks.map(([href,label])=><Link href={href} key={href}>{label}</Link>)}</div>
+      <div className="fashion-footer-column"><h2>{copy.world}</h2>{worldLinks.map(([href,label])=><Link href={href} key={href}>{label}</Link>)}<InstallPanel compact /></div>
+      <div className="fashion-footer-column"><h2>{copy.legal}</h2>{legalLinks.map(([href,label])=><Link href={href} key={href}>{label}</Link>)}<button type="button" onClick={() => { window.dispatchEvent(new Event('goya:privacy')); }}>{fr ? 'Préférences cookies' : 'Cookie preferences'}</button><Link href="/login">{copy.account}</Link></div>
     </div>
-    <div className="fashion-footer-preferences"><Link href="/" className="fashion-footer-logo" aria-label="Maison Goya">Goya</Link><button type="button" className="reference-country" onClick={() => dispatch({ type: 'open', overlay: { kind: 'region' } })}><Icon name="globe" width={17} />{t(`country${state.market}`)} / {state.currency}</button><LanguageSwitch /></div>
+    <div className="fashion-footer-preferences"><Link href="/" className="fashion-footer-logo" aria-label="Maison Goya">Goya</Link><Link className="reference-country" href="/countries"><Icon name="globe" width={17} />{t(`country${state.market}`)} / {state.currency}</Link><div className="reference-footer-socials"><a href="https://www.facebook.com/goyaparischaussures/" target="_blank" rel="noreferrer" aria-label="Goya · Facebook"><Icon name="facebook" width={18} /></a><a href="https://www.instagram.com/goyaparis/" target="_blank" rel="noreferrer" aria-label="Goya · Instagram"><Icon name="instagram" width={18} /></a></div><LanguageSwitch /></div>
     <div className="fashion-footer-legal"><span>© {new Date().getFullYear()} Maison Goya</span><span>{copy.demo}</span><a href={top} aria-label={state.locale === 'fr' ? 'Retour en haut' : 'Back to top'}><Icon name="arrow-up-right" width={18} /></a></div>
   </footer>;
 }

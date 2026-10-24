@@ -4,16 +4,23 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRef } from 'react';
 import { useShop } from '@/context/shop-context';
-import { fashionCopy, shoeCategories } from '@/lib/fashion-copy';
+import { fashionCopy } from '@/lib/fashion-copy';
 import { gsap, useGSAP } from '@/lib/gsap';
-import { catalogPath } from '@/lib/storefront';
-import type { ShoeType } from '@/lib/types';
+import type { Category } from '@/lib/types';
+import { FeaturedProducts } from './featured-products';
+
+const HOME_COLLECTIONS = [
+  { id: 'men-new', href: '/new-arrivals/men', category: 'men', image: '/images/archive/goya-18.jpg', position: 'center', title: { en: 'Men · New in', fr: 'Homme · Nouveautés' }, alt: { en: 'Patterned Goya loafers with blue edging and tassels.', fr: 'Mocassins Goya à motif, liserés bleus et glands.' } },
+  { id: 'men-accessories', href: '/accessories?audience=men', category: 'accessories', image: '/images/archive/goya-20.jpg', position: 'center', title: { en: 'Men · Accessories', fr: 'Homme · Accessoires' }, alt: { en: 'A black Goya belt and loafer with coordinated patterned details.', fr: 'Une ceinture et un mocassin Goya noirs aux détails à motif coordonnés.' } },
+  { id: 'women-new', href: '/new-arrivals/women', category: 'women', image: '/images/archive/goya-11.jpg', position: 'center', title: { en: 'Women · New in', fr: 'Femme · Nouveautés' }, alt: { en: 'Red Goya slingback shoes.', fr: 'Souliers Goya rouges à bride arrière.' } },
+  { id: 'women-accessories', href: '/accessories?audience=women', category: 'accessories', image: '/images/archive/goya-08.jpg', position: 'center', title: { en: 'Women · Accessories', fr: 'Femme · Accessoires' }, alt: { en: 'A Goya patterned bag and matching ankle boots.', fr: 'Un sac Goya à motif et des bottines assorties.' } },
+] as const;
 
 export function BrandCollection() {
   const { state, dispatch } = useShop();
   const copy = fashionCopy[state.locale];
   const root = useRef<HTMLElement>(null);
-  const choose = (filter: 'men' | 'women', shoeType: ShoeType = 'all') => { dispatch({ type: 'resetFilters' }); dispatch({ type: 'filter', filter }); dispatch({ type: 'shoeType', shoeType }); };
+  const choose = (filter: Category) => { dispatch({ type: 'resetFilters' }); dispatch({ type: 'filter', filter }); dispatch({ type: 'shoeType', shoeType: 'all' }); };
   useGSAP(() => {
     const media = gsap.matchMedia();
     media.add('(prefers-reduced-motion: no-preference)', () => {
@@ -28,10 +35,11 @@ export function BrandCollection() {
     return () => media.revert();
   }, { scope: root });
   return <section id="collection" className="fashion-collection reference-home-collection" ref={root} tabIndex={-1} aria-label={copy.new}>
-    <div className="fashion-category-grid brand-category-grid">{shoeCategories.map(category => <article key={category.id} className={`fashion-category fashion-category--${category.id}`}><Link href={catalogPath(category.filter, category.id)} onClick={() => choose(category.filter, category.id)}>
-      <Image src={category.image} alt={category.label[state.locale]} fill sizes="(min-width: 700px) 25vw, 100vw" style={{ objectPosition: category.position }} />
-      <h2><span>{category.label[state.locale]}</span></h2>
+    <div className="fashion-category-grid brand-category-grid">{HOME_COLLECTIONS.map(category => <article key={category.id} className={`fashion-category fashion-category--${category.id}`}><Link href={category.href} onClick={() => choose(category.category)}>
+      <Image src={category.image} alt={category.alt[state.locale]} fill sizes="(min-width: 700px) 25vw, 100vw" style={{ objectPosition: category.position }} />
+      <h2><span>{category.title[state.locale]}</span></h2>
     </Link></article>)}</div>
+    <FeaturedProducts />
     <div className="fashion-pair-grid">
       <article className="fashion-pair fashion-pair--men collection-editorial"><Link href="/men" onClick={() => choose('men')} aria-label={copy.shopMen}>
         <div className="fashion-pair-photo"><Image src="/images/img2.jpg" alt={state.locale === 'fr' ? 'Une silhouette Goya en costume gris et souliers bordeaux.' : 'A Goya silhouette in grey tailoring and burgundy shoes.'} fill sizes="(min-width: 700px) 50vw, 100vw" /></div>

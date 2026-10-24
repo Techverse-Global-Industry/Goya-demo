@@ -5,6 +5,7 @@ import type { TranslationKey } from './i18n';
 import type { Booking, BookingDetails, CartLine, Category, Currency, DemoUser, Locale, Order, Overlay, PaymentMethod, ShippingDetails, StoreSnapshot, ShoeType } from './types';
 import type { AccountProfile, CatalogFilters, CatalogSort, Country } from './types';
 import { EMPTY_FILTERS, MARKETS } from './storefront';
+import type { ReturnRequest, ServiceRequest } from './experience-types';
 
 export interface ShopState {
   products: StoreSnapshot['products'];
@@ -29,6 +30,8 @@ export interface ShopState {
   sort: CatalogSort;
   catalogFilters: CatalogFilters;
   profile: AccountProfile | null;
+  returns: ReturnRequest[];
+  requests: ServiceRequest[];
   ready: boolean;
   notice: { id: number; key: TranslationKey } | null;
   noticeSerial: number;
@@ -39,7 +42,7 @@ export const INITIAL_STATE: ShopState = {
   locale: 'en', currency: 'EUR', cart: [], stockUsed: {}, user: null,
   orders: [], bookings: [], overlay: null, filter: 'all', shoeType: 'all', query: '',
   ready: false, notice: null, noticeSerial: 0,
-  wishlist: [], market: 'BJ', sort: 'recommended', catalogFilters: EMPTY_FILTERS, profile: null,
+  wishlist: [], market: 'BJ', sort: 'recommended', catalogFilters: EMPTY_FILTERS, profile: null, returns: [], requests: [],
 };
 
 export type ShopAction =
@@ -84,7 +87,7 @@ export function shopReducer(state: ShopState, action: ShopAction): ShopState {
       const catalog = new Map(action.snapshot.products.map((product) => [product.id, product]));
       const switchingAccounts = !!state.user?.id && state.user.id !== action.snapshot.user?.id;
       const cart = switchingAccounts ? [] : sanitizeCart(state.cart, {}, catalog);
-      return { ...state, ...action.snapshot, profile: action.snapshot.profile ?? null, wishlist: switchingAccounts ? [] : state.wishlist.filter(id => catalog.has(id)), cart, stockUsed: {}, connected: true };
+      return { ...state, ...action.snapshot, profile: action.snapshot.profile ?? null, returns: action.snapshot.returns ?? [], requests: action.snapshot.requests ?? [], wishlist: switchingAccounts ? [] : state.wishlist.filter(id => catalog.has(id)), cart, stockUsed: {}, connected: true };
     }
     case 'connection': return { ...state, connected: action.connected };
     case 'orderComplete': return { ...state, cart: [], orders: [action.order, ...state.orders.filter((order) => order.id !== action.order.id)], overlay: { kind: 'checkout', orderId: action.order.id }, notice: null };
@@ -139,9 +142,9 @@ export function shopReducer(state: ShopState, action: ShopAction): ShopState {
     case 'remove': return notify({ ...state, cart: state.cart.filter((line) => !(line.productId === action.productId && line.size === action.size)) }, 'removed');
     case 'signIn': {
       const differentOwner = !!state.user && state.user.id !== action.user.id;
-      return notify({ ...state, user: action.user, profile: null, orders: [], bookings: [], notifications: [], ...(differentOwner ? { cart: [], wishlist: [] } : {}) }, 'signedIn');
+      return notify({ ...state, user: action.user, profile: null, orders: [], bookings: [], notifications: [], returns: [], requests: [], ...(differentOwner ? { cart: [], wishlist: [] } : {}) }, 'signedIn');
     }
-    case 'signOut': return notify({ ...state, user: null, profile: null, wishlist: [], overlay: null, cart: [], orders: [], bookings: [], notifications: [] }, 'loggedOut');
+    case 'signOut': return notify({ ...state, user: null, profile: null, wishlist: [], overlay: null, cart: [], orders: [], bookings: [], notifications: [], returns: [], requests: [] }, 'loggedOut');
     case 'order': {
       // Atomic completion also makes repeated clicks idempotent.
       if (state.overlay?.kind !== 'checkout' || state.overlay.orderId) return state;

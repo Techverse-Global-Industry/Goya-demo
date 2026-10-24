@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent } from 'react';
 import { useShop } from '@/context/shop-context';
 import { availableStock, cartQuantity } from '@/lib/commerce';
+import { shopRequest } from '@/lib/api';
 import { imageSources } from '@/lib/assets';
 import type { Product } from '@/lib/types';
 import { Header } from './header';
@@ -14,6 +15,8 @@ import { Toast } from './controls';
 import { MaisonImage } from './maison-image';
 import { ProductCard } from './collection';
 import { Icon } from './icon';
+import { rememberFit, savedFit } from './fit-guide';
+export { FitFinder, ProductSizeGuide } from './fit-guide';
 
 type GalleryView = { sources: string[]; campaign: boolean; label: string };
 type DetailTab = 'details' | 'shipping' | 'care';
@@ -50,6 +53,11 @@ function colorSwatch(color: string): string {
   if (value.includes('cream')) return '#e7ddcb';
   if (value.includes('white')) return '#eeece5';
   if (value.includes('brown')) return '#73503d';
+  if (value.includes('purple') || value.includes('lavender')) return '#9981b2';
+  if (value.includes('yellow')) return '#d7af3b';
+  if (value.includes('pink')) return '#c98f9e';
+  if (value.includes('grey') || value.includes('gray')) return '#9a9a98';
+  if (value.includes('orange')) return '#c8743a';
   return 'linear-gradient(135deg,#cdb95d 0 25%,#75939d 25% 50%,#aa5b48 50% 75%,#d9d2bc 75%)';
 }
 
@@ -76,7 +84,9 @@ function ProductDetailContent({ product }: { product: Product }) {
   const [photo, setPhoto] = useState(0);
   const [zoomPhoto, setZoomPhoto] = useState<number | null>(null);
   const [magnified, setMagnified] = useState(false);
-  const [selectedSize, setSelectedSize] = useState(product.kind === 'bag' ? 'OS' : '');
+  const oneSize = product.kind !== 'footwear' && product.kind !== 'belt';
+  const [selectedSize, setSelectedSize] = useState(() => savedFit(product.id) ?? (oneSize ? 'OS' : ''));
+  const [fitSelection, setFitSelection] = useState(() => savedFit(product.id));
   const [sizeError, setSizeError] = useState(false);
   const [tab, setTab] = useState<DetailTab>('details');
   const [sticky, setSticky] = useState(false);
@@ -89,7 +99,18 @@ function ProductDetailContent({ product }: { product: Product }) {
   const inBag = size ? cartQuantity(state.cart, product.id, size) : 0;
   const soldOut = sizes.every(value => availableStock(product.id, value, state.stockUsed, productById) === 0);
   const saved = state.wishlist.includes(product.id);
+  const colorVariants = product.colorGroup ? products.filter(item => item.published !== false && item.colorGroup === product.colorGroup && item.category === product.category && item.kind === product.kind) : [product];
   const tabNames = { details: fr ? 'Détails du produit' : 'Product details', shipping: fr ? 'Livraison et retours' : 'Shipping and returns', care: fr ? 'Soin et entretien' : 'Care and maintenance' };
+
+  useEffect(() => {
+    const applyFit = (event: Event) => {
+      const detail = (event as CustomEvent<{ productId: string; size: string }>).detail;
+      if (detail?.productId !== product.id || !Object.prototype.hasOwnProperty.call(product.stock, detail.size)) return;
+      setSelectedSize(detail.size); setFitSelection(detail.size); setSizeError(false);
+    };
+    window.addEventListener('goya:fit', applyFit);
+    return () => window.removeEventListener('goya:fit', applyFit);
+  }, [product.id, product.stock]);
 
   useEffect(() => {
     const target = purchase.current;
@@ -158,10 +179,10 @@ function ProductDetailContent({ product }: { product: Product }) {
     </section>
 
     <section className="pdp-information" aria-label={name}>
-      <div className="pdp-main-information"><p className="pdp-overline">MAISON GOYA · {t(product.badge)}</p><h1>{name}</h1><p className="pdp-price">{money(product.prices[state.currency])}</p><div className="pdp-color"><p><span>{fr ? 'Couleur' : 'Color'}:</span> {product.color[state.locale]}</p><button type="button" aria-label={product.color[state.locale]} aria-pressed="true" className="pdp-color-swatch"><span style={{ background: colorSwatch(product.color.en) }} /></button></div>
-        {product.kind === 'bag' ? <p className="pdp-one-size">{t('oneSize')}</p> : <div className="pdp-size-control"><div className="pdp-size-heading"><label htmlFor={`pdp-size-${product.id}`}>{fr ? product.kind === 'footwear' ? 'Pointure' : 'Taille' : 'Size'}{product.kind === 'footwear' && <span>EU</span>}</label>{product.kind === 'footwear' && <button type="button" className="pdp-text-link" onClick={() => dispatch({ type: 'open', overlay: { kind: 'sizeGuide' } })}>{fr ? 'Guide des pointures' : 'Size guide'}</button>}</div><div className="pdp-select-wrap"><select ref={sizeSelect} id={`pdp-size-${product.id}`} value={size} aria-invalid={sizeError || undefined} aria-describedby={sizeError ? 'pdp-size-error' : undefined} onChange={event => { setSelectedSize(event.target.value); setSizeError(false); }}><option value="">{fr ? 'Choisissez votre pointure' : 'Select your size'}</option>{sizes.map(value => <option key={value} value={value}>{product.kind === 'footwear' ? 'EU ' : ''}{value}{product.kind === 'belt' ? ' cm' : ''}{availableStock(product.id, value, state.stockUsed, productById) === 0 ? (fr ? ' — Indisponible' : ' — Unavailable') : ''}</option>)}</select><Icon name="chevron" width={15} /></div>{sizeError && <p id="pdp-size-error" className="pdp-size-error" role="alert">{fr ? 'Sélectionnez une pointure pour continuer.' : 'Select a size to continue.'}</p>}</div>}
+      <div className="pdp-main-information"><p className="pdp-overline">MAISON GOYA · {t(product.badge)}</p><h1>{name}</h1><p className="pdp-price">{money(product.prices[state.currency])}</p><div className="pdp-color"><p><span>{fr ? 'Couleur' : 'Color'}:</span> {product.color[state.locale]}</p><div className="pdp-color-options" aria-label={fr ? 'Couleurs disponibles' : 'Available colours'}>{colorVariants.map(variant => <Link key={variant.id} href={`/product/${variant.id}`} aria-label={`${variant.color[state.locale]}${variant.id === product.id ? fr ? ' — sélectionnée' : ' — selected' : ''}`} aria-current={variant.id === product.id ? 'true' : undefined} className="pdp-color-swatch" onClick={() => { if (size && Object.prototype.hasOwnProperty.call(variant.stock, size)) rememberFit(variant.id, size); }}><span style={{ background: colorSwatch(variant.color.en) }} /></Link>)}</div></div>
+        {oneSize ? <p className="pdp-one-size">{t('oneSize')}</p> : <div className="pdp-size-control"><div className="pdp-size-heading"><label htmlFor={`pdp-size-${product.id}`}>{fr ? product.kind === 'footwear' ? 'Pointure' : 'Taille' : 'Size'}{product.kind === 'footwear' && <span>EU</span>}</label>{product.kind === 'footwear' && <button type="button" className="pdp-text-link" onClick={() => dispatch({ type: 'open', overlay: { kind: 'sizeGuide', productId: product.id } })}>{fr ? 'Guide des pointures' : 'Size guide'}</button>}</div><div className="pdp-select-wrap"><select ref={sizeSelect} id={`pdp-size-${product.id}`} value={size} aria-invalid={sizeError || undefined} aria-describedby={sizeError ? 'pdp-size-error' : undefined} onChange={event => { setSelectedSize(event.target.value); setSizeError(false); }}><option value="">{fr ? 'Choisissez votre pointure' : 'Select your size'}</option>{sizes.map(value => <option key={value} value={value}>{product.kind === 'footwear' ? 'EU ' : ''}{value}{product.kind === 'belt' ? ' cm' : ''}{availableStock(product.id, value, state.stockUsed, productById) === 0 ? (fr ? ' — Indisponible' : ' — Unavailable') : ''}</option>)}</select><Icon name="chevron" width={15} /></div>{sizeError && <p id="pdp-size-error" className="pdp-size-error" role="alert">{fr ? 'Sélectionnez une pointure pour continuer.' : 'Select a size to continue.'}</p>}{product.kind === 'footwear' && <button type="button" className="pdp-fit-finder-trigger" onClick={() => dispatch({ type: 'open', overlay: { kind: 'fit', productId: product.id } })}><Icon name="spark" width={15} />{fr ? 'Trouver ma pointure' : 'Find your size'}</button>}{fitSelection && <p className="pdp-recommended-size">{fr ? 'Votre conseil de pointure' : 'Your size recommendation'}: EU {fitSelection}</p>}</div>}
         <p className="pdp-stock" role="status">{size ? count > 0 ? <><span className="pdp-stock-dot" />{count <= 2 ? (fr ? `Plus que ${count} disponible${count > 1 ? 's' : ''}` : `Only ${count} available`) : (fr ? 'Disponible en ligne' : 'Available online')}</> : inBag > 0 ? (fr ? 'Les pièces disponibles sont déjà dans votre panier.' : 'The available pieces are already in your bag.') : (fr ? 'Cette pointure est actuellement indisponible.' : 'This size is currently unavailable.') : (fr ? 'Sélectionnez une pointure pour voir la disponibilité.' : 'Select a size to check availability.')}</p>
-        {product.kind !== 'bag' && <button type="button" className="pdp-text-link pdp-availability-link" onClick={showAvailability}>{fr ? 'Vous ne trouvez pas votre pointure ?' : 'Can’t find your size?'}<Icon name="mail" width={15} /></button>}
+        {!oneSize && <button type="button" className="pdp-text-link pdp-availability-link" onClick={showAvailability}>{fr ? 'Vous ne trouvez pas votre pointure ?' : 'Can’t find your size?'}<Icon name="mail" width={15} /></button>}
       </div>
       <div className="pdp-purchase" ref={purchase}>{buyButtons()}<p className="pdp-delivery-note"><Icon name="truck" width={20} />{fr ? 'Livraison calculée lors du paiement' : 'Delivery calculated at checkout'}</p><Link className="pdp-text-link" href="/shipping-returns">{fr ? 'Livraison et retours' : 'Delivery and returns'}</Link><button type="button" className="pdp-share" onClick={() => void share()}><Icon name="share" width={17} />{fr ? 'Partager cette création' : 'Share this creation'}</button>{shareMessage && <p className="pdp-share-message" role="status">{shareMessage}</p>}{shareFallback && <input className="pdp-share-field" aria-label={fr ? 'Lien de la création' : 'Creation link'} value={shareFallback} readOnly onFocus={event => event.target.select()} />}</div>
     </section>
@@ -184,7 +205,7 @@ function Recommendations({ product, products }: { product: Product; products: Pr
   const fr = state.locale === 'fr';
   const rail = useRef<HTMLDivElement>(null);
   const [bounds, setBounds] = useState({ start: true, end: false });
-  const recommendations = [...products].filter(item => item.id !== product.id && item.published !== false).sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category)).slice(0, 4);
+  const recommendations = [...products].filter(item => item.id !== product.id && item.published !== false && (!product.colorGroup || item.colorGroup !== product.colorGroup)).sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category)).slice(0, 8);
   useEffect(() => {
     const element = rail.current; if (!element) return;
     const update = () => setBounds({ start: element.scrollLeft < 8, end: element.scrollLeft + element.clientWidth >= element.scrollWidth - 8 });
@@ -197,23 +218,23 @@ function Recommendations({ product, products }: { product: Product; products: Pr
 }
 
 export function AvailabilityNotice({ productId, size: requestedSize }: { productId: string; size?: string }) {
-  const { state, productById, dispatch } = useShop();
+  const { state, productById, dispatch, refresh, t } = useShop();
   const product = productById.get(productId);
   const fr = state.locale === 'fr';
   const [size, setSize] = useState(requestedSize ?? '');
   const [email, setEmail] = useState(state.user?.email ?? '');
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState('');
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   if (!product) return <div className="pdp-availability-notice"><h2>{fr ? 'Création indisponible' : 'Creation unavailable'}</h2><Link href="/collections" onClick={() => dispatch({ type: 'close' })}>{fr ? 'Voir la collection' : 'View the collection'}</Link></div>;
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); setError('');
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); if (busy) return; setError(''); setBusy(true);
     try {
-      const key = 'goya.availability.requests.v1';
-      let existing: unknown; try { existing = JSON.parse(localStorage.getItem(key) ?? '[]'); } catch { existing = []; }
-      const requests = Array.isArray(existing) ? existing.slice(-19) : [];
-      localStorage.setItem(key, JSON.stringify([...requests, { productId, size: size || 'OS', email: email.trim(), locale: state.locale, at: new Date().toISOString() }]));
-      setSaved(true);
-    } catch { setError(fr ? 'Le stockage est indisponible dans ce navigateur. Réessayez dans votre navigateur principal.' : 'Storage is unavailable in this browser. Try again in your main browser.'); }
+      if (!state.user) await shopRequest('guestSession');
+      const { request } = await shopRequest<{ request: { id: string } }>('availabilityRequest', { productId, size: size || 'OS', email: email.trim(), locale: state.locale });
+      setSaved(request.id); await refresh(true);
+    } catch { setError(t('requestFailed')); }
+    finally { setBusy(false); }
   };
-  return <div className="pdp-availability-notice"><p className="pdp-overline">MAISON GOYA</p><h2>{fr ? 'Une création à retrouver.' : 'A creation to return to.'}</h2><p>{product.name[state.locale]}</p>{saved ? <div className="pdp-availability-success" role="status"><Icon name="check" width={30} height={30} /><h3>{fr ? 'Votre demande de démonstration est enregistrée.' : 'Your demo request is saved.'}</h3><p>{fr ? 'Elle reste dans ce navigateur. Aucun e-mail réel n’est envoyé dans cette démonstration.' : 'It stays in this browser. No real email is sent in this demonstration.'}</p><button type="button" className="pdp-add-button" onClick={() => dispatch({ type: 'close' })}>{fr ? 'Continuer la découverte' : 'Continue exploring'}</button></div> : <form onSubmit={submit}><p>{fr ? 'Enregistrez une demande de disponibilité pour cette création et votre pointure.' : 'Save an availability request for this creation and your size.'}</p>{product.kind !== 'bag' && <label><span>{fr ? 'Pointure' : 'Size'}</span><select value={size} onChange={event => setSize(event.target.value)} required><option value="">{fr ? 'Choisissez une pointure' : 'Choose a size'}</option>{Object.keys(product.stock).map(value => <option key={value} value={value}>{product.kind === 'footwear' ? 'EU ' : ''}{value}</option>)}</select></label>}<label><span>{fr ? 'Adresse e-mail' : 'Email address'}</span><input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required maxLength={254} /></label><p className="pdp-availability-demo">{fr ? 'Démonstration : utilisez des coordonnées fictives. Aucun e-mail ne sera envoyé.' : 'Demo: use fictitious details. No email will be sent.'}</p>{error && <p role="alert" className="pdp-size-error">{error}</p>}<button type="submit" className="pdp-add-button">{fr ? 'Enregistrer ma demande' : 'Save my request'}</button><Link className="pdp-text-link" href="/customer-service#privacy" onClick={() => dispatch({ type: 'close' })}>{fr ? 'Confidentialité' : 'Privacy'}</Link></form>}</div>;
+  return <div className="pdp-availability-notice"><p className="pdp-overline">MAISON GOYA</p><h2>{fr ? 'Une création à retrouver.' : 'A creation to return to.'}</h2><p>{product.name[state.locale]}</p>{saved ? <div className="pdp-availability-success" role="status"><Icon name="check" width={30} height={30} /><h3>{fr ? 'Votre demande de démonstration est enregistrée.' : 'Your demo request is saved.'}</h3><p>{fr ? 'La Maison peut suivre votre demande et vous informer de son évolution dans cette démonstration. Aucun e-mail réel ne sera envoyé.' : 'The Maison can follow your request and update its progress in this demonstration. No real email will be sent.'}</p><p>{fr ? 'Référence' : 'Reference'}: {saved}</p><Link className="pdp-text-link" href="/my-requests" onClick={() => dispatch({ type: 'close' })}>{fr ? 'Suivre ma demande' : 'Follow my request'}<Icon name="arrow-right" width={16} /></Link><button type="button" className="pdp-add-button" onClick={() => dispatch({ type: 'close' })}>{fr ? 'Continuer la découverte' : 'Continue exploring'}</button></div> : <form method="post" onSubmit={submit}><p>{fr ? 'Enregistrez une demande de disponibilité pour cette création et votre pointure.' : 'Save an availability request for this creation and your size.'}</p>{(product.kind === 'footwear' || product.kind === 'belt') && <label><span>{fr ? 'Pointure' : 'Size'}</span><select value={size} onChange={event => setSize(event.target.value)} required><option value="">{fr ? 'Choisissez une pointure' : 'Choose a size'}</option>{Object.keys(product.stock).map(value => <option key={value} value={value}>{product.kind === 'footwear' ? 'EU ' : ''}{value}</option>)}</select></label>}<label><span>{fr ? 'Adresse e-mail' : 'Email address'}</span><input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required maxLength={254} /></label><p className="pdp-availability-demo">{fr ? 'Démonstration : utilisez des coordonnées fictives. Aucun e-mail ne sera envoyé.' : 'Demo: use fictitious details. No email will be sent.'}</p>{error && <p role="alert" className="pdp-size-error">{error}</p>}<button type="submit" className="pdp-add-button" disabled={busy || !state.ready}>{busy ? t('saving') : fr ? 'Enregistrer ma demande' : 'Save my request'}</button><Link className="pdp-text-link" href="/legal/privacy" onClick={() => dispatch({ type: 'close' })}>{fr ? 'Confidentialité' : 'Privacy'}</Link></form>}</div>;
 }

@@ -4,10 +4,12 @@ import { setTimeout as delay } from 'node:timers/promises';
 import path from 'node:path';
 import { neon } from '@neondatabase/serverless';
 import { PRODUCTS } from '../catalog';
+import { ARCHIVE_PRODUCTS } from '../archive-catalog';
 import type { AccountProfile, Announcement, Booking, DemoUser, Order, Product, ShopNotification } from '../types';
+import type { ReturnRequest, ServiceRequest } from '../experience-types';
 import { localDemo } from './config';
 
-export interface Account extends DemoUser { passwordHash: string; profile?: AccountProfile }
+export interface Account extends DemoUser { passwordHash: string; profile?: AccountProfile; recoveryHash?: string; recoveryExpiresAt?: number }
 export interface Session { hash: string; userId: string; expiresAt: number }
 export interface Subscription { userId: string; endpoint: string; keys: { p256dh: string; auth: string }; locale: 'en' | 'fr' }
 export interface Database {
@@ -15,6 +17,9 @@ export interface Database {
   announcements: Announcement[]; notifications: ShopNotification[]; subscriptions: Subscription[];
   requests: Record<string, { count: number; expires: number }>;
   idempotency: Record<string, string>;
+  returns?: ReturnRequest[];
+  inquiries?: ServiceRequest[];
+  passwordResets?: { hash: string; userId: string; expiresAt: number }[];
 }
 export function seedDatabase(): Database {
   return { products: structuredClone(PRODUCTS).map((product) => ({ ...product, published: true })), users: [], sessions: [], orders: [], bookings: [], announcements: [], notifications: [], subscriptions: [], requests: {}, idempotency: {} };
@@ -34,6 +39,7 @@ export function reconcileDemoCatalog(db: Database): Database {
     if (!legacy && !encodingDefect && !frenchEncodingDefect) return product;
     return { ...product, ...structuredClone(corrected), prices: product.prices, stock: product.kind === corrected.kind ? product.stock : corrected.stock, published: product.published, updatedAt: product.updatedAt };
   });
+  for (const product of ARCHIVE_PRODUCTS) if (!db.products.some(existing => existing.id === product.id)) db.products.push({ ...structuredClone(product), published: true });
   return db;
 }
 const dataFile = () => process.env.DEMO_DATA_FILE || path.join(process.cwd(), '.data', 'shop.json');

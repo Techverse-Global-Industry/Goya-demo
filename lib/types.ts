@@ -1,9 +1,9 @@
 export type Locale = 'en' | 'fr';
 export type Currency = 'EUR' | 'USD' | 'XOF';
 export type Category = 'all' | 'men' | 'women' | 'accessories';
-export type ShoeType = 'all' | 'loafers' | 'sneakers' | 'heels' | 'boots';
+export type ShoeType = 'all' | 'loafers' | 'lace-ups' | 'boots' | 'sneakers' | 'monk-straps' | 'slippers' | 'sandals' | 'pumps' | 'flats' | 'heels' | 'mules';
 export type Country = 'BJ' | 'FR' | 'SN' | 'US' | 'GB';
-export type PaymentMethod = 'card' | 'apple' | 'mobile' | 'pickup';
+export type PaymentMethod = 'card' | 'apple' | 'paypal' | 'klarna' | 'scalapay' | 'mobile' | 'pickup';
 export type AtelierLocation = 'cotonou' | 'paris' | 'dakar';
 export type AtelierService = 'polish' | 'patina' | 'heels' | 'restoration';
 export type Localized = Record<Locale, string>;
@@ -20,7 +20,14 @@ export interface Product {
   published?: boolean;
   updatedAt?: string;
   category: Exclude<Category, 'all'>;
-  kind: 'footwear' | 'bag' | 'belt';
+  kind: 'footwear' | 'bag' | 'belt' | 'accessory' | 'care';
+  style?: Exclude<ShoeType, 'all'>;
+  accessoryType?: string;
+  audience?: 'men' | 'women' | 'unisex';
+  construction?: string;
+  edits?: ('new' | 'gifts' | 'featured')[];
+  colorGroup?: string;
+  fit?: 'regular' | 'generous' | 'narrow';
   badge: 'signature' | 'limited' | 'atelierEdition';
   prices: PriceBook;
   stock: Readonly<Record<string, number>>;
@@ -55,7 +62,7 @@ export interface AccountProfile {
   wishlist: string[];
 }
 export type CatalogSort = 'recommended' | 'priceAsc' | 'priceDesc';
-export interface CatalogFilters { sizes: string[]; colors: string[]; materials: string[]; styles: ShoeType[]; genders?: Category[] }
+export interface CatalogFilters { sizes: string[]; colors: string[]; materials: string[]; styles: ShoeType[]; genders?: Category[]; constructions?: string[]; accessoryTypes?: string[] }
 
 export interface OrderLine extends CartLine {
   unitPrice: number;
@@ -106,6 +113,8 @@ export interface StoreSnapshot {
   revision: number;
   pushPublicKey: string | null;
   profile?: AccountProfile | null;
+  returns?: import('./experience-types').ReturnRequest[];
+  requests?: import('./experience-types').ServiceRequest[];
 }
 
 export interface BookingDetails {
@@ -133,7 +142,9 @@ export type Overlay =
   | { kind: 'info'; topic: 'shipping' | 'care' | 'privacy' }
   | { kind: 'region' }
   | { kind: 'recovery' }
-  | { kind: 'sizeGuide' }
+  | { kind: 'sizeGuide'; productId?: string }
+  | { kind: 'fit'; productId: string }
+  | { kind: 'newsletter' }
   | { kind: 'availability'; productId: string; size?: string }
-  | { kind: 'filters'; category?: Category; style?: ShoeType }
+  | { kind: 'filters'; category?: Category; style?: ShoeType; accessoryType?: string; accessoryAudience?: 'men' | 'women'; edit?: 'collection' | 'new' | 'gifts' | 'featured' | 'search'; selection?: string[] }
   | null;

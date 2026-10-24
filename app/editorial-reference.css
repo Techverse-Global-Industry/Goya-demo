@@ -17,26 +17,27 @@
 .reference-home-journal { display: grid; grid-template-columns: 29% minmax(0,1fr); gap: 35px; padding: 60px 0 55px 4vw; color: #171717; background: #f3f3f1; overflow: hidden; }
 .reference-journal-intro { display: flex; flex-direction: column; align-items: flex-start; padding: 16px 22px 8px 0; }
 .reference-journal-kicker { font-size: 9px; line-height: 1.5; color: #686868; }
-.reference-journal-intro h2 { font: 500 clamp(26px,2.5vw,37px)/1.15 var(--sans); letter-spacing: -.04em; text-transform: uppercase; margin: 24px 0 18px; max-width: 320px; }
-.reference-journal-intro > p:last-of-type { font-size: 13px; line-height: 1.8; max-width: 260px; }
+.reference-journal-intro h2 { font: 500 24px/1.2 var(--sans); letter-spacing: -.025em; text-transform: uppercase; margin: 24px 0 18px; max-width: 320px; }
+.reference-journal-intro > p:last-of-type { font-size: 16px; line-height: 1.6; max-width: 300px; }
 .reference-journal-controls { display: flex; align-items: center; gap: 10px; margin-top: auto; padding-top: 30px; }
 .reference-journal-controls > button { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #171717; border-radius: 50%; color: #171717; background: transparent; transition: background .2s,color .2s; }
 .reference-journal-controls > button:hover:not(:disabled) { color: #fff; background: #171717; }
 .reference-journal-controls > button:disabled { opacity: .25; cursor: default; }
-.reference-journal-rail { display: flex; gap: 20px; min-width: 0; padding: 0 4vw 5px 0; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; scroll-padding-right: 4vw; overscroll-behavior-x: contain; }
+.reference-journal-rail { display: flex; gap: 4px; min-width: 0; padding: 0 4vw 5px 0; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; scroll-padding-right: 4vw; overscroll-behavior-x: contain; }
 .reference-journal-rail::-webkit-scrollbar { display: none; }
 .reference-journal-rail:focus-visible { outline-offset: -2px; }
-.reference-journal-story { flex: 0 0 44%; min-width: 0; scroll-snap-align: start; }
+.reference-journal-story { flex: 0 0 calc((100% - 8px)/3); min-width: 0; scroll-snap-align: start; }
 .reference-journal-story > a { display: block; }
-.reference-journal-image { width: 100%; position: relative; aspect-ratio: 4/5; overflow: hidden; background: #dededb; }
+.reference-journal-image { width: 100%; position: relative; aspect-ratio: 3/4; overflow: hidden; background: #dededb; }
+.reference-journal-image::after { content: ''; position: absolute; inset: 35% 0 0; background: linear-gradient(transparent,#0008); pointer-events: none; }
 .reference-journal-image img { object-fit: cover; transition: transform .8s; }
 .reference-journal-image--le-geste-du-soin img { object-position: 33% center; }
 .reference-journal-image--l-art-de-l-offrir img { object-fit: contain; background: #fff; }
 .reference-journal-story a:hover .reference-journal-image img { transform: scale(1.035); }
-.reference-journal-story .reference-journal-story-kicker { margin-top: 19px; font-size: 8px; line-height: 1.5; text-transform: uppercase; color: #92603e; }
-.reference-journal-story h3 { font: 500 13px/1.5 var(--sans); letter-spacing: -.015em; text-transform: uppercase; margin: 9px 0; }
-.reference-journal-story h3 + p { font-size: 12px; line-height: 1.8; max-width: 360px; }
-.reference-journal-link { display: inline-flex; align-items: center; gap: 20px; min-height: 34px; font-size: 10px; padding-bottom: 4px; border-bottom: 1px solid #171717; margin-top: 12px; }
+.reference-journal-caption { position: absolute; z-index: 1; left: 24px; right: 20px; bottom: 30px; color: #fff; }
+.reference-journal-caption > p { font-size: 9px; line-height: 1.5; text-transform: uppercase; margin-bottom: 11px; }
+.reference-journal-story h3 { font: 500 14px/1.6 var(--sans); letter-spacing: -.015em; text-transform: uppercase; }
+.reference-journal-story h3 span { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; }
 @media(max-width:1023px) {
   .reference-home-collection .fashion-category > a { min-height: 240px; }
   .reference-home-collection .fashion-category h2 { left: 16px; bottom: 20px; font-size: 9px; }
@@ -45,8 +46,9 @@
   .reference-home-statement { gap: 5vw; }
   .reference-home-journal { grid-template-columns: 29% minmax(0,1fr); gap: 22px; }
   .reference-journal-intro { padding-right: 5px; }
-  .reference-journal-intro h2 { font-size: 28px; }
-  .reference-journal-story { flex-basis: 60%; }
+  .reference-journal-intro h2 { font-size: 24px; }
+  .reference-journal-story { flex-basis: 49%; }
+  .reference-journal-caption { left: 19px; right: 16px; bottom: 24px; }
 }
 @media(max-width:699px) {
   .reference-home-collection .fashion-category-grid.brand-category-grid { grid-template-columns: 1fr; gap: 4px; }
@@ -62,15 +64,14 @@
   .reference-home-statement > p { font-size: 14px; line-height: 1.85; }
   .reference-home-journal { display: block; position: relative; padding: 39px 0 99px; }
   .reference-journal-intro { padding: 0 24px 27px; }
-  .reference-journal-intro h2 { margin: 16px 0; font-size: 30px; max-width: 290px; }
-  .reference-journal-intro > p:last-of-type { font-size: 12px; max-width: 280px; }
+  .reference-journal-intro h2 { margin: 16px 0; font-size: 24px; max-width: 290px; }
+  .reference-journal-intro > p:last-of-type { font-size: 16px; max-width: 320px; }
   .reference-journal-controls { position: absolute; bottom: 30px; left: 24px; padding-top: 0; }
   .reference-journal-controls > button { width: 40px; height: 40px; }
-  .reference-journal-rail { padding: 0 24px 7px; gap: 14px; scroll-padding: 24px; }
+  .reference-journal-rail { padding: 0 24px 7px; gap: 4px; scroll-padding: 24px; }
   .reference-journal-story { flex-basis: 85%; }
-  .reference-journal-story .reference-journal-story-kicker { margin-top: 17px; }
-  .reference-journal-story h3 { font-size: 13px; }
-  .reference-journal-story h3 + p { font-size: 12px; line-height: 1.8; }
+  .reference-journal-caption { left: 24px; right: 20px; bottom: 29px; }
+  .reference-journal-story h3 { font-size: 14px; }
 }
 @media(prefers-reduced-motion:reduce) {
   .reference-home-collection .fashion-category img,.reference-home-collection .fashion-pair-photo img,.reference-journal-image img,.reference-journal-controls > button { transition: none; }
