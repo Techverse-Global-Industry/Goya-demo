@@ -1,6 +1,8 @@
 # Local validation - 16 October 2026
 
-The application separates the public brand website, authenticated customer application and administrator workspace. See CUSTOMER-ACCOUNT.md for routes and access rules.
+> Historical validation of the earlier login-required shopping flow. The later Santoni-inspired revision adds public shopping, optional customer accounts and cookie-owned guest checkout/tracking. The results below describe the dated run, not verification of that newer flow. See [CUSTOMER-ACCOUNT.md](CUSTOMER-ACCOUNT.md) for current routes and access rules.
+
+The application retains separately authorized customer and administrator workspaces alongside the public storefront.
 
 The production build and TypeScript check pass. The 55 backend, commerce, translation, session and inventory unit tests pass. The previous complete lint check passed before the final catalog corrections; the later targeted check did not complete before hosting preparation.
 

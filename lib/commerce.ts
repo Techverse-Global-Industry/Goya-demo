@@ -1,6 +1,7 @@
 import { COUNTRIES, LOCATION_TIMEZONES, LOCATIONS, PAYMENT_METHODS, PRODUCT_BY_ID, SERVICES, TIME_SLOTS } from './catalog';
 import type { AtelierLocation, Booking, BookingDetails, CartLine, Country, Currency, Locale, Order, PaymentMethod, PriceBook, Product, ShippingDetails } from './types';
 import type { TranslationKey } from './i18n';
+import { shoeTypeOf } from './merchandising';
 
 export const SHIPPING_THRESHOLD: PriceBook = { EUR: 60000, USD: 65000, XOF: 395000 };
 export const SHIPPING_FEE: PriceBook = { EUR: 2000, USD: 2500, XOF: 15000 };
@@ -144,10 +145,12 @@ export function normalizeSearch(value: string): string {
 }
 
 export function matchesProduct(product: Product, query: string): boolean {
-  const words = normalizeSearch(query).split(/\s+/).filter(Boolean);
+  const words = normalizeSearch(query).replace(/[^\p{L}\p{N}\s-]/gu, ' ').split(/\s+/).filter(word => word && !['and', 'et'].includes(word));
   const category = { men: 'men homme hommes', women: 'women femme femmes', accessories: 'accessories accessoires' }[product.category];
   const kinds = { footwear: 'shoe shoes chaussure chaussures soulier souliers', bag: 'bag bags sac sacs', belt: 'belt belts ceinture ceintures' }[product.kind];
-  const text = normalizeSearch([product.id, category, kinds, ...Object.values(product.name), ...Object.values(product.description), ...Object.values(product.material), ...Object.values(product.color)].join(' '));
+  const shoeStyle = shoeTypeOf(product);
+  const styles = { loafers: 'loafer loafers mocassin mocassins slip-on', sneakers: 'sneaker sneakers basket baskets', heels: 'heel heels pump pumps talon talons escarpin escarpins', boots: 'boot boots bottine bottines ankle' };
+  const text = normalizeSearch([product.id, category, kinds, shoeStyle ? styles[shoeStyle] : '', ...Object.values(product.name), ...Object.values(product.description), ...Object.values(product.material), ...Object.values(product.color)].join(' '));
   return words.every((word) => text.includes(word));
 }
 

@@ -3,6 +3,8 @@ import { availableStock, createOrder, readPreferences, remainingStock, sanitizeC
 import type { StockUsed } from './commerce';
 import type { TranslationKey } from './i18n';
 import type { Booking, BookingDetails, CartLine, Category, Currency, DemoUser, Locale, Order, Overlay, PaymentMethod, ShippingDetails, StoreSnapshot, ShoeType } from './types';
+import type { AccountProfile, CatalogFilters, CatalogSort, Country } from './types';
+import { EMPTY_FILTERS, MARKETS } from './storefront';
 
 export interface ShopState {
   products: StoreSnapshot['products'];
@@ -22,6 +24,11 @@ export interface ShopState {
   filter: Category;
   shoeType: ShoeType;
   query: string;
+  wishlist: string[];
+  market: Country;
+  sort: CatalogSort;
+  catalogFilters: CatalogFilters;
+  profile: AccountProfile | null;
   ready: boolean;
   notice: { id: number; key: TranslationKey } | null;
   noticeSerial: number;
@@ -32,6 +39,7 @@ export const INITIAL_STATE: ShopState = {
   locale: 'en', currency: 'EUR', cart: [], stockUsed: {}, user: null,
   orders: [], bookings: [], overlay: null, filter: 'all', shoeType: 'all', query: '',
   ready: false, notice: null, noticeSerial: 0,
+  wishlist: [], market: 'BJ', sort: 'recommended', catalogFilters: EMPTY_FILTERS, profile: null,
 };
 
 export type ShopAction =
@@ -47,6 +55,11 @@ export type ShopAction =
   | { type: 'filter'; filter: Category }
   | { type: 'shoeType'; shoeType: ShoeType }
   | { type: 'query'; query: string }
+  | { type: 'wishlist'; productId: string }
+  | { type: 'setWishlist'; productIds: string[] }
+  | { type: 'market'; market: Country }
+  | { type: 'sort'; sort: CatalogSort }
+  | { type: 'catalogFilters'; filters: CatalogFilters }
   | { type: 'resetFilters' }
   | { type: 'add'; productId: string; size: string }
   | { type: 'quantity'; productId: string; size: string; quantity: number }
@@ -69,15 +82,25 @@ export function shopReducer(state: ShopState, action: ShopAction): ShopState {
   switch (action.type) {
     case 'sync': {
       const catalog = new Map(action.snapshot.products.map((product) => [product.id, product]));
-      const cart = state.user?.id === action.snapshot.user?.id ? sanitizeCart(state.cart, {}, catalog) : [];
-      return { ...state, ...action.snapshot, cart, stockUsed: {}, connected: true };
+      const switchingAccounts = !!state.user?.id && state.user.id !== action.snapshot.user?.id;
+      const cart = switchingAccounts ? [] : sanitizeCart(state.cart, {}, catalog);
+      return { ...state, ...action.snapshot, profile: action.snapshot.profile ?? null, wishlist: switchingAccounts ? [] : state.wishlist.filter(id => catalog.has(id)), cart, stockUsed: {}, connected: true };
     }
     case 'connection': return { ...state, connected: action.connected };
     case 'orderComplete': return { ...state, cart: [], orders: [action.order, ...state.orders.filter((order) => order.id !== action.order.id)], overlay: { kind: 'checkout', orderId: action.order.id }, notice: null };
     case 'bookingComplete': return { ...state, bookings: [...state.bookings.filter((booking) => booking.id !== action.booking.id), action.booking], overlay: { kind: 'booking', bookingId: action.booking.id } };
     case 'hydrate': {
       const prefs = readPreferences(action.raw, catalog);
-      return { ...state, ...prefs, cart: sanitizeCart(prefs.cart, state.stockUsed, catalog), ready: true };
+      let wishlist = state.wishlist;
+      let market = state.market;
+      try {
+        const extra = action.raw && action.raw.length < 100_000 ? JSON.parse(action.raw) : null;
+        if (extra?.version === 1) {
+          if (Array.isArray(extra.wishlist)) wishlist = [...new Set<string>(extra.wishlist.filter((id: unknown): id is string => typeof id === 'string' && catalog.has(id)))].slice(0, 100);
+          if (MARKETS.includes(extra.market)) market = extra.market;
+        }
+      } catch { /* Cart and locale use the independently validated preferences above. */ }
+      return { ...state, ...prefs, wishlist, market, cart: sanitizeCart(prefs.cart, state.stockUsed, catalog), ready: true };
     }
     case 'locale': return { ...state, locale: action.locale };
     case 'currency': return { ...state, currency: action.currency };
@@ -89,7 +112,12 @@ export function shopReducer(state: ShopState, action: ShopAction): ShopState {
     case 'filter': return { ...state, filter: action.filter, shoeType: 'all' };
     case 'shoeType': return { ...state, shoeType: action.shoeType };
     case 'query': return { ...state, query: action.query.slice(0, 120) };
-    case 'resetFilters': return { ...state, filter: 'all', shoeType: 'all', query: '' };
+    case 'wishlist': return catalog.has(action.productId) ? { ...state, wishlist: state.wishlist.includes(action.productId) ? state.wishlist.filter(id => id !== action.productId) : [...state.wishlist, action.productId].slice(0, 100) } : state;
+    case 'setWishlist': return { ...state, wishlist: [...new Set(action.productIds.filter(id => catalog.has(id)))].slice(0, 100) };
+    case 'market': return { ...state, market: action.market };
+    case 'sort': return { ...state, sort: action.sort };
+    case 'catalogFilters': return { ...state, catalogFilters: action.filters };
+    case 'resetFilters': return { ...state, filter: 'all', shoeType: 'all', query: '', catalogFilters: EMPTY_FILTERS, sort: 'recommended' };
     case 'add': {
       if (!state.ready) return state;
       if (!remainingStock(state.cart, state.stockUsed, action.productId, action.size, catalog)) return notify(state, 'stockLimit');
@@ -109,8 +137,11 @@ export function shopReducer(state: ShopState, action: ShopAction): ShopState {
       return action.quantity > max ? notify({ ...state, cart }, 'stockLimit') : { ...state, cart };
     }
     case 'remove': return notify({ ...state, cart: state.cart.filter((line) => !(line.productId === action.productId && line.size === action.size)) }, 'removed');
-    case 'signIn': return notify({ ...state, user: action.user }, 'signedIn');
-    case 'signOut': return notify({ ...state, user: null, overlay: null, cart: [], products: [], orders: [], bookings: [], notifications: [] }, 'loggedOut');
+    case 'signIn': {
+      const differentOwner = !!state.user && state.user.id !== action.user.id;
+      return notify({ ...state, user: action.user, profile: null, orders: [], bookings: [], notifications: [], ...(differentOwner ? { cart: [], wishlist: [] } : {}) }, 'signedIn');
+    }
+    case 'signOut': return notify({ ...state, user: null, profile: null, wishlist: [], overlay: null, cart: [], orders: [], bookings: [], notifications: [] }, 'loggedOut');
     case 'order': {
       // Atomic completion also makes repeated clicks idempotent.
       if (state.overlay?.kind !== 'checkout' || state.overlay.orderId) return state;
@@ -141,6 +172,6 @@ export function shopReducer(state: ShopState, action: ShopAction): ShopState {
     }
     case 'notice': return notify(state, action.key);
     case 'dismissNotice': return { ...state, notice: null };
-    case 'clearPreferences': return notify({ ...state, locale: 'en', currency: 'EUR', cart: [] }, 'preferencesCleared');
+    case 'clearPreferences': return notify({ ...state, locale: 'en', currency: 'EUR', cart: [], wishlist: [], market: 'BJ' }, 'preferencesCleared');
   }
 }

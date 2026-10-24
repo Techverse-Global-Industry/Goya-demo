@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useShop } from '@/context/shop-context';
 import { availableStock, cartQuantity, SHIPPING_THRESHOLD } from '@/lib/commerce';
-import { useSectionNavigation } from '@/lib/use-section-navigation';
 import { MaisonImage } from './maison-image';
 import { CurrencySelect, DemoNote, InlineNotice } from './controls';
 import { Icon } from './icon';
@@ -63,36 +63,42 @@ function QuickViewProduct({ product }: { product: import('@/lib/types').Product 
   </div>;
 }
 
-export function CartDrawer({ close }: { close: () => void }) {
+export function CartDrawer({ close, fullPage = false }: { close: () => void; fullPage?: boolean }) {
   const { state, dispatch, t, money, cartSubtotal, itemCount, productById } = useShop();
-  const scrollToSection = useSectionNavigation();
+  const [savedItem, setSavedItem] = useState('');
+  const c = state.locale === 'fr' ? { save: 'Déplacer vers ma liste de souhaits', saved: 'Ajouté à votre liste de souhaits', wishlist: 'Voir ma liste de souhaits', bag: 'Voir mon panier', color: 'Couleur' } : { save: 'Move to wishlist', saved: 'Saved to your wishlist', wishlist: 'View my wishlist', bag: 'View my bag', color: 'Colour' };
   const threshold = SHIPPING_THRESHOLD[state.currency];
   const remainingToFree = Math.max(0, threshold - cartSubtotal);
-  if (!state.cart.length) return <div className="cart-empty empty-state"><Icon name="bag" width={42} height={42} /><p className="eyebrow">Maison Goya</p><h2>{t('emptyBag')}</h2><p>{t('emptyBagText')}</p>
-    <button type="button" className="button button-gold" onClick={() => { dispatch({ type: 'close' }); requestAnimationFrame(() => scrollToSection('collection')); }}>{t('explore')}<Icon name="arrow-up-right" /></button>
+  if (!state.ready) return <div className="checkout-loading" role="status">{state.locale === 'fr' ? 'Préparation de votre panier…' : 'Preparing your bag…'}</div>;
+  if (!state.cart.length) return <div className="cart-reference cart-empty empty-state"><Icon name="bag" width={42} height={42} /><p className="eyebrow">Maison Goya</p><h2>{t('emptyBag')}</h2><p>{t('emptyBagText')}</p>
+    <Link href="/collections" className="button button-gold" onClick={close}>{t('explore')}<Icon name="arrow-up-right" /></Link>
+    {savedItem && <p className="cart-wishlist-notice" role="status"><Icon name="heart" width={16} /><span>{c.saved}: {savedItem}. <Link href="/wishlist" onClick={close}>{c.wishlist}</Link></span></p>}
     <InlineNotice />
   </div>;
-  return <div className="cart-layout">
+  return <div className={`cart-layout cart-reference${fullPage ? ' cart-reference-page' : ''}`}>
     <div className="cart-intro"><h2 className="modal-display-title">{t('orderSummary')}<sup>{itemCount}</sup></h2><CurrencySelect /></div>
     <InlineNotice />
+    {savedItem && <p className="cart-wishlist-notice" role="status"><Icon name="heart" width={16} /><span>{c.saved}: {savedItem}. <Link href="/wishlist" onClick={close}>{c.wishlist}</Link></span></p>}
     <div className="shipping-tracker">
       <p><Icon name="truck" width={18} height={18} /><span>{remainingToFree === 0 ? t('shippingUnlocked') : t('shippingRemaining', { amount: money(remainingToFree) })}</span></p>
       <progress max={threshold} value={Math.min(cartSubtotal, threshold)} aria-label={t('shippingProgress')} />
     </div>
     <ul className="cart-items">
       {state.cart.map((line) => {
-        const product = productById.get(line.productId)!;
+        const product = productById.get(line.productId);
+        if (!product) return null;
         const name = product.name[state.locale];
         return <li key={`${line.productId}:${line.size}`} className="cart-line" data-cart-line={line.productId}>
           <button type="button" className="cart-thumbnail" aria-label={t('viewProduct', { name })} onClick={() => dispatch({ type: 'open', overlay: { kind: 'quick', productId: product.id } })}>
             <MaisonImage key={product.images?.join()} index={product.image} sources={product.images} alt={name} sizes="112px" className="object-cover" />
           </button>
-          <div className="cart-line-copy"><p className="eyebrow">{t(product.badge)}</p><h3>{name}</h3><p className="cart-size">{t('size')}: {line.size === 'OS' ? t('oneSize') : `${product.kind === 'footwear' ? 'EU ' : ''}${line.size}${product.kind === 'belt' ? ' cm' : ''}`}</p>
+          <div className="cart-line-copy"><p className="eyebrow">{t(product.badge)}</p><h3><Link href={`/product/${product.id}`} onClick={close}>{name}</Link></h3><p className="cart-color">{c.color}: {product.color[state.locale]}</p><p className="cart-size">{t('size')}: {line.size === 'OS' ? t('oneSize') : `${product.kind === 'footwear' ? 'EU ' : ''}${line.size}${product.kind === 'belt' ? ' cm' : ''}`}</p>
             <div className="quantity-control" role="group" aria-label={`${t('quantity')} — ${name}`}>
               <button type="button" aria-label={t('decrease')} onClick={() => dispatch({ type: 'quantity', productId: line.productId, size: line.size, quantity: line.quantity - 1 })}><Icon name="minus" width={13} height={13} /></button>
               <output aria-live="polite">{line.quantity}</output>
               <button type="button" aria-label={t('increase')} disabled={line.quantity >= availableStock(line.productId, line.size, state.stockUsed, productById)} onClick={() => dispatch({ type: 'quantity', productId: line.productId, size: line.size, quantity: line.quantity + 1 })}><Icon name="plus" width={13} height={13} /></button>
             </div>
+            <button type="button" className="cart-save-wishlist" onClick={() => { if (!state.wishlist.includes(product.id)) dispatch({ type: 'wishlist', productId: product.id }); dispatch({ type: 'remove', productId: line.productId, size: line.size }); setSavedItem(name); }}><Icon name="heart" width={15} height={15} />{c.save}</button>
           </div>
           <div className="cart-line-right"><span>{money(product.prices[state.currency] * line.quantity)}</span><button type="button" className="quiet-link" onClick={() => dispatch({ type: 'remove', productId: line.productId, size: line.size })}>{t('remove')}</button></div>
         </li>;
@@ -100,8 +106,9 @@ export function CartDrawer({ close }: { close: () => void }) {
     </ul>
     <div className="cart-summary"><div className="total-row"><span>{t('subtotal')}</span><strong>{money(cartSubtotal)}</strong></div>
       <p className="fine-print">{t('deliveryNote')}</p>
-      <button type="button" className="button button-gold button-full" onClick={() => dispatch({ type: 'open', overlay: { kind: 'checkout' } })}>{t('checkout')}<Icon name="arrow-right" /></button>
-      <button type="button" className="text-link centered-link" onClick={() => { close(); scrollToSection('collection'); }}>{t('continueShopping')}</button>
+      <Link href="/checkout" className="button button-gold button-full" onClick={close}>{t('checkout')}<Icon name="arrow-right" /></Link>
+      {!fullPage && <Link href="/bag" className="cart-view-bag" onClick={close}>{c.bag}<Icon name="arrow-right" width={15} /></Link>}
+      <Link href="/collections" className="text-link centered-link" onClick={close}>{t('continueShopping')}</Link>
       <DemoNote />
     </div>
   </div>;

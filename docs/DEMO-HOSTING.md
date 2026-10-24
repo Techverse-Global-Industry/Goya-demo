@@ -14,7 +14,7 @@ Open http://localhost:3000 and http://localhost:3000/admin.
 
 Local administrator: `admin@goya.demo` / `MaisonDemo2026!`.
 
-Customers create their own demonstration accounts. Use fictitious names, email addresses and delivery details, and a unique demo password. There is no email verification or password-reset email service in this demo.
+Customers can shop and request atelier appointments as guests. Optional demonstration accounts provide saved details, account history and notifications. Use fictitious names, email addresses and delivery details, and a unique demo password when registering. There is no email verification or real password-reset email service; recovery is a labelled preview and changes no password.
 
 `setup:demo` creates private Web Push keys in the ignored `.env.local` file and enables local storage with `DEMO_LOCAL=true`. Never commit this file or set `DEMO_LOCAL` on hosting.
 
@@ -51,7 +51,7 @@ This is intentionally a small demo architecture. A live merchant deployment shou
 
 ## Notifications and installation
 
-The manifest supplies app icons, standalone display and customer shop/orders shortcuts. A service worker supplies an offline reconnection page and Web Push handling. It never caches account pages or API responses. Availability and checkout require a network connection.
+The manifest supplies app icons, standalone display, public collection start URL and collection/account-orders shortcuts. A service worker supplies an offline reconnection page and Web Push handling. It never caches account pages or API responses. Availability, guest tracking and checkout require a network connection.
 
 Customers enable notifications from their account. Notifications are stored in the account even if push is unsupported, denied or not configured. Order updates and announcements are sent to opted-in devices in the user's selected language. Signing out removes the current device subscription.
 
@@ -61,12 +61,16 @@ On supported iPhones/iPads, add the site to the Home Screen before enabling noti
 
 1. Owner signs in at `/admin` and opens Products.
 2. Owner adds photos, English/French copy, prices and size quantities, then publishes.
-3. Customer searches using either language, selects an available size and adds it to the bag.
-4. Customer signs in or creates an account before entering `/app/shop`, then chooses a size and enters fictitious delivery details at checkout.
+3. Visitor opens `/collections` or a men’s/women’s style page, searches using either language, opens a product, selects an available size and adds it to the bag. The initial catalog contains eight truthful demo listings, not extra placeholder products.
+4. Visitor opens `/checkout`, continues as a guest or optionally signs in, and enters fictitious delivery details.
 5. Customer chooses Mobile Money, enters a fictitious number, sends a demo request and approves or declines it. No actual wallet request, SMS, PIN or money transfer is involved.
 6. A successful order is saved and stock decreases. A rejected payment leaves the bag intact.
 7. Owner moves the order from Confirmed to Preparing to On its way to Delivered. Cancellation is available before shipping and returns stock.
-8. Customer sees the updated journey in their account and, where enabled and supported, receives Web Push.
-9. Owner publishes a bilingual new-arrival announcement. It appears in the collection and customer updates.
+8. A guest follows the order at `/track-order` in the same browser with its valid guest cookie. A signed-in customer follows account orders in `/app/orders` and, where enabled and supported, receives Web Push.
+9. Owner publishes a bilingual new-arrival announcement. It is saved in the demo backend and appears in customer updates.
+
+Guest orders are not automatically transferred to an account. An order number alone never grants access; clearing cookies, guest-session expiry or signing out can remove access to guest tracking. Customer and administrator data remain separately authorized.
+
+Contact forms, newsletter preferences, availability requests and password recovery are demonstration interactions. They send no real email, and recovery changes no password. Newsletter and availability preferences are stored locally; account communication preferences may be saved to the account.
 
 Updates refresh automatically while the page is visible, on window focus and immediately between tabs on the same browser. They are periodic updates, not a permanently open realtime socket.

@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { setTimeout as delay } from 'node:timers/promises';
 import path from 'node:path';
 import { neon } from '@neondatabase/serverless';
 import { PRODUCTS } from '../catalog';
-import type { Announcement, Booking, DemoUser, Order, Product, ShopNotification } from '../types';
+import type { AccountProfile, Announcement, Booking, DemoUser, Order, Product, ShopNotification } from '../types';
 import { localDemo } from './config';
 
-export interface Account extends DemoUser { passwordHash: string }
+export interface Account extends DemoUser { passwordHash: string; profile?: AccountProfile }
 export interface Session { hash: string; userId: string; expiresAt: number }
 export interface Subscription { userId: string; endpoint: string; keys: { p256dh: string; auth: string }; locale: 'en' | 'fr' }
 export interface Database {
@@ -36,8 +37,22 @@ export function reconcileDemoCatalog(db: Database): Database {
   return db;
 }
 const dataFile = () => process.env.DEMO_DATA_FILE || path.join(process.cwd(), '.data', 'shop.json');
+const LOCAL_RENAME_RETRY_DELAYS = [25, 50, 75, 100, 125] as const;
 let queue: Promise<unknown> = Promise.resolve();
 let initialized: Promise<void> | undefined;
+
+async function replaceLocalFile(temporary: string, target: string): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try { await rename(temporary, target); return; }
+    catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      // Windows scanners can briefly prevent atomic replacement of an open file.
+      // Retry that operation only; permanent permissions and other failures still surface.
+      if (process.platform !== 'win32' || (code !== 'EPERM' && code !== 'EBUSY') || attempt >= LOCAL_RENAME_RETRY_DELAYS.length) throw error;
+      await delay(LOCAL_RENAME_RETRY_DELAYS[attempt]);
+    }
+  }
+}
 
 function sqlClient() {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required on hosting.');
@@ -79,10 +94,11 @@ export async function mutateDatabase<T>(change: (db: Database) => T): Promise<T>
         const rows = await sqlClient()`UPDATE maison_demo_store SET data = ${JSON.stringify(data)}::jsonb, revision = revision + 1 WHERE id = 1 AND revision = ${revision} RETURNING revision`;
         if (!rows.length) continue;
       } else {
-        await mkdir(path.dirname(dataFile()), { recursive: true });
-        const temporary = `${dataFile()}.${randomUUID()}.tmp`;
+        const target = dataFile();
+        await mkdir(path.dirname(target), { recursive: true });
+        const temporary = `${target}.${randomUUID()}.tmp`;
         await writeFile(temporary, JSON.stringify({ data, revision: revision + 1 }), { mode: 0o600 });
-        await rename(temporary, dataFile());
+        await replaceLocalFile(temporary, target);
       }
       return result;
     }

@@ -6,6 +6,7 @@ import { formatMoney, remainingStock, STORAGE_KEY, subtotal } from '@/lib/commer
 import { INITIAL_STATE, shopReducer } from '@/lib/store';
 import type { ShopAction, ShopState } from '@/lib/store';
 import { translate } from '@/lib/i18n';
+import { shopRequest } from '@/lib/api';
 import type { Translate } from '@/lib/i18n';
 import type { Currency, Product, StoreSnapshot } from '@/lib/types';
 
@@ -28,6 +29,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(shopReducer, INITIAL_STATE);
   const inFlight = useRef<Promise<void> | null>(null);
   const catalogReady = useRef(false);
+  const guestWishlist = useRef(true);
+  const wishlistAccount = useRef<string | null>(null);
+  const wishlistSent = useRef('');
+  const wishlistServer = useRef('');
   const refresh = useCallback(function refreshSnapshot(force = false): Promise<void> {
     if (inFlight.current) return force ? inFlight.current.then(() => refreshSnapshot()) : inFlight.current;
     inFlight.current = (async () => {
@@ -39,7 +44,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         if (!catalogReady.current) {
           catalogReady.current = true;
           let raw: string | null = null;
-          try { const stored = window.localStorage.getItem(STORAGE_KEY); if (stored) { const prefs = JSON.parse(stored); raw = JSON.stringify({ ...prefs, cart: prefs.customerId === snapshot.user?.id ? prefs.cart : [] }); } } catch { /* unavailable storage */ }
+          try { const stored = window.localStorage.getItem(STORAGE_KEY); if (stored) { const prefs = JSON.parse(stored); const sameOwner = (prefs.customerId ?? null) === (snapshot.user?.id ?? null); guestWishlist.current = !prefs.customerId; raw = JSON.stringify({ ...prefs, cart: sameOwner || !prefs.customerId ? prefs.cart : [], wishlist: sameOwner || !prefs.customerId ? prefs.wishlist : [] }); } } catch { /* unavailable storage */ }
           dispatch({ type: 'hydrate', raw });
         }
       } catch { dispatch({ type: 'connection', connected: false }); }
@@ -54,7 +59,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const onStorage = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY && event.key !== null) return;
       let raw = event.newValue;
-      try { if (raw) { const prefs = JSON.parse(raw); raw = JSON.stringify({ ...prefs, cart: prefs.customerId === state.user?.id ? prefs.cart : [] }); } } catch { raw = null; }
+      try { if (raw) { const prefs = JSON.parse(raw); const sameOwner = (prefs.customerId ?? null) === (state.user?.id ?? null); raw = JSON.stringify({ ...prefs, cart: sameOwner ? prefs.cart : [], wishlist: sameOwner ? prefs.wishlist : [] }); } } catch { raw = null; }
       dispatch({ type: 'hydrate', raw });
       void refresh();
     };
@@ -71,13 +76,40 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!state.ready) return;
-    const serialized = JSON.stringify({ version: 1, locale: state.locale, currency: state.currency, cart: state.cart, customerId: state.user?.id ?? null });
+    const serialized = JSON.stringify({ version: 1, locale: state.locale, currency: state.currency, cart: state.cart, wishlist: state.wishlist, market: state.market, customerId: state.user?.id ?? null });
     try {
       if (window.localStorage.getItem(STORAGE_KEY) !== serialized) window.localStorage.setItem(STORAGE_KEY, serialized);
     } catch {
       // Shopping stays functional in private browsing and storage-quota failures.
     }
-  }, [state.ready, state.locale, state.currency, state.cart, state.user?.id]);
+  }, [state.ready, state.locale, state.currency, state.cart, state.wishlist, state.market, state.user?.id]);
+
+  useEffect(() => {
+    if (!state.ready || !state.user) { wishlistAccount.current = null; guestWishlist.current = true; return; }
+    if (!state.profile) return;
+    const serverIds = state.profile.wishlist.filter(id => state.products.some(product => product.id === id));
+    const serverKey = JSON.stringify(serverIds);
+    const localKey = JSON.stringify(state.wishlist);
+    if (wishlistAccount.current !== state.user.id) {
+      wishlistAccount.current = state.user.id;
+      wishlistServer.current = serverKey;
+      wishlistSent.current = serverKey;
+      const merged = guestWishlist.current ? [...new Set([...state.wishlist, ...serverIds])] : serverIds;
+      guestWishlist.current = false;
+      if (JSON.stringify(merged) !== localKey) { dispatch({ type: 'setWishlist', productIds: merged }); return; }
+    } else if (wishlistServer.current !== serverKey && localKey === wishlistSent.current) {
+      wishlistServer.current = serverKey;
+      wishlistSent.current = serverKey;
+      if (serverKey !== localKey) { dispatch({ type: 'setWishlist', productIds: serverIds }); return; }
+    }
+    wishlistServer.current = serverKey;
+    if (localKey === wishlistSent.current) return;
+    const accountId = state.user.id;
+    const timer = window.setTimeout(() => {
+      void shopRequest('wishlist', { productIds: state.wishlist }).then(() => { if (wishlistAccount.current === accountId) wishlistSent.current = localKey; }).catch(() => undefined);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [state.ready, state.user, state.profile, state.wishlist, state.products]);
 
   useEffect(() => {
     document.documentElement.lang = state.locale;

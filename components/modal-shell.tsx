@@ -11,10 +11,12 @@ interface ModalShellProps {
   title: string;
   drawer?: boolean;
   wide?: boolean;
+  className?: string;
+  chrome?: boolean;
   children: (close: () => void) => ReactNode;
 }
 
-export function ModalShell({ title, drawer = false, wide = false, children }: ModalShellProps) {
+export function ModalShell({ title, drawer = false, wide = false, className = '', chrome = true, children }: ModalShellProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const [closeRequested, setCloseRequested] = useState(false);
@@ -66,7 +68,7 @@ export function ModalShell({ title, drawer = false, wide = false, children }: Mo
     });
   }, { scope: dialog, dependencies: [closeRequested] });
 
-  return <dialog ref={dialog} aria-labelledby={titleId} className={`maison-dialog ${drawer ? 'maison-dialog--drawer' : ''} ${wide ? 'maison-dialog--wide' : ''}`}
+  return <dialog ref={dialog} aria-labelledby={chrome ? titleId : undefined} aria-label={chrome ? undefined : title} className={`maison-dialog ${drawer ? 'maison-dialog--drawer' : ''} ${wide ? 'maison-dialog--wide' : ''} ${className}`}
     onKeyDown={(event) => {
       if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return; }
       if (event.key !== 'Tab') return;
@@ -79,12 +81,12 @@ export function ModalShell({ title, drawer = false, wide = false, children }: Mo
     onCancel={(event) => { event.preventDefault(); close(); }}>
     <div className="dialog-positioner" onPointerDown={(event) => { if (event.target === event.currentTarget) close(); }}>
       <div className="dialog-panel" ref={panel}>
-        <header className="dialog-chrome">
+        {chrome && <header className="dialog-chrome">
           <p id={titleId} className="eyebrow">{title}</p>
           <div className="dialog-controls"><LanguageSwitch compact />
             <button type="button" className="icon-button" data-close-modal aria-label={t('close')} onClick={close}><Icon name="close" /></button>
           </div>
-        </header>
+        </header>}
         <div className="dialog-content">{children(close)}</div>
       </div>
     </div>

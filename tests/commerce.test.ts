@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PRODUCT_IMAGES, STORY_IMAGES, imageSources } from '../lib/assets';
 import { PRODUCTS } from '../lib/catalog';
-import { addDays, availableStock, bookingDateRange, createOrder, formatDate, formatMoney, isPaymentAvailable, isTimeAvailable, localDateTime, normalizeSearch, readPreferences, remainingStock, sanitizeCart, shippingCost, subtotal, validateBooking, validateShipping } from '../lib/commerce';
+import { addDays, availableStock, bookingDateRange, createOrder, formatDate, formatMoney, isPaymentAvailable, isTimeAvailable, localDateTime, matchesProduct, normalizeSearch, readPreferences, remainingStock, sanitizeCart, shippingCost, subtotal, validateBooking, validateShipping } from '../lib/commerce';
 import { invoiceText } from '../lib/browser';
 import { INITIAL_STATE, shopReducer } from '../lib/store';
 import { shoeTypeOf } from '../lib/merchandising';
-import type { Booking, BookingDetails, CartLine, ShippingDetails } from '../lib/types';
+import { productColors } from '../lib/storefront';
+import type { Booking, BookingDetails, CartLine, ShippingDetails, StoreSnapshot } from '../lib/types';
 
 const shipping: ShippingDetails = { name: 'Demo Guest', email: 'guest@example.test', address: '12 Demo Avenue', city: 'Cotonou', country: 'BJ' };
 const cart: CartLine[] = [{ productId: 'francesco', size: '42', quantity: 1 }];
@@ -18,6 +19,19 @@ const hydrated = () => shopReducer(INITIAL_STATE, { type: 'hydrate', raw: null }
 
 test('shoe navigation separates loafers, sneakers, heels and boots without treating bags as shoes', () => {
   assert.deepEqual(PRODUCTS.map(shoeTypeOf), ['loafers', 'sneakers', 'heels', 'heels', 'boots', 'loafers', 'heels', null]);
+});
+
+test('bilingual search recognises the displayed shoe-style suggestions', () => {
+  for (const query of ['Heels & pumps', 'Talons & escarpins', 'Ankle boots', 'Bottines', 'Loafers', 'Mocassins', 'Sneakers', 'Baskets']) {
+    assert.ok(PRODUCTS.some(product => matchesProduct(product, query)), query);
+  }
+});
+
+test('multicolour accents do not make a black shoe match the natural colour filter', () => {
+  const colors = productColors(PRODUCTS.find(product => product.id === 'francesco')!);
+  assert.ok(colors.includes('black'));
+  assert.ok(colors.includes('multicolor'));
+  assert.ok(!colors.includes('natural'));
 });
 
 test('changing the collection clears its previous shoe style and reset clears the presentation filters', () => {
@@ -260,4 +274,33 @@ test('sign out removes the simulated user and closes the overlay', () => {
   state = shopReducer(state, { type: 'signOut' });
   assert.equal(state.user, null);
   assert.equal(state.overlay, null);
+});
+
+test('guest bag and wishlist survive sign-in while switching customers clears owned preferences', () => {
+  const guest = { ...hydrated(), cart, wishlist: ['francesco'] };
+  const user = { id: 'first', name: 'First Guest', email: 'first@example.test', provider: 'email' as const };
+  const signedIn = shopReducer(guest, { type: 'signIn', user });
+  assert.deepEqual(signedIn.cart, cart);
+  assert.deepEqual(signedIn.wishlist, ['francesco']);
+  const switched = shopReducer(signedIn, { type: 'signIn', user: { ...user, id: 'second' } });
+  assert.deepEqual(switched.cart, []);
+  assert.deepEqual(switched.wishlist, []);
+  assert.equal(switched.profile, null);
+});
+
+test('expired account synchronization clears owned preferences but guest refresh preserves them', () => {
+  const snapshot: StoreSnapshot = { products: [...PRODUCTS], user: null, orders: [], bookings: [], bookedSlots: [], announcements: [], notifications: [], revision: 1, pushPublicKey: null };
+  const guest = { ...hydrated(), cart, wishlist: ['francesco'] };
+  assert.deepEqual(shopReducer(guest, { type: 'sync', snapshot }).cart, cart);
+  assert.deepEqual(shopReducer(guest, { type: 'sync', snapshot }).wishlist, ['francesco']);
+  const account = { ...guest, user: { id: 'first', name: 'First Guest', email: 'first@example.test', provider: 'email' as const } };
+  const expired = shopReducer(account, { type: 'sync', snapshot });
+  assert.deepEqual(expired.cart, []);
+  assert.deepEqual(expired.wishlist, []);
+});
+
+test('a published-catalog update removes archived favourites while retaining available ones', () => {
+  const state = { ...hydrated(), wishlist: ['francesco', 'kanvo-oxford'] };
+  const snapshot: StoreSnapshot = { products: PRODUCTS.filter(product => product.id !== 'francesco'), user: null, orders: [], bookings: [], bookedSlots: [], announcements: [], notifications: [], revision: 2, pushPublicKey: null };
+  assert.deepEqual(shopReducer(state, { type: 'sync', snapshot }).wishlist, ['kanvo-oxford']);
 });

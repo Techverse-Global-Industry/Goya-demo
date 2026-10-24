@@ -36,10 +36,11 @@ export function PwaProvider({ children }: { children: ReactNode }) {
   return <PwaContext.Provider value={{ install, installed, help, setHelp, ios }}>{children}</PwaContext.Provider>;
 }
 
-export function InstallPanel() {
+export function InstallPanel({ compact = false }: { compact?: boolean }) {
   const { state, t } = useShop();
   const copy = presentationCopy[state.locale];
   const { install, installed, help, setHelp, ios } = useContext(PwaContext);
+  if (compact) return <div className="reference-install"><button type="button" onClick={install} disabled={installed}>{t(installed ? 'installed' : 'installApp')}</button>{help && <p role="status">{t(ios ? 'installIOS' : 'installOther')} <button type="button" onClick={() => setHelp(false)} aria-label={t('close')}><Icon name="close" width={14} /></button></p>}</div>;
   return <section className="install-panel section-pad"><div className="install-mark" aria-hidden="true">G</div><div><p className="eyebrow">{copy.installEyebrow}</p><h2>{copy.installTitle}</h2><p>{copy.installBody}</p>{help && <p className="install-help" role="status">{t(ios ? 'installIOS' : 'installOther')} <button className="quiet-link" onClick={() => setHelp(false)}>{t('close')}</button></p>}</div><button type="button" className="button button-outline" onClick={install} disabled={installed}>{t(installed ? 'installed' : 'installApp')}<Icon name="download" /></button></section>;
 }
 
@@ -105,7 +106,7 @@ export function ConnectionNotice() {
     const query = new URLSearchParams(location.search);
     if (query.has('account')) router.replace('/app/orders');
     const productId = query.get('product');
-    if (productId && !location.pathname.startsWith('/app')) { router.replace(`/app/shop?product=${encodeURIComponent(productId)}`); return; }
+    if (productId && !location.pathname.startsWith('/app')) { router.replace(`/product/${encodeURIComponent(productId)}`); return; }
     if (productId && userId) dispatch({ type: 'open', overlay: { kind: 'quick', productId } });
   }, [state.ready, userId, pathname, dispatch, router]);
   return !state.connected && started ? <div className="connection-notice" role="status"><span>{t('connectionLost')}</span><button type="button" onClick={() => void refresh()}>{t('retry')}</button></div> : null;

@@ -7,9 +7,8 @@ import { LOCATIONS, SERVICES, TIME_SLOTS } from '@/lib/catalog';
 import { bookingDateRange, formatDate, isTimeAvailable, validateBooking } from '@/lib/commerce';
 import type { FieldErrors } from '@/lib/commerce';
 import type { AtelierLocation, AtelierService, BookingDetails } from '@/lib/types';
-import { shopRequest } from '@/lib/api';
+import { RequestError, shopRequest } from '@/lib/api';
 import type { Booking } from '@/lib/types';
-import { Auth } from './auth';
 import { gsap, useGSAP } from '@/lib/gsap';
 import { DemoNote, InlineNotice, SelectField, TextField } from './controls';
 import { Icon } from './icon';
@@ -45,13 +44,16 @@ export function BookingModal({ close }: { close: () => void }) {
     if (busy) return;
     setBusy(true); setError('');
     try {
+      if (!state.user) await shopRequest('guestSession');
       const { booking } = await shopRequest<{ booking: Booking }>('book', { details });
       dispatch({ type: 'bookingComplete', booking }); await refresh();
-    } catch { setError(t('slotTaken')); }
+    } catch (failure) {
+      setError(t(failure instanceof RequestError && failure.code === 'slotTaken' ? 'slotTaken' : 'requestFailed'));
+      await refresh(true);
+    }
     finally { setBusy(false); }
   };
 
-  if (!state.user) return <Auth />;
   return <div className="booking-root" ref={root}>
     {error && <p className="field-error" role="alert">{error}</p>}
     {booking ? <div className="booking-confirmed confirmation">
@@ -66,7 +68,7 @@ export function BookingModal({ close }: { close: () => void }) {
         <div><dt>{t('date')}</dt><dd>{formatDate(booking.date, state.locale, true)} · {booking.time}</dd></div>
         <div><dt>{t('name')}</dt><dd>{booking.name}</dd></div>
       </dl>
-      <button type="button" className="button button-gold button-full" onClick={close}>{t('myAppointments')}<Icon name="arrow-up-right" /></button>
+      <button type="button" className="button button-gold button-full" onClick={close}>{t('close')}<Icon name="check" /></button>
       <DemoNote variant="bookingDemo" />
     </div> : <>
       <p className="eyebrow">{t('atelierEyebrow')}</p>

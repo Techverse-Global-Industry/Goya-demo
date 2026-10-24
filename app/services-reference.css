@@ -1,0 +1,269 @@
+/* Santoni-shaped service surfaces, using Goya's identity and demonstration data. */
+.reference-service-page { padding-top: var(--reference-header-height,72px); background: #fff; color: #171717; }
+.reference-service-page h1, .reference-service-page h2, .reference-service-page h3,
+.reference-region h2, .reference-recovery h2, .reference-size-guide h2 { font-family: var(--sans); font-weight: 400; letter-spacing: -.02em; }
+.reference-service-heading { padding: 55px 7vw 32px; max-width: 1200px; margin: 0 auto; }
+.reference-service-heading h1 { margin: 0 0 48px; text-align: center; font-size: 28px; line-height: 1.25; text-transform: uppercase; }
+.reference-service-heading > p { font-size: 13px; line-height: 1.8; margin-bottom: 18px; }
+.reference-service-heading > nav { display: flex; flex-wrap: wrap; gap: 12px 32px; margin-top: 25px; font-size: 11px; }
+.reference-service-heading > nav a { text-decoration: underline; text-underline-offset: 5px; min-height: 32px; display: inline-flex; align-items: center; }
+.reference-button { display: inline-flex; align-items: center; justify-content: center; gap: 24px; min-height: 49px; padding: 14px 24px; border: 1px solid #171717; background: #171717; color: #fff; font: 400 11px/1.5 var(--sans); letter-spacing: .025em; text-transform: uppercase; cursor: pointer; transition: background .2s, color .2s; }
+.reference-button:hover:not(:disabled) { background: #383838; }
+.reference-button:disabled { opacity: .4; cursor: default; }
+.reference-text-link { display: inline-flex; align-items: center; gap: 20px; width: fit-content; min-height: 40px; padding: 7px 0; background: none; border: 0; border-bottom: 1px solid #7e5535; color: inherit; font: 400 11px/1.5 var(--sans); letter-spacing: .025em; text-transform: uppercase; }
+.reference-demo-note { display: block; font-size: 10px; line-height: 1.7; color: #737373; }
+.reference-kicker { font-size: 9px; line-height: 1.5; letter-spacing: .09em; }
+.reference-form-error { color: #9b3229; font-size: 12px; line-height: 1.6; }
+.reference-success { display: flex; align-items: flex-start; gap: 10px; line-height: 1.8; }
+.reference-success > svg { flex: 0 0 auto; margin-top: 2px; }
+
+/* Newsletter: a quiet field and arrow, followed by explicit preference controls. */
+.reference-newsletter h2 { font: 400 14px/1.5 var(--sans); text-transform: uppercase; letter-spacing: 0; margin: 0 0 16px; }
+.reference-newsletter > p { font-size: 12px; line-height: 1.75; max-width: 430px; margin-bottom: 22px; }
+.reference-newsletter form > label { font-size: 11px; display: block; margin-bottom: 6px; }
+.reference-newsletter-entry { display: flex; align-items: stretch; border-bottom: 1px solid #8f8f8f; }
+.reference-newsletter-entry input { min-width: 0; width: 100%; min-height: 42px; border: 0; background: transparent; color: #171717; font: 400 12px var(--sans); padding: 8px 0; }
+.reference-newsletter-entry button { min-width: 44px; min-height: 44px; background: transparent; border: 0; display: grid; place-items: center; color: #171717; }
+.reference-newsletter form > small { display: block; font-size: 9px; line-height: 1.7; color: #777; margin-top: 9px; }
+.reference-newsletter-options { padding: 17px 0 4px; font-size: 10px; line-height: 1.65; }
+.reference-newsletter-options > div { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 13px; }
+.reference-newsletter-options label { display: flex; align-items: flex-start; gap: 8px; }
+.reference-newsletter-options input { margin-top: 2px; accent-color: #171717; min-width: 14px; min-height: 14px; }
+
+/* Country, language and recovery layers share the reference's thin rules. */
+.reference-region, .reference-recovery, .reference-size-guide { padding: 35px 40px 40px; }
+.reference-region h2, .reference-recovery h2, .reference-size-guide h2 { font-size: 26px; line-height: 1.3; text-transform: uppercase; margin: 0 0 24px; }
+.reference-region > p, .reference-recovery > p, .reference-size-guide > p { font-size: 12px; line-height: 1.8; margin: 0 0 22px; }
+.reference-region-search { display: flex; align-items: center; gap: 13px; border-bottom: 1px solid #999; padding: 0 0 10px; margin-top: 26px; }
+.reference-region-search input { width: 100%; min-width: 0; min-height: 33px; font-size: 13px; background: transparent; border: 0; color: #171717; }
+.reference-region-tabs { display: flex; gap: 24px; margin: 25px 0 20px; overflow-x: auto; }
+.reference-region-tabs button { padding: 10px 0; border: 0; background: transparent; white-space: nowrap; font: 400 10px/1.5 var(--sans); text-transform: uppercase; color: #777; border-bottom: 1px solid transparent; }
+.reference-region-tabs button[aria-pressed=true] { color: #171717; border-bottom-color: #171717; }
+.reference-region-countries { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 25px; margin-bottom: 30px; }
+.reference-region-countries button { display: flex; align-items: center; justify-content: space-between; gap: 15px; min-height: 45px; padding: 10px 12px; border: 1px solid transparent; background: #f7f7f5; text-align: left; font: 400 11px/1.5 var(--sans); color: #171717; text-transform: uppercase; }
+.reference-region-countries button[aria-pressed=true] { border-color: #171717; }
+.reference-region-preferences { display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px; padding-top: 25px; border-top: 1px solid #ddd; margin-bottom: 28px; }
+.reference-region-preferences fieldset { border: 0; padding: 0; margin: 0; }
+.reference-region-preferences legend, .reference-region-preferences > label { display: block; font: 400 11px/1.5 var(--sans); }
+.reference-region-preferences fieldset button { font-size: 12px; min-height: 42px; padding: 8px 0; margin-right: 20px; background: transparent; border: 0; color: #888; }
+.reference-region-preferences fieldset button[aria-pressed=true] { color: #171717; text-decoration: underline; text-underline-offset: 5px; }
+.reference-region-preferences select { display: block; width: 100%; margin-top: 8px; height: 40px; background: #fff; color: #171717; border: 1px solid #ccc; padding: 8px 10px; font-size: 12px; }
+.reference-region > .reference-button { width: 100%; }
+.reference-region > small { margin-top: 15px; }
+.reference-recovery { max-width: 600px; margin: 0 auto; }
+.reference-recovery form { display: flex; flex-direction: column; gap: 22px; }
+.reference-recovery label { display: block; font-size: 11px; }
+.reference-recovery label input { display: block; width: 100%; min-height: 47px; border: 1px solid #ccc; color: #171717; background: #fff; margin-top: 8px; padding: 11px 13px; font-size: 14px; }
+.reference-recovery form > small { font-size: 10px; line-height: 1.7; color: #777; }
+.reference-recovery > small { margin-top: 15px; }
+.reference-recovery > .reference-text-link { margin-top: 25px; }
+.reference-size-tabs { display: flex; gap: 30px; border-bottom: 1px solid #ddd; margin-bottom: 30px; }
+.reference-size-tabs button { padding: 12px 0; font-size: 12px; background: transparent; border: 0; border-bottom: 1px solid transparent; color: #777; }
+.reference-size-tabs button[aria-pressed=true] { border-bottom-color: #171717; color: #171717; }
+.reference-size-guide h3 { font: 400 16px/1.5 var(--sans); margin: 25px 0 14px; }
+.reference-size-table { overflow-x: auto; margin: 28px 0; }
+.reference-size-table table { width: 100%; min-width: 320px; border-collapse: collapse; text-align: center; font-size: 12px; }
+.reference-size-table caption { text-align: left; margin-bottom: 14px; font-size: 11px; }
+.reference-size-table td { height: 48px; border: 1px solid #ccc; background: #fafaf8; min-width: 39px; }
+.reference-size-guide > .reference-text-link { margin-top: 25px; }
+
+/* The reference contact form is a white card on soft craft photography. */
+.reference-contact-stage { position: relative; padding: 32px 24px 64px; background: #514238 url('/images/campaign/goya-care-poster.webp') center / cover fixed; }
+.reference-contact-card { max-width: 700px; margin: 0 auto; background: #fff; padding: 18px 40px 40px; }
+.reference-contact-card > h2 { font-size: 25px; line-height: 1.4; text-transform: uppercase; text-align: center; margin-bottom: 32px; }
+.reference-contact-form { display: grid; grid-template-columns: 1fr 1fr; gap: 31px 24px; }
+.reference-contact-form[hidden] { display: none; }
+.reference-contact-form > label { font-size: 11px; line-height: 1.6; }
+.reference-contact-form input:not([type=checkbox]):not([type=file]), .reference-contact-form select, .reference-contact-form textarea { display: block; width: 100%; margin-top: 5px; border: 1px solid #d0d0d0; border-radius: 0; background: #fff; color: #171717; font: 400 13px/1.5 var(--sans); padding: 12px 9px; }
+.reference-contact-form select { min-height: 46px; padding-right: 26px; }
+.reference-contact-form textarea { resize: vertical; min-height: 120px; }
+.reference-field-full { grid-column: 1 / -1; }
+.reference-contact-form .reference-checkbox { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; font-size: 10px; line-height: 1.7; }
+.reference-checkbox > label { flex: 1; min-width: 190px; }
+.reference-checkbox input { margin-top: 3px; min-width: 14px; height: 14px; accent-color: #171717; }
+.reference-checkbox a { text-decoration: underline; text-underline-offset: 3px; }
+.reference-attachment { position: relative; }
+.reference-attachment > label { display: block; font-size: 11px; }
+.reference-attachment > label > span { display: flex; align-items: center; justify-content: space-between; min-height: 43px; margin-top: 7px; border-bottom: 1px solid #ccc; padding: 7px 0; cursor: pointer; font-size: 12px; }
+.reference-attachment input { position: absolute; height: 1px; width: 1px; opacity: 0; overflow: hidden; }
+.reference-attachment input:focus-visible { opacity: 1; outline: 2px solid #171717; width: 100%; height: 43px; left: 0; top: 23px; }
+.reference-attachment > small { display: block; color: #777; font-size: 10px; line-height: 1.7; margin-top: 8px; overflow-wrap: anywhere; }
+.reference-attachment > button { font-size: 9px; min-height: 28px; }
+.reference-service-privacy { max-width: 1050px; padding: 45px 30px; margin: 0 auto; }
+.reference-service-privacy h2 { font-size: 19px; margin-bottom: 18px; }
+.reference-service-privacy p { font-size: 12px; line-height: 1.9; color: #666; }
+.reference-request-preview { padding-top: 10px; }
+.reference-request-preview h3 { display: flex; gap: 12px; align-items: center; font: 400 20px/1.4 var(--sans); }
+.reference-request-preview > p { font-size: 12px; line-height: 1.8; margin-top: 18px; }
+.reference-request-preview dl { margin: 30px 0; }
+.reference-request-preview dl > div { padding: 16px 0; border-bottom: 1px solid #ddd; }
+.reference-request-preview dt { font-size: 10px; color: #777; text-transform: uppercase; margin-bottom: 7px; }
+.reference-request-preview dd { font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-wrap; }
+.reference-request-preview > button { width: 100%; }
+
+/* Store cards and an honest, lightweight map need no third-party API. */
+.reference-stores .reference-service-heading { max-width: none; text-align: center; padding-bottom: 20px; }
+.reference-stores .reference-service-heading h1 { margin-bottom: 20px; }
+.reference-store-filter { display: flex; gap: 30px; padding: 12px 30px; border-bottom: 1px solid #ddd; }
+.reference-store-filter > select { min-width: 220px; border: 0; border-bottom: 1px solid #999; background: #fff; color: #171717; padding: 10px; font: 400 13px var(--sans); }
+.reference-store-filter > label { display: flex; align-items: center; gap: 13px; width: min(460px,100%); margin-left: auto; border-bottom: 1px solid #999; }
+.reference-store-filter input { background: transparent; border: 0; min-width: 0; width: 100%; padding: 12px 0; font-size: 13px; color: #171717; }
+.reference-store-demo { color: #777; font-size: 10px; line-height: 1.8; margin: 18px 40px 0; max-width: 850px; }
+.reference-store-finder { display: grid; grid-template-columns: 35% 1fr; gap: 35px; padding: 30px 40px 70px; align-items: start; }
+.reference-store-list { display: flex; flex-direction: column; gap: 30px; }
+.reference-store-list > article { border: 1px solid #bbb; padding: 25px; transition: border-color .2s; }
+.reference-store-list > article.is-selected { border-color: #171717; }
+.reference-store-list h2 { font: 400 22px/1.4 var(--sans); margin-bottom: 18px; }
+.reference-store-list article > p { display: flex; gap: 9px; font-size: 12px; line-height: 1.7; margin-bottom: 21px; }
+.reference-store-list article > p svg { flex-shrink: 0; margin-top: 2px; }
+.reference-store-list article > .reference-button { width: 100%; }
+.reference-store-list article > .reference-text-link { width: 100%; justify-content: center; margin-top: 2px; }
+.reference-store-detail { margin-top: 22px; border-top: 1px solid #ddd; padding-top: 20px; }
+.reference-store-detail strong { font: 400 11px var(--sans); text-transform: uppercase; }
+.reference-store-detail p { margin-top: 10px; font-size: 11px; line-height: 1.8; }
+.reference-store-detail > .reference-text-link { margin-top: 12px; font-size: 10px; }
+.reference-store-map { position: sticky; top: 100px; min-height: 580px; background: #eef0ed; overflow: hidden; }
+.reference-store-map > p { position: absolute; z-index: 2; top: 22px; left: 22px; font-size: 9px; letter-spacing: .06em; text-transform: uppercase; background: #ffffffe8; padding: 10px 12px; }
+.reference-store-map-art { width: 100%; height: 580px; display: flex; align-items: center; transition: transform .4s; transform-origin: center; }
+.reference-store-map-art svg { width: 100%; height: 100%; }
+.reference-map-controls { position: absolute; z-index: 2; right: 20px; bottom: 20px; display: flex; flex-direction: column; border: 1px solid #aaa; }
+.reference-map-controls button { display: grid; place-items: center; min-width: 40px; min-height: 40px; border: 0; background: #fff; color: #171717; }
+.reference-map-controls button + button { border-top: 1px solid #ddd; }
+.reference-map-controls button:disabled { color: #bbb; }
+
+/* Personalization follows the reference's campaign → introduction → detail flow. */
+.reference-personal-hero { position: relative; isolation: isolate; height: calc(100svh - 72px); min-height: 650px; max-height: 1100px; color: #fff; overflow: hidden; }
+.reference-personal-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(#0002,#0007); z-index: -1; }
+.reference-personal-hero-copy { position: absolute; left: 50%; top: 50%; width: min(850px,calc(100% - 60px)); transform: translate(-50%,-50%); text-align: center; }
+.reference-personal-hero h1 { font: 600 clamp(27px,2.6vw,39px)/1.2 var(--sans); text-transform: uppercase; letter-spacing: -.025em; }
+.reference-personal-hero p { font-size: 14px; line-height: 1.85; max-width: 600px; margin: 20px auto 25px; }
+.reference-personal-hero .reference-text-link { border-bottom-color: #fff; }
+.reference-personal-intro { text-align: center; padding: 70px 25px; }
+.reference-personal-intro h2 { font: 400 28px/1.3 var(--sans); text-transform: uppercase; }
+.reference-personal-intro p { margin: 25px auto 0; max-width: 700px; font-size: 13px; line-height: 1.9; }
+.reference-personal-configurator { display: grid; grid-template-columns: 1.2fr 1fr; background: #f2f1ed; }
+.reference-personal-preview { position: relative; min-height: 680px; overflow: hidden; }
+.reference-personal-preview > img { object-fit: cover; }
+.reference-personal-label { position: absolute; left: 30px; top: 25px; font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
+.reference-monogram-swatch { position: absolute; right: 30px; bottom: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 150px; height: 100px; background: #4a2e22; color: #d3ab65; border: 1px solid #3d291a; box-shadow: 0 5px 15px #0002; }
+.reference-monogram-swatch > span { font: 400 34px/1.2 var(--serif); letter-spacing: .05em; }
+.reference-monogram-swatch > small { font-size: 6px; letter-spacing: .3em; margin-top: 10px; }
+.reference-monogram-swatch--silver { color: #dededa; }
+.reference-monogram-swatch--dark { color: #171717; background: #d4bb96; }
+.reference-personal-controls { padding: 70px 14%; display: flex; flex-direction: column; align-items: stretch; justify-content: center; }
+.reference-personal-controls h2 { font: 400 31px/1.25 var(--sans); margin: 20px 0 30px; text-transform: uppercase; }
+.reference-personal-controls label { font-size: 11px; }
+.reference-personal-controls input { display: block; width: 100%; margin-top: 10px; min-height: 46px; border: 1px solid #aaa; background: transparent; color: #171717; font-size: 16px; letter-spacing: .15em; padding: 10px 13px; }
+.reference-personal-controls fieldset { border: 0; padding: 0; margin: 25px 0 0; }
+.reference-personal-controls legend { font-size: 11px; margin-bottom: 14px; }
+.reference-stamp-finishes { display: flex; gap: 12px; }
+.reference-stamp-finishes button { display: flex; flex-direction: column; align-items: center; gap: 9px; min-width: 62px; padding: 8px 0; font-size: 10px; background: transparent; color: #555; border: 0; border-bottom: 1px solid transparent; }
+.reference-stamp-finishes button[aria-pressed=true] { border-bottom-color: #171717; color: #171717; }
+.reference-finish-dot { width: 26px; height: 26px; border: 1px solid #aaa; border-radius: 50%; }
+.reference-finish-dot--gold { background: #c8a767; }.reference-finish-dot--silver { background: #d0d0cd; }.reference-finish-dot--dark { background: #262626; }
+.reference-personal-controls > .reference-demo-note { margin-top: 25px; }
+.reference-personal-controls > .reference-button { margin-top: 25px; }
+.reference-personal-craft { display: grid; grid-template-columns: 1fr 1fr; }
+.reference-personal-craft > div:first-child { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 70px 13%; }
+.reference-personal-craft h2 { font: 400 30px/1.25 var(--sans); text-transform: uppercase; margin-bottom: 25px; }
+.reference-personal-craft p { font-size: 13px; line-height: 1.9; margin-bottom: 25px; }
+.reference-personal-craft-image { position: relative; height: 650px; }
+.reference-personal-craft-image img { object-fit: cover; }
+
+/* Customer-care topics: category navigation and generous accordion rows. */
+.reference-faq-layout { display: grid; grid-template-columns: 270px minmax(0,1fr); gap: 7vw; max-width: 1250px; margin: 0 auto; padding: 10px 40px 80px; align-items: start; }
+.reference-faq-layout > nav { display: flex; flex-direction: column; align-items: stretch; }
+.reference-faq-layout > nav button,.reference-faq-layout > nav a { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 11px 0; background: transparent; color: #666; border: 0; text-align: left; font: 400 11px/1.6 var(--sans); text-transform: uppercase; }
+.reference-faq-layout > nav button[aria-current=page] { color: #171717; text-decoration: underline; text-underline-offset: 6px; }
+.reference-faq-layout > nav button > svg { rotate: -90deg; }
+.reference-faq-answers h2 { font: 400 20px/1.4 var(--sans); text-transform: uppercase; margin: 10px 0 25px; }
+.reference-faq-answers details { border-top: 1px solid #d6d6d6; }
+.reference-faq-answers details:last-of-type { border-bottom: 1px solid #d6d6d6; }
+.reference-faq-answers summary { display: flex; align-items: center; gap: 20px; min-height: 74px; padding: 18px 0; list-style: none; cursor: pointer; }
+.reference-faq-answers summary::-webkit-details-marker { display: none; }
+.reference-faq-answers h3 { font: 400 14px/1.6 var(--sans); }
+.reference-faq-answers summary svg { flex: 0 0 auto; margin-left: auto; transition: rotate .25s; }
+.reference-faq-answers details[open] summary svg { rotate: 45deg; }
+.reference-faq-answers details > p { font-size: 12px; line-height: 1.9; padding: 0 30px 24px 0; color: #626262; }
+.reference-faq-answers > .reference-text-link { margin-top: 28px; }
+.reference-faq-answers > section + section { margin-top: 55px; }
+.reference-faq-answers > .reference-demo-note { margin-top: 28px; }
+
+@media(max-width:1023px) {
+  .reference-store-finder { grid-template-columns: 42% 1fr; gap: 20px; padding-left: 25px; padding-right: 25px; }
+  .reference-store-list > article { padding: 20px; }
+  .reference-store-list h2 { font-size: 20px; }
+  .reference-store-map,.reference-store-map-art { min-height: 520px; height: 520px; }
+  .reference-personal-controls { padding: 45px 9%; }
+  .reference-personal-preview { min-height: 610px; }
+  .reference-faq-layout { grid-template-columns: 220px minmax(0,1fr); gap: 5vw; padding-left: 25px; padding-right: 25px; }
+}
+@media(max-width:699px) {
+  .reference-service-page { padding-top: 64px; }
+  .reference-service-heading { padding: 35px 24px 25px; }
+  .reference-service-heading h1 { font-size: 24px; margin-bottom: 30px; }
+  .reference-service-heading > p { font-size: 12px; line-height: 1.85; }
+  .reference-service-heading > nav { gap: 8px 20px; font-size: 10px; }
+  .reference-region,.reference-recovery,.reference-size-guide { padding: 28px 23px 32px; }
+  .reference-region h2,.reference-recovery h2,.reference-size-guide h2 { font-size: 22px; }
+  .reference-region-tabs { gap: 23px; margin-top: 21px; }
+  .reference-region-tabs button { font-size: 9px; }
+  .reference-region-countries { gap: 8px 12px; }
+  .reference-region-countries button { font-size: 10px; padding: 9px 10px; min-height: 46px; }
+  .reference-region-preferences { gap: 20px; }
+  .reference-region-preferences fieldset button { font-size: 11px; margin-right: 12px; }
+  .reference-region-search input,.reference-recovery label input { font-size: 16px; }
+  .reference-newsletter-entry input { font-size: 16px; }
+  .reference-contact-stage { padding: 25px 16px 35px; background-attachment: scroll; }
+  .reference-contact-card { padding: 22px 20px 27px; }
+  .reference-contact-card > h2 { font-size: 23px; margin-bottom: 28px; }
+  .reference-contact-form { grid-template-columns: 1fr; gap: 24px; }
+  .reference-contact-form input:not([type=checkbox]):not([type=file]),.reference-contact-form select,.reference-contact-form textarea { font-size: 16px; min-height: 48px; }
+  .reference-contact-form .reference-checkbox { font-size: 10px; }
+  .reference-contact-form .reference-button { width: 100%; padding: 14px 18px; font-size: 10px; }
+  .reference-service-privacy { padding: 35px 24px; }
+  .reference-service-privacy h2 { font-size: 18px; }
+  .reference-store-filter { padding: 10px 24px 16px; flex-direction: column; gap: 15px; }
+  .reference-store-filter > select { width: 100%; min-width: 0; font-size: 14px; padding-left: 0; }
+  .reference-store-filter > label { width: 100%; }
+  .reference-store-filter input { font-size: 16px; }
+  .reference-store-demo { margin: 20px 24px 0; }
+  .reference-store-finder { display: flex; flex-direction: column-reverse; gap: 25px; padding: 25px 24px 40px; }
+  .reference-store-map { width: 100%; min-height: 300px; height: 300px; position: relative; top: auto; }
+  .reference-store-map-art { min-height: 300px; height: 300px; }
+  .reference-store-map > p { left: 12px; top: 12px; padding: 8px; font-size: 8px; }
+  .reference-map-controls { right: 12px; bottom: 12px; }
+  .reference-map-controls button { min-width: 34px; min-height: 34px; }
+  .reference-store-list { width: 100%; gap: 20px; }
+  .reference-store-list > article { padding: 23px; }
+  .reference-store-list h2 { font-size: 21px; }
+  .reference-personal-hero { height: calc(100svh - 64px); min-height: 590px; max-height: 950px; }
+  .reference-personal-hero-copy { width: calc(100% - 48px); }
+  .reference-personal-hero h1 { font-size: 28px; line-height: 1.15; }
+  .reference-personal-hero p { font-size: 12px; line-height: 1.85; margin-top: 20px; }
+  .reference-personal-intro { padding: 40px 24px; }
+  .reference-personal-intro h2 { font-size: 25px; }
+  .reference-personal-intro p { font-size: 12px; line-height: 1.85; margin-top: 20px; }
+  .reference-personal-configurator { grid-template-columns: 1fr; }
+  .reference-personal-preview { min-height: 0; height: 115vw; max-height: 650px; }
+  .reference-personal-label { left: 23px; top: 20px; font-size: 8px; }
+  .reference-monogram-swatch { width: 120px; height: 82px; right: 22px; bottom: 22px; }
+  .reference-monogram-swatch > span { font-size: 28px; }
+  .reference-personal-controls { padding: 38px 25px 42px; }
+  .reference-personal-controls h2 { font-size: 27px; margin-top: 18px; }
+  .reference-personal-craft { grid-template-columns: 1fr; }
+  .reference-personal-craft > div:first-child { padding: 40px 25px; }
+  .reference-personal-craft h2 { font-size: 27px; }
+  .reference-personal-craft p { font-size: 12px; }
+  .reference-personal-craft-image { height: 125vw; max-height: 680px; }
+  .reference-faq-layout { grid-template-columns: 1fr; gap: 30px; padding: 0 24px 45px; }
+  .reference-faq-layout > nav { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; border-bottom: 1px solid #ddd; padding-bottom: 15px; }
+  .reference-faq-layout > nav button,.reference-faq-layout > nav a { min-height: 44px; font-size: 9px; padding: 9px 0; }
+  .reference-faq-answers h2 { font-size: 20px; margin: 0 0 20px; }
+  .reference-faq-answers summary { min-height: 76px; padding: 17px 0; gap: 16px; }
+  .reference-faq-answers h3 { font-size: 13px; }
+  .reference-faq-answers details > p { font-size: 12px; line-height: 1.9; padding-right: 10px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .reference-store-map-art,.reference-faq-answers summary svg { transition: none; }
+}

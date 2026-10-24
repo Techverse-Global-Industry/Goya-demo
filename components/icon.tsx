@@ -1,9 +1,19 @@
 import type { SVGProps, ReactNode } from 'react';
 
-export type IconName = 'arrow-right' | 'arrow-up-right' | 'arrow-down' | 'search' | 'user' | 'bag' | 'menu' | 'close' | 'plus' | 'minus' | 'check' | 'pin' | 'truck' | 'shield' | 'spark' | 'calendar' | 'card' | 'phone' | 'store' | 'package' | 'logout' | 'download' | 'chevron' | 'globe';
+export type IconName = 'arrow-right' | 'arrow-left' | 'arrow-up-right' | 'arrow-down' | 'search' | 'search-spark' | 'heart' | 'filter' | 'zoom' | 'share' | 'mail' | 'refresh' | 'chevron-left' | 'chevron-right' | 'user' | 'bag' | 'menu' | 'close' | 'plus' | 'minus' | 'check' | 'pin' | 'truck' | 'shield' | 'spark' | 'calendar' | 'card' | 'phone' | 'store' | 'package' | 'logout' | 'download' | 'chevron' | 'globe';
 
 const paths: Record<IconName, ReactNode> = {
   'arrow-right': <><path d="M4 12h15M13 5l7 7-7 7" /></>,
+  'arrow-left': <path d="M20 12H5m6-7-7 7 7 7" />,
+  heart: <path d="M20.5 4.5a5.4 5.4 0 0 0-7.6 0L12 5.4l-.9-.9a5.4 5.4 0 0 0-7.6 7.6L12 21l8.5-8.9a5.4 5.4 0 0 0 0-7.6Z" />,
+  filter: <><path d="M3 7h18M3 17h18M8 4v6M16 14v6" /></>,
+  zoom: <><circle cx="10" cy="10" r="6.5" /><path d="m15 15 6 6M10 7v6M7 10h6" /></>,
+  share: <><path d="M12 16V2m-5 5 5-5 5 5M5 11H3v11h18V11h-2" /></>,
+  mail: <><rect x="2" y="4" width="20" height="16" /><path d="m2 5 10 8L22 5" /></>,
+  refresh: <><path d="M20 7A9 9 0 1 0 21 15M20 2v6h-6" /></>,
+  'chevron-left': <path d="m15 4-8 8 8 8" />,
+  'chevron-right': <path d="m9 4 8 8-8 8" />,
+  'search-spark': <><path d="M16.5 12.5a7 7 0 1 1-9-8M16 16l5 5M16 1l1.7 4.3L22 7l-4.3 1.7L16 13l-1.7-4.3L10 7l4.3-1.7L16 1Z" /></>,
   'arrow-up-right': <><path d="M5 19 19 5M5 5h14v14" /></>,
   'arrow-down': <><path d="M12 4v16M5 13l7 7 7-7" /></>,
   search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></>,

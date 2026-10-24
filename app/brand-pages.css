@@ -1,6 +1,6 @@
-.brand-page { padding-top: 72px; background: #fff; }
+.brand-page { padding-top: var(--store-header-height,64px); background: #fff; }
 .brand-page h1, .brand-page h2 { font-family: var(--sans); letter-spacing: -.04em; }
-.brand-page-hero { position: relative; isolation: isolate; height: calc(100svh - 72px); min-height: 640px; max-height: 1100px; color: #fff; overflow: hidden; background: #888; }
+.brand-page-hero { position: relative; isolation: isolate; height: calc(100svh - var(--store-header-height,64px)); min-height: 640px; max-height: 1100px; color: #fff; overflow: hidden; background: #888; }
 .brand-page-hero > img { object-fit: cover; z-index: -2; }
 .brand-page-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg,#00000010,#00000040 50%,#00000040); }
 .brand-page-hero-copy { position: absolute; left: 50%; top: 48%; transform: translate(-50%,-50%); width: calc(100% - 50px); text-align: center; }
@@ -66,8 +66,8 @@
   .brand-workshop-photo { min-height: 650px; }
 }
 @media(max-width:699px) {
-  .brand-page { padding-top: 64px; }
-  .brand-page-hero { height: calc(92svh - 64px); min-height: 580px; max-height: 900px; }
+  .brand-page { padding-top: var(--store-header-height,60px); }
+  .brand-page-hero { height: calc(92svh - var(--store-header-height,60px)); min-height: 580px; max-height: 900px; }
   .brand-page-hero h1 { font-size: 49px; }
   .brand-page-hero-copy { top: 45%; }
   .brand-page-hero-copy > .fashion-kicker { font-size: 8px; margin-bottom: 18px; }

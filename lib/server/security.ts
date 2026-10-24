@@ -5,6 +5,8 @@ import type { Account, Database } from './database';
 import type { DemoUser } from '../types';
 
 export const COOKIE = 'mg_session';
+export const GUEST_COOKIE = 'mg_guest';
+const SESSION_LIFETIME = 7 * 86400000;
 export class ApiError extends Error {
   constructor(message: string, public status = 400, public code = 'invalid') { super(message); }
 }
@@ -24,6 +26,29 @@ export function checkPassword(password: string, stored: string): boolean {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 export const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
+export async function guestCookieToken(): Promise<string | null> {
+  const token = (await cookies()).get(GUEST_COOKIE)?.value;
+  return token && /^[a-f0-9]{64}$/.test(token) ? token : null;
+}
+/** Guest checkout can recover its own order, but never authenticates an account. */
+export function guestIdentityForToken(db: Database, token: string | null): string | null {
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
+  const session = db.sessions.find((entry) => entry.hash === tokenHash(token) && entry.expiresAt > Date.now() && /^guest:[a-f0-9]{32}$/.test(entry.userId));
+  return session?.userId ?? null;
+}
+/** Called inside the same atomic mutation as stock allocation; failed orders save no session. */
+export function prepareGuestCheckout(db: Database, token: string | null): { token: string; identity: string } {
+  const identity = guestIdentityForToken(db, token);
+  if (identity && token) return { identity, token };
+  const nextToken = randomBytes(32).toString('hex');
+  const nextIdentity = `guest:${randomBytes(16).toString('hex')}`;
+  db.sessions = db.sessions.filter((session) => session.expiresAt > Date.now());
+  db.sessions.push({ hash: tokenHash(nextToken), userId: nextIdentity, expiresAt: Date.now() + SESSION_LIFETIME });
+  return { token: nextToken, identity: nextIdentity };
+}
+export async function setGuestCookie(token: string) {
+  (await cookies()).set(GUEST_COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: SESSION_LIFETIME / 1000 });
+}
 export async function sessionUser(): Promise<DemoUser | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
@@ -43,7 +68,7 @@ export async function requireUser(admin = false): Promise<DemoUser> {
 }
 export async function createSession(userId: string) {
   const token = randomBytes(32).toString('hex');
-  const expiresAt = Date.now() + 7 * 86400000;
+  const expiresAt = Date.now() + SESSION_LIFETIME;
   await mutateDatabase((db) => {
     db.sessions = db.sessions.filter((session) => session.expiresAt > Date.now());
     db.sessions.push({ hash: tokenHash(token), userId, expiresAt });

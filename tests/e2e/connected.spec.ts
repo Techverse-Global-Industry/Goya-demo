@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
+import { registerCustomer, seedPrivacy } from './navigation';
+
+test.beforeEach(async ({ page }) => { await seedPrivacy(page); });
 
 test('owner publishes a product, customer pays with demo MoMo, owner fulfills, customer sees updates', async ({ browser, page, isMobile }) => {
   test.setTimeout(120000);
@@ -7,9 +10,9 @@ test('owner publishes a product, customer pays with demo MoMo, owner fulfills, c
   const englishName = `Maison Journey ${unique}`;
   const frenchName = `Création Voyage ${unique}`;
   await page.goto('/admin');
-  await page.getByLabel('Email address', { exact: true }).fill('admin@goya.demo');
-  await page.getByLabel('Password', { exact: true }).fill('MaisonDemo2026!');
-  await page.locator('form').getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByLabel('Email *', { exact: true }).fill('admin@goya.demo');
+  await page.getByLabel('Password *', { exact: true }).fill('MaisonDemo2026!');
+  await page.locator('form').getByRole('button', { name: 'Login', exact: true }).click();
   await expect(page.locator('.admin-stats')).toBeVisible();
   await page.locator('.admin-sidebar nav').getByRole('button', { name: 'Products', exact: true }).click();
   await page.getByRole('button', { name: 'Add a creation', exact: true }).click();
@@ -34,46 +37,46 @@ test('owner publishes a product, customer pays with demo MoMo, owner fulfills, c
   await expect(page.locator('.admin-products')).toBeVisible();
   await expect(page.locator('.admin-product').filter({ hasText: englishName })).toBeVisible();
 
-  const customer = await browser.newContext({ viewport: isMobile ? { width: 393, height: 851 } : { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
+  const customer = await browser.newContext({ baseURL: 'http://127.0.0.1:3100', viewport: isMobile ? { width: 393, height: 851 } : { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
+  try {
+  await seedPrivacy(customer);
   const customerPage = await customer.newPage();
   const errors: string[] = [];
   customerPage.on('pageerror', (error) => errors.push(error.message));
   await customerPage.goto('/app/shop');
-  await customerPage.getByRole('group', { name: 'Your Maison', exact: true }).getByRole('button', { name: 'Create an account' }).click();
-  await customerPage.getByLabel('Full name', { exact: true }).fill('Demo Journey');
-  await customerPage.getByLabel('Email address', { exact: true }).fill(`journey-${unique}@example.test`);
-  await customerPage.getByLabel('Password', { exact: true }).fill('JourneyDemo2026!');
-  await customerPage.locator('form').getByRole('button', { name: 'Create an account', exact: true }).click();
+  await registerCustomer(customerPage, { email: `journey-${unique}@example.test`, firstName: 'Demo', lastName: 'Journey', password: 'JourneyDemo2026!' });
   await expect(customerPage).toHaveURL(/\/app\/shop$/);
-  await expect(customerPage.locator('.product-grid')).toBeVisible();
-  await customerPage.locator('.site-header').getByRole('button', { name: 'Search', exact: true }).click();
+  await customerPage.goto('/collections');
+  await expect(customerPage.locator('.reference-plp-grid')).toBeVisible();
+  await customerPage.locator('.reference-search-trigger').click();
   await customerPage.locator('#maison-search').fill(`voyage ${unique}`);
-  await expect(customerPage.locator('.search-results li')).toHaveCount(1);
-  await customerPage.locator('.search-results li button').click();
-  let dialog = customerPage.getByRole('dialog');
-  await expect(dialog.getByRole('heading', { name: englishName, exact: true })).toBeVisible();
-  await dialog.locator('.size-option').filter({ hasText: /^42$/ }).click();
-  await dialog.getByRole('button', { name: 'Add to bag', exact: true }).click();
-  await customerPage.getByRole('button', { name: 'Boutique checkout', exact: true }).click();
-  dialog = customerPage.getByRole('dialog');
-  await expect(dialog.locator('#shipping-address')).toBeVisible();
-  await dialog.getByLabel('Full name', { exact: true }).fill('Demo Journey');
-  await dialog.getByLabel('Email address', { exact: true }).fill(`journey-${unique}@example.test`);
-  await dialog.getByLabel('Street address', { exact: true }).fill('12 Demonstration Avenue');
-  await dialog.getByLabel('City', { exact: true }).fill('Cotonou');
-  await dialog.getByRole('button', { name: 'Continue', exact: true }).click();
-  await dialog.getByRole('radio', { name: /Mobile Money/ }).check();
-  await dialog.getByRole('button', { name: 'Confirm demo order', exact: true }).click();
-  await dialog.getByLabel('Demo mobile number', { exact: true }).fill('0100000000');
-  await dialog.getByRole('button', { name: 'Send demo payment request', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Decline demo payment', exact: true }).click();
-  await expect(dialog.getByText('Payment declined. No order was placed. You can try again.')).toBeVisible();
-  await dialog.getByRole('button', { name: 'Send demo payment request', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Approve demo payment', exact: true }).click();
-  await expect(dialog.getByRole('heading', { name: 'A beautiful choice.' })).toBeVisible();
-  const orderId = await dialog.locator('.confirmation-references strong').first().textContent();
+  await expect(customerPage.locator('.reference-search-results li')).toHaveCount(1);
+  await customerPage.locator('.reference-search-results li a').click();
+  await expect(customerPage.getByRole('heading', { level: 1, name: englishName, exact: true })).toBeVisible();
+  await customerPage.locator('.pdp-size-control select').selectOption('42');
+  await customerPage.locator('.pdp-purchase').getByRole('button', { name: 'Add to bag', exact: true }).click();
+  await customerPage.getByRole('dialog').getByRole('link', { name: 'Boutique checkout', exact: true }).click();
+  await expect(customerPage).toHaveURL(/\/checkout$/);
+  const checkout = customerPage.locator('.checkout-reference');
+  await expect(checkout.locator('#shipping-address')).toBeVisible();
+  await checkout.getByLabel('Full name', { exact: true }).fill('Demo Journey');
+  await checkout.getByLabel('Email address', { exact: true }).fill(`journey-${unique}@example.test`);
+  await checkout.getByLabel('Street address', { exact: true }).fill('12 Demonstration Avenue');
+  await checkout.getByLabel('City', { exact: true }).fill('Cotonou');
+  await checkout.getByRole('button', { name: 'Continue', exact: true }).click();
+  await checkout.getByRole('radio', { name: /Mobile Money/ }).check();
+  await checkout.getByRole('button', { name: 'Confirm demo order', exact: true }).click();
+  await checkout.getByLabel('Demo mobile number', { exact: true }).fill('0100000000');
+  await checkout.getByRole('button', { name: 'Send demo payment request', exact: true }).click();
+  await checkout.getByRole('button', { name: 'Decline demo payment', exact: true }).click();
+  await expect(checkout.getByText('Payment declined. No order was placed. You can try again.')).toBeVisible();
+  expect((await (await customerPage.request.get('/api/shop')).json()).orders).toEqual([]);
+  await checkout.getByRole('button', { name: 'Send demo payment request', exact: true }).click();
+  await checkout.getByRole('button', { name: 'Approve demo payment', exact: true }).click();
+  await expect(checkout.getByRole('heading', { name: 'A beautiful choice.' })).toBeVisible();
+  const orderId = await checkout.locator('.confirmation-references strong').first().textContent();
   await customerPage.screenshot({ path: `test-results/checkout-${isMobile ? 'mobile' : 'desktop'}.png`, fullPage: false });
-  await dialog.getByRole('link', { name: 'View all orders', exact: true }).click();
+  await checkout.getByRole('link', { name: 'View all orders', exact: true }).click();
   await expect(customerPage).toHaveURL(/\/app\/orders$/);
   await expect(customerPage.locator('.customer-order').getByText(orderId!, { exact: true })).toBeVisible();
   const unauthorized = await customerPage.request.get('/api/shop?admin=1');
@@ -104,5 +107,5 @@ test('owner publishes a product, customer pays with demo MoMo, owner fulfills, c
   expect(errors).toEqual([]);
   await customerPage.screenshot({ path: `test-results/account-${isMobile ? 'mobile' : 'desktop'}.png`, fullPage: false });
   await page.screenshot({ path: `test-results/admin-orders-${isMobile ? 'mobile' : 'desktop'}.png`, fullPage: true });
-  await customer.close();
+  } finally { await customer.close(); }
 });

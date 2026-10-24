@@ -2,8 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { after } from 'next/server';
 import { readDatabase, mutateDatabase } from '@/lib/server/database';
-import { apiFailure, ApiError, assertOrigin, bodyJson, checkPassword, COOKIE, createSession, hashPassword, publicUser, rateLimit, requireUser, sessionUser, tokenHash } from '@/lib/server/security';
-import { changeOrderStatus, createAnnouncement, createBooking, placeOrder, snapshot, validateProduct } from '@/lib/server/shop';
+import { apiFailure, ApiError, assertOrigin, bodyJson, checkPassword, COOKIE, GUEST_COOKIE, createSession, guestCookieToken, guestIdentityForToken, prepareGuestCheckout, setGuestCookie, hashPassword, publicUser, rateLimit, requireUser, sessionUser, tokenHash } from '@/lib/server/security';
+import { changeOrderStatus, createAnnouncement, createBooking, deleteCustomerAddress, placeOrder, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, validateProduct } from '@/lib/server/shop';
 import { validEmail } from '@/lib/commerce';
 import { deliverPush } from '@/lib/server/push';
 import { localDemo } from '@/lib/server/config';
@@ -18,7 +18,8 @@ export async function GET(request: Request) {
     const admin = new URL(request.url).searchParams.get('admin') === '1';
     const user = admin ? await requireUser(true) : await sessionUser();
     const { data, revision } = await readDatabase();
-    return Response.json(snapshot(data, revision, user, admin), { headers });
+    const guestIdentity = user ? null : guestIdentityForToken(data, await guestCookieToken());
+    return Response.json(snapshot(data, revision, user, admin, guestIdentity), { headers });
   } catch (error) { return apiFailure(error); }
 }
 
@@ -72,15 +73,75 @@ export async function POST(request: Request) {
     }
     if (action === 'logout') {
       const token = (await cookies()).get(COOKIE)?.value;
-      if (token) await mutateDatabase((db) => {
-        const session = db.sessions.find((session) => session.hash === tokenHash(token));
-        db.sessions = db.sessions.filter((session) => session.hash !== tokenHash(token));
+      const guestToken = await guestCookieToken();
+      if (token || guestToken) await mutateDatabase((db) => {
+        const session = token ? db.sessions.find((session) => session.hash === tokenHash(token)) : undefined;
+        db.sessions = db.sessions.filter((session) => (!token || session.hash !== tokenHash(token)) && (!guestToken || session.hash !== tokenHash(guestToken)));
         if (session && typeof body.endpoint === 'string') db.subscriptions = db.subscriptions.filter((subscription) => !(subscription.userId === session.userId && subscription.endpoint === body.endpoint));
       });
       (await cookies()).delete(COOKIE);
+      (await cookies()).delete(GUEST_COOKIE);
       return Response.json({ ok: true }, { headers });
     }
+    if (action === 'guestSession') {
+      const user = await sessionUser();
+      if (!user) {
+        const ip = request.headers.get('x-nf-client-connection-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'local';
+        await rateLimit(`guest-session:${ip}`, 60);
+        const token = await guestCookieToken();
+        const guest = await mutateDatabase((db) => prepareGuestCheckout(db, token));
+        await setGuestCookie(guest.token);
+      }
+      return Response.json({ ok: true }, { headers });
+    }
+    if (action === 'order') {
+      const user = await sessionUser();
+      if (!user) {
+        const ip = request.headers.get('x-nf-client-connection-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'local';
+        await rateLimit(`guest-order:${ip}`, 30);
+      }
+      const token = user ? null : await guestCookieToken();
+      const result = await mutateDatabase((db) => {
+        const before = new Set(db.notifications.map((notice) => notice.id));
+        const guest = user ? null : prepareGuestCheckout(db, token);
+        const order = placeOrder(db, user, body, guest?.identity);
+        return { order, guestToken: guest?.token, ids: db.notifications.filter((notice) => !before.has(notice.id)).map((notice) => notice.id) };
+      });
+      if (result.guestToken) await setGuestCookie(result.guestToken);
+      if (result.ids.length) after(() => deliverPush(result.ids));
+      return Response.json({ order: result.order }, { headers });
+    }
+    if (action === 'book') {
+      const user = await sessionUser();
+      if (!user) {
+        const ip = request.headers.get('x-nf-client-connection-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'local';
+        await rateLimit(`guest-booking:${ip}`, 30);
+      }
+      const token = user ? null : await guestCookieToken();
+      const result = await mutateDatabase((db) => {
+        const guest = user ? null : prepareGuestCheckout(db, token);
+        return { booking: createBooking(db, user, body.details, guest?.identity), guestToken: guest?.token };
+      });
+      if (result.guestToken) await setGuestCookie(result.guestToken);
+      return Response.json({ booking: result.booking }, { headers });
+    }
     const user = await requireUser();
+    if (action === 'saveProfile') {
+      const profile = await mutateDatabase((db) => saveCustomerProfile(db, user, body.profile));
+      return Response.json({ profile }, { headers });
+    }
+    if (action === 'saveAddress') {
+      const result = await mutateDatabase((db) => saveCustomerAddress(db, user, body.address));
+      return Response.json(result, { headers });
+    }
+    if (action === 'deleteAddress') {
+      const profile = await mutateDatabase((db) => deleteCustomerAddress(db, user, body.id));
+      return Response.json({ profile }, { headers });
+    }
+    if (action === 'wishlist') {
+      const profile = await mutateDatabase((db) => saveCustomerWishlist(db, user, body.productIds));
+      return Response.json({ profile }, { headers });
+    }
     if (action === 'profile') {
       const name = typeof body.name === 'string' ? body.name.trim() : '';
       if (name.length < 2 || name.length > 100) throw new ApiError('Please enter a valid name.', 400, 'invalidName');
@@ -94,19 +155,6 @@ export async function POST(request: Request) {
     }
     const adminAction = ['saveProduct', 'orderStatus', 'announce', 'deleteAnnouncement'].includes(String(action));
     if (adminAction && user.role !== 'admin') throw new ApiError('Administrator access required.', 403);
-    if (action === 'order') {
-      const result = await mutateDatabase((db) => {
-        const before = new Set(db.notifications.map((notice) => notice.id));
-        const order = placeOrder(db, user, body);
-        return { order, ids: db.notifications.filter((notice) => !before.has(notice.id)).map((notice) => notice.id) };
-      });
-      after(() => deliverPush(result.ids));
-      return Response.json({ order: result.order }, { headers });
-    }
-    if (action === 'book') {
-      const booking = await mutateDatabase((db) => createBooking(db, user, body.details));
-      return Response.json({ booking }, { headers });
-    }
     if (action === 'saveProduct') {
       const product = await mutateDatabase((db) => {
         const value = body.product;

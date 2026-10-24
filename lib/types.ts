@@ -38,7 +38,24 @@ export interface ShippingDetails {
   address: string;
   city: string;
   country: Country;
+  postalCode?: string;
+  phone?: string;
+  address2?: string;
+  company?: string;
 }
+
+export interface SavedAddress extends ShippingDetails { id: string; label?: string; isDefault?: boolean }
+export interface AccountProfile {
+  phone: string;
+  birthDate: string;
+  title: '' | 'mr' | 'ms' | 'mx';
+  preferredLocale: Locale;
+  newsletter: boolean;
+  addresses: SavedAddress[];
+  wishlist: string[];
+}
+export type CatalogSort = 'recommended' | 'priceAsc' | 'priceDesc';
+export interface CatalogFilters { sizes: string[]; colors: string[]; materials: string[]; styles: ShoeType[]; genders?: Category[] }
 
 export interface OrderLine extends CartLine {
   unitPrice: number;
@@ -49,6 +66,7 @@ export type OrderStatus = 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 
 export interface OrderEvent { status: OrderStatus; at: string }
 
 export interface Order {
+  checkoutReference?: string;
   id: string;
   tracking: string | null;
   createdAt: string;
@@ -63,6 +81,8 @@ export interface Order {
   status?: OrderStatus;
   events?: OrderEvent[];
   paymentReference?: string;
+  billingRecipient?: ShippingDetails;
+  gift?: { wrap: boolean; message: string };
 }
 
 export interface DemoUser {
@@ -85,6 +105,7 @@ export interface StoreSnapshot {
   notifications: ShopNotification[];
   revision: number;
   pushPublicKey: string | null;
+  profile?: AccountProfile | null;
 }
 
 export interface BookingDetails {
@@ -110,4 +131,9 @@ export type Overlay =
   | { kind: 'search' }
   | { kind: 'menu' }
   | { kind: 'info'; topic: 'shipping' | 'care' | 'privacy' }
+  | { kind: 'region' }
+  | { kind: 'recovery' }
+  | { kind: 'sizeGuide' }
+  | { kind: 'availability'; productId: string; size?: string }
+  | { kind: 'filters'; category?: Category; style?: ShoeType }
   | null;

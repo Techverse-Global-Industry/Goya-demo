@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import { ShopProvider } from '@/context/shop-context';
 import { PwaProvider, ConnectionNotice } from '@/components/pwa';
+import { PrivacyChoices } from '@/components/privacy-choices';
 import './globals.css';
 import './commerce.css';
 import './account.css';
@@ -9,6 +10,15 @@ import './maison-design.css';
 import './fashion-design.css';
 import './mobile-boutique.css';
 import './brand-pages.css';
+import './services-reference.css';
+import './auth-reference.css';
+import './account-preferences.css';
+import './catalog-reference.css';
+import './product-detail.css';
+import './checkout-reference.css';
+import './storefront-pages.css';
+import './editorial-reference.css';
+import './reference-design.css';
 
 const inter = localFont({ src: '../public/fonts/inter-normal-100-900.woff2', variable: '--font-inter', display: 'swap', weight: '100 900', style: 'normal' });
 const playfair = localFont({ src: [
@@ -30,7 +40,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en" className={`${inter.variable} ${playfair.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
     <body suppressHydrationWarning className="bg-obsidian text-ivory antialiased">
-      <ShopProvider><PwaProvider>{children}<ConnectionNotice /></PwaProvider></ShopProvider>
+      <ShopProvider><PwaProvider>{children}<ConnectionNotice /><PrivacyChoices /></PwaProvider></ShopProvider>
     </body>
   </html>;
 }
