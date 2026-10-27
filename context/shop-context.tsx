@@ -10,6 +10,7 @@ import { RequestError, shopRequest } from '@/lib/api';
 import { languageDirection } from '@/lib/international';
 import type { Translate } from '@/lib/i18n';
 import type { CartQuote, Currency, Product, StoreSnapshot } from '@/lib/types';
+import { WishlistSync } from '@/lib/wishlist-sync';
 
 interface ShopContextValue {
   state: ShopState;
@@ -34,9 +35,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const inFlight = useRef<Promise<void> | null>(null);
   const catalogReady = useRef(false);
   const guestWishlist = useRef(true);
-  const wishlistAccount = useRef<string | null>(null);
-  const wishlistSent = useRef('');
-  const wishlistServer = useRef('');
+  const wishlistSync = useRef<WishlistSync | null>(null);
   const promoAttempt = useRef(0);
   useEffect(() => { promoAttempt.current += 1; }, [state.user?.id]);
   const refresh = useCallback(function refreshSnapshot(force = false): Promise<void> {
@@ -91,31 +90,30 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   }, [state.ready, state.locale, state.language, state.currency, state.cart, state.promoCode, state.wishlist, state.market, state.user?.id]);
 
   useEffect(() => {
-    if (!state.ready || !state.user) { wishlistAccount.current = null; guestWishlist.current = true; return; }
+    if (!state.ready) return;
+    wishlistSync.current ??= new WishlistSync({
+      storage: {
+        getItem: key => window.localStorage.getItem(key),
+        setItem: (key, value) => window.localStorage.setItem(key, value),
+        removeItem: key => window.localStorage.removeItem(key),
+      },
+      save: async (ownerId, productIds, expectedRevision) => {
+        const { profile } = await shopRequest<{ profile: StoreSnapshot['profile'] }>('wishlist', { ownerId, productIds, expectedRevision });
+        return profile?.wishlistRevision ?? expectedRevision + 1;
+      },
+      onConflict: () => { void refresh(true); },
+    });
+    const synchronizer = wishlistSync.current;
+    if (!state.user) { synchronizer.reset(); guestWishlist.current = true; return; }
     if (!state.profile) return;
     const serverIds = state.profile.wishlist.filter(id => state.products.some(product => product.id === id));
-    const serverKey = JSON.stringify(serverIds);
-    const localKey = JSON.stringify(state.wishlist);
-    if (wishlistAccount.current !== state.user.id) {
-      wishlistAccount.current = state.user.id;
-      wishlistServer.current = serverKey;
-      wishlistSent.current = serverKey;
-      const merged = guestWishlist.current ? [...new Set([...state.wishlist, ...serverIds])] : serverIds;
-      guestWishlist.current = false;
-      if (JSON.stringify(merged) !== localKey) { dispatch({ type: 'setWishlist', productIds: merged }); return; }
-    } else if (wishlistServer.current !== serverKey && localKey === wishlistSent.current) {
-      wishlistServer.current = serverKey;
-      wishlistSent.current = serverKey;
-      if (serverKey !== localKey) { dispatch({ type: 'setWishlist', productIds: serverIds }); return; }
-    }
-    wishlistServer.current = serverKey;
-    if (localKey === wishlistSent.current) return;
-    const accountId = state.user.id;
-    const timer = window.setTimeout(() => {
-      void shopRequest('wishlist', { productIds: state.wishlist }).then(() => { if (wishlistAccount.current === accountId) wishlistSent.current = localKey; }).catch(() => undefined);
-    }, 350);
-    return () => window.clearTimeout(timer);
-  }, [state.ready, state.user, state.profile, state.wishlist, state.products]);
+    const allowed = new Set(state.products.filter(product => product.published !== false).map(product => product.id));
+    const desired = synchronizer.owner === state.user.id
+      ? synchronizer.reconcile(state.wishlist, serverIds, state.profile.wishlistRevision, allowed)
+      : synchronizer.activate(state.user.id, serverIds, state.profile.wishlistRevision, state.wishlist, guestWishlist.current, allowed);
+    guestWishlist.current = false;
+    if (desired && JSON.stringify(desired) !== JSON.stringify(state.wishlist)) dispatch({ type: 'setWishlist', productIds: desired });
+  }, [state.ready, state.user, state.profile, state.wishlist, state.products, refresh]);
 
   useEffect(() => {
     document.documentElement.lang = state.language;

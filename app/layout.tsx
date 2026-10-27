@@ -6,6 +6,7 @@ import { PrivacyChoices } from '@/components/privacy-choices';
 import { PromotionPrompt } from '@/components/promotion';
 import { CountryPrompt } from '@/components/country-prompt';
 import { LegacyTranslation } from '@/components/legacy-translation';
+import { GOYA_BRAND_VERSION } from '@/lib/goya-brand';
 import './globals.css';
 import './commerce.css';
 import './account.css';
@@ -34,6 +35,7 @@ import './exact-catalog.css';
 import './exact-editorial.css';
 import './exact-account.css';
 import './account-profile.css';
+import './official-brand.css';
 
 const inter = localFont({ src: '../public/fonts/inter-normal-100-900.woff2', variable: '--font-inter', display: 'swap', weight: '100 900', style: 'normal' });
 const playfair = localFont({ src: [
@@ -46,7 +48,7 @@ export const metadata: Metadata = {
   description: 'European precision. African soul. Discover Maison Goya shoes, accessories and care in an international demonstration experience.',
   applicationName: 'Maison Goya',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Maison Goya' },
-  icons: { apple: '/icons/apple-touch-icon.png' },
+  icons: { apple: `/icons/apple-touch-icon.png?v=${GOYA_BRAND_VERSION}` },
   // This is a demonstration storefront, not an authorized live commercial site.
   robots: { index: false, follow: false },
 };

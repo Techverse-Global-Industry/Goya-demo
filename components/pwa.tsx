@@ -7,6 +7,7 @@ import { shopRequest } from '@/lib/api';
 import { Icon } from './icon';
 import { usePathname, useRouter } from 'next/navigation';
 import { presentationCopy } from '@/lib/presentation-copy';
+import { GoyaWordmark } from './goya-wordmark';
 
 interface InstallPrompt extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> }
 const PwaContext = createContext<{ install: () => Promise<void>; installed: boolean; help: boolean; setHelp: (value: boolean) => void; ios: boolean }>({ install: async () => {}, installed: false, help: false, setHelp: () => {}, ios: false });
@@ -41,7 +42,7 @@ export function InstallPanel({ compact = false }: { compact?: boolean }) {
   const copy = presentationCopy[state.locale];
   const { install, installed, help, setHelp, ios } = useContext(PwaContext);
   if (compact) return <div className="reference-install"><button type="button" onClick={install} disabled={installed}>{t(installed ? 'installed' : 'installApp')}</button>{help && <p role="status">{t(ios ? 'installIOS' : 'installOther')} <button type="button" onClick={() => setHelp(false)} aria-label={t('close')}><Icon name="close" width={14} /></button></p>}</div>;
-  return <section className="install-panel section-pad"><div className="install-mark" aria-hidden="true">G</div><div><p className="eyebrow">{copy.installEyebrow}</p><h2>{copy.installTitle}</h2><p>{copy.installBody}</p>{help && <p className="install-help" role="status">{t(ios ? 'installIOS' : 'installOther')} <button className="quiet-link" onClick={() => setHelp(false)}>{t('close')}</button></p>}</div><button type="button" className="button button-outline" onClick={install} disabled={installed}>{t(installed ? 'installed' : 'installApp')}<Icon name="download" /></button></section>;
+  return <section className="install-panel section-pad"><div className="install-mark" aria-hidden="true"><GoyaWordmark variant="symbol" /></div><div><p className="eyebrow">{copy.installEyebrow}</p><h2>{copy.installTitle}</h2><p>{copy.installBody}</p>{help && <p className="install-help" role="status">{t(ios ? 'installIOS' : 'installOther')} <button className="quiet-link" onClick={() => setHelp(false)}>{t('close')}</button></p>}</div><button type="button" className="button button-outline" onClick={install} disabled={installed}>{t(installed ? 'installed' : 'installApp')}<Icon name="download" /></button></section>;
 }
 
 function applicationKey(value: string): Uint8Array<ArrayBuffer> {

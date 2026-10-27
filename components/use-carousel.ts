@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
 /** Logical positions preserve the same next/previous order in RTL browsers. */
-export function useCarousel(items: number, rtl: boolean) {
-  const track = useRef<HTMLDivElement>(null);
+export function useCarousel<T extends HTMLElement = HTMLDivElement>(items: number, rtl: boolean, viewKey?: string) {
+  const track = useRef<T>(null);
   const [bounds, setBounds] = useState({ start: true, end: false });
   useEffect(() => {
     const element = track.current;
@@ -21,14 +21,14 @@ export function useCarousel(items: number, rtl: boolean) {
     element.addEventListener('scroll', update, { passive: true });
     update();
     return () => { observer.disconnect(); element.removeEventListener('scroll', update); };
-  }, [items, rtl]);
+  }, [items, rtl, viewKey]);
   const move = useCallback((direction: number) => {
     const element = track.current;
     if (!element) return;
     const gap = Number.parseFloat(getComputedStyle(element).columnGap) || 0;
     element.scrollBy({ left: direction * (rtl ? -1 : 1) * ((element.firstElementChild?.clientWidth ?? element.clientWidth) + gap), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   }, [rtl]);
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (event: KeyboardEvent<T>) => {
     if (event.target !== event.currentTarget) return;
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); move((event.key === 'ArrowRight' ? 1 : -1) * (rtl ? -1 : 1)); }
     if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); track.current?.scrollTo({ left: event.key === 'Home' ? 0 : (rtl ? -1 : 1) * track.current.scrollWidth, behavior: 'instant' }); }

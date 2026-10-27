@@ -8,7 +8,7 @@ export async function shopRequest<T>(action: string, body: Record<string, unknow
     subscription = await registration?.pushManager.getSubscription() ?? null;
     if (subscription) body = { ...body, endpoint: subscription.endpoint };
   }
-  const response = await fetch('/api/shop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, action }) });
+  const response = await fetch('/api/shop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, action }), ...(action === 'wishlist' ? { keepalive: true } : {}) });
   const data = await response.json();
   if (!response.ok) throw new RequestError(data.error || 'Please try again.', data.code, response.status);
   if (subscription) await subscription.unsubscribe().catch(() => undefined);

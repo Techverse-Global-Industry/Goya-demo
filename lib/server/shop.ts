@@ -5,6 +5,7 @@ import type { Account, Database } from './database';
 import { ApiError } from './security';
 import { isSiteLocale, MARKET_CODES } from '../international';
 import type { RequestAttachment, ReturnLine, ReturnRequest, ReturnStatus, ServiceRequest, ServiceRequestKind, ServiceRequestStatus } from '../experience-types';
+import { MAX_REQUEST_PHOTO_BYTES } from '../experience-types';
 
 export const ORDER_STATUSES: OrderStatus[] = ['confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'];
 const OPTIONAL_SHIPPING_FIELDS = { postalCode: 24, phone: 40, address2: 240, company: 160 } as const;
@@ -34,6 +35,7 @@ function profileDefaults(account: Account): AccountProfile {
     ...(stored?.country && MARKET_CODES.includes(stored.country) ? { country: stored.country } : {}),
     ...(typeof stored?.personalization === 'boolean' ? { personalization: stored.personalization } : {}),
     addresses: structuredClone(stored?.addresses ?? []), wishlist: [...(stored?.wishlist ?? [])],
+    ...(Number.isSafeInteger(stored?.wishlistRevision) && (stored?.wishlistRevision ?? -1) >= 0 ? { wishlistRevision: stored!.wishlistRevision } : {}),
   };
 }
 function ownAccount(db: Database, user: DemoUser): Account {
@@ -129,12 +131,16 @@ export function deleteCustomerAddress(db: Database, user: DemoUser, id: unknown)
   account.profile = profile;
   return customerProfile(db, user)!;
 }
-export function saveCustomerWishlist(db: Database, user: DemoUser, ids: unknown): AccountProfile {
+export function saveCustomerWishlist(db: Database, user: DemoUser, ids: unknown, options: { ownerId?: unknown; expectedRevision?: unknown } = {}): AccountProfile {
   const account = ownAccount(db, user);
+  if (options.ownerId !== undefined && options.ownerId !== user.id) throw new ApiError('This account has changed. Refresh before saving.', 409, 'staleAccount');
   const published = new Set(db.products.filter((product) => product.published !== false).map((product) => product.id));
   if (!Array.isArray(ids) || ids.length > 100 || ids.some((id) => typeof id !== 'string' || !published.has(id))) throw new ApiError('Please select available pieces for your wishlist.');
   const profile = profileDefaults(account);
+  const revision = profile.wishlistRevision ?? 0;
+  if (options.expectedRevision !== undefined && (!Number.isSafeInteger(options.expectedRevision) || options.expectedRevision !== revision)) throw new ApiError('Your wishlist changed. Refresh before saving.', 409, 'wishlistConflict');
   profile.wishlist = [...new Set(ids as string[])];
+  profile.wishlistRevision = revision + 1;
   account.profile = profile;
   return customerProfile(db, user)!;
 }
@@ -152,8 +158,8 @@ export function validateProduct(value: Record<string, unknown>, existing?: Produ
   for (const [size, quantity] of Object.entries(stock)) {
     if (!/^(OS|[0-9]{2,3}(\.[05])?)$/.test(size) || !Number.isSafeInteger(quantity) || quantity < 0 || quantity > 10000) throw new ApiError('Sizes and quantities are invalid.');
     if (['bag', 'accessory', 'care'].includes(String(value.kind)) && size !== 'OS') throw new ApiError('This accessory uses one size (OS).');
-    if (value.kind === 'footwear' && (Number(size) < 20 || Number(size) > 50)) throw new ApiError('Footwear sizes must be between 20 and 50.');
-    if (value.kind === 'belt' && (Number(size) < 50 || Number(size) > 150)) throw new ApiError('Belt sizes must be between 50 and 150 cm.');
+    if (value.kind === 'footwear' && (!Number.isFinite(Number(size)) || Number(size) < 20 || Number(size) > 50)) throw new ApiError('Footwear sizes must be between 20 and 50.');
+    if (value.kind === 'belt' && (!Number.isFinite(Number(size)) || Number(size) < 50 || Number(size) > 150)) throw new ApiError('Belt sizes must be between 50 and 150 cm.');
   }
   const prices = value.prices as Product['prices'];
   if (!prices || typeof prices !== 'object' || Array.isArray(prices) || (['EUR', 'USD', 'XOF'] as const).some(currency => !Number.isSafeInteger(prices[currency]) || prices[currency] < 1 || prices[currency] > 100000000) || Object.entries(prices).some(([currency, amount]) => !CURRENCIES.includes(currency as Currency) || typeof amount !== 'number' || !Number.isSafeInteger(amount) || amount < 1 || amount > 100000000)) throw new ApiError('Enter a positive price for each currency.');
@@ -201,6 +207,12 @@ export function snapshot(db: Database, revision: number, user: DemoUser | null, 
 export function addNotification(db: Database, userId: string, title: Localized, body: Localized, url = '/app/updates') {
   db.notifications.unshift({ id: randomUUID(), userId, title, body, url, createdAt: new Date().toISOString(), read: false });
   db.notifications = db.notifications.slice(0, 2000);
+}
+
+export function withNewNotifications<T>(db: Database, change: () => T): { value: T; notificationIds: string[] } {
+  const existing = new Set(db.notifications.map(notice => notice.id));
+  const value = change();
+  return { value, notificationIds: db.notifications.filter(notice => !existing.has(notice.id)).map(notice => notice.id) };
 }
 
 /** Public quote exposes only published variant prices; no draft or customer data. */
@@ -387,7 +399,7 @@ function requestAttachments(input: unknown): RequestAttachment[] | undefined {
     if (!match || match[1] !== value.type) throw new ApiError('Choose a valid photo.');
     const bytes = Buffer.from(match[2], 'base64');
     const valid = value.type === 'image/jpeg' ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255 : value.type === 'image/png' ? bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])) : bytes.subarray(0, 4).toString() === 'RIFF' && bytes.subarray(8, 12).toString() === 'WEBP';
-    if (!valid || bytes.length > 600_000 || bytes.length < 12) throw new ApiError('Each photo must be a valid image smaller than 600 KB.');
+    if (!valid || bytes.length > MAX_REQUEST_PHOTO_BYTES || bytes.length < 12) throw new ApiError('Each photo must be a valid image smaller than 600 KB.');
     return { name: value.name.replace(/[\x00-\x1f]/g, '').slice(0, 150), type: value.type as RequestAttachment['type'], size: bytes.length, dataUrl: value.dataUrl };
   });
 }
@@ -420,6 +432,7 @@ export function createServiceRequest(db: Database, user: DemoUser | null, guestI
   db.inquiries ??= []; db.inquiries.unshift(record);
   if (guestIdentity) db.idempotency[`${guestIdentity}:request:${record.id}`] = record.id;
   if (requestKey) db.idempotency[requestKey] = record.id;
+  if (record.kind === 'availability' && productId) processAvailability(db, db.products.find(product => product.id === productId)!);
   return record;
 }
 export function ownServiceRequest(db: Database, user: DemoUser | null, guestIdentity: string | null, id: unknown): ServiceRequest {
@@ -432,6 +445,11 @@ export function updateServiceRequest(db: Database, id: unknown, status: unknown,
   if (!record) throw new ApiError('Request not found.', 404, 'notFound');
   if (!['received', 'reviewing', 'confirmed', 'completed', 'closed'].includes(String(status))) throw new ApiError('Choose a valid request status.');
   if (note !== undefined && (typeof note !== 'string' || note.length > 1000)) throw new ApiError('Keep your note within 1000 characters.');
+  if (record.kind === 'consultation' && record.status === 'closed' && status !== 'closed' && ['date', 'time', 'location'].some(field => Object.hasOwn(record.details, field))) {
+    const occupied = [...db.bookings, ...consultationSlots(db)];
+    const location = record.details.location as BookingDetails['location'];
+    if (!['cotonou', 'paris', 'dakar'].includes(location) || !isTimeAvailable({ location, date: record.details.date, time: record.details.time }, occupied)) throw new ApiError('That appointment is unavailable. Please select another time.', 409, 'slotTaken');
+  }
   record.status = status as ServiceRequestStatus; record.updatedAt = new Date().toISOString();
   if (typeof note === 'string') record.note = note.trim();
   if (record.customerId) addNotification(db, record.customerId, { en: 'Your Goya request has been updated', fr: 'Votre demande Goya a été mise à jour' }, { en: `${record.id} · View the latest demonstration response in your account.`, fr: `${record.id} · Consultez la réponse de démonstration dans votre compte.` }, '/app/updates');

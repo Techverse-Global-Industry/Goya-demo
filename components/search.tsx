@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShop } from '@/context/shop-context';
 import { normalizeSearch } from '@/lib/commerce';
@@ -13,6 +13,7 @@ import { storefrontCopy } from '@/lib/storefront';
 import type { Product } from '@/lib/types';
 import { MaisonImage } from './maison-image';
 import { Icon } from './icon';
+import { useCarousel } from './use-carousel';
 
 export function SearchModal({ close }: { close: () => void }) {
   const { state, dispatch, t, products } = useShop();
@@ -20,8 +21,6 @@ export function SearchModal({ close }: { close: () => void }) {
   const router = useRouter();
   const navigateClose = () => dispatch({ type: 'close' });
   const [query, setQuery] = useState(state.query);
-  const track = useRef<HTMLUListElement>(null);
-  const [bounds, setBounds] = useState({ start: true, end: false });
   const results = useMemo(() => {
     const matches = rankedSearch(products, query);
     const found = new Set(matches.map(product => product.id));
@@ -42,26 +41,11 @@ export function SearchModal({ close }: { close: () => void }) {
     return style ? localizedText(SHOE_STYLE_LABELS[style], state.language) : localizedText(product.name, state.language);
   }))].slice(0, 4);
   const typing = Boolean(query.trim());
+  const { track, bounds, move } = useCarousel<HTMLUListElement>(featured.length, state.language === 'ar', typing ? results.length ? 'results' : 'noresults' : 'initial');
   const submit = (value = query) => {
     const clean = value.trim().slice(0, 120);
     dispatch({ type: 'resetFilters' }); dispatch({ type: 'query', query: clean });
     navigateClose(); router.push('/search?q=' + encodeURIComponent(clean));
-  };
-  useEffect(() => {
-    const element = track.current;
-    if (!element) return;
-    const update = () => setBounds(previous => {
-      const start = element.scrollLeft < 5;
-      const end = element.scrollLeft + element.clientWidth >= element.scrollWidth - 5;
-      return start === previous.start && end === previous.end ? previous : { start, end };
-    });
-    const observer = new ResizeObserver(update); observer.observe(element);
-    element.addEventListener('scroll', update, { passive: true }); update();
-    return () => { observer.disconnect(); element.removeEventListener('scroll', update); };
-  }, [typing, featured.length, results.length]);
-  const move = (direction: number) => {
-    const element = track.current;
-    if (element) element.scrollBy({ left: direction * element.clientWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   };
   const card = (product: Product) => <Link href={'/product/' + product.id} onClick={navigateClose}><div className="reference-search-photo"><MaisonImage index={product.image} sources={product.images} alt={localizedText(product.name, state.language)} sizes="(min-width:1200px) 16vw,45vw" /></div><h3>{localizedText(product.name, state.language)}</h3></Link>;
   const carousel = <div className="reference-search-carousel"><ul ref={track} className="reference-search-carousel-track">{featured.map(product => <li key={product.id}>{card(product)}</li>)}</ul><div className="reference-search-carousel-controls"><button type="button" disabled={bounds.start} aria-label={siteText(state.language, 'Previous creations', 'Créations précédentes')} onClick={() => move(-1)}><Icon name="chevron-left" width={15} /></button><button type="button" disabled={bounds.end} aria-label={siteText(state.language, 'Next creations', 'Créations suivantes')} onClick={() => move(1)}><Icon name="chevron-right" width={15} /></button></div></div>;

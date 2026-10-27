@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { after } from 'next/server';
 import { readDatabase, mutateDatabase } from '@/lib/server/database';
 import { apiFailure, ApiError, assertOrigin, beginDemoRecovery, bodyJson, checkPassword, COOKIE, GUEST_COOKIE, createSession, finishDemoRecovery, guestCookieToken, guestIdentityForToken, issueRecoveryCode, prepareGuestCheckout, provisionAdministrator, reservedAdministratorEmail, setGuestCookie, hashPassword, publicUser, rateLimit, requireUser, sessionUser, tokenHash, updateCredentials } from '@/lib/server/security';
-import { changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, quoteShopCart, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct } from '@/lib/server/shop';
+import { changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, quoteShopCart, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct, withNewNotifications } from '@/lib/server/shop';
 import { validEmail } from '@/lib/commerce';
 import { deliverPush } from '@/lib/server/push';
 import { localDemo } from '@/lib/server/config';
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
       const ip = request.headers.get('x-nf-client-connection-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'local';
       await rateLimit(`${action}:${ip}`, action === 'lookupOrder' ? 20 : 40);
       const token = await guestCookieToken();
-      const result = await mutateDatabase(db => {
+      const result = await mutateDatabase(db => withNewNotifications(db, () => {
         const guest = !user || action === 'lookupOrder' ? prepareGuestCheckout(db, token) : null;
         if (action === 'lookupOrder') return { order: lookupCustomerOrder(db, body.reference, body.email, guest!.identity), guestToken: guest!.token };
         let input = body.request;
@@ -156,20 +156,22 @@ export async function POST(request: Request) {
           input = { kind: 'availability', name: typeof body.name === 'string' ? body.name : `${firstName} ${lastName}`.trim() || user?.name || '', email: body.email, locale: body.locale, productId: body.productId, details: { size: typeof body.size === 'string' ? body.size : '', ...(firstName ? { firstName } : {}), ...(lastName ? { lastName } : {}), ...(typeof body.newsletter === 'boolean' ? { newsletter: String(body.newsletter) } : {}) } };
         }
         return { request: createServiceRequest(db, user, guest?.identity ?? null, input), guestToken: guest?.token };
-      });
-      if (result.guestToken) await setGuestCookie(result.guestToken);
-      const { guestToken: _privateToken, ...response } = result;
+      }));
+      if (result.value.guestToken) await setGuestCookie(result.value.guestToken);
+      if (result.notificationIds.length) after(() => deliverPush(result.notificationIds));
+      const { guestToken: _privateToken, ...response } = result.value;
       void _privateToken;
       return Response.json(response, { headers });
     }
     if (action === 'requestReturn' || action === 'requestDetail') {
       const user = await sessionUser();
       const token = await guestCookieToken();
-      const result = await mutateDatabase(db => {
+      const result = await mutateDatabase(db => withNewNotifications(db, () => {
         const identity = guestIdentityForToken(db, token);
         return action === 'requestReturn' ? { returnRequest: requestCustomerReturn(db, user, identity, body) } : { request: ownServiceRequest(db, user, identity, body.id) };
-      });
-      return Response.json(result, { headers });
+      }));
+      if (result.notificationIds.length) after(() => deliverPush(result.notificationIds));
+      return Response.json(result.value, { headers });
     }
     const user = await requireUser();
     if (action === 'accountCredentials') {
@@ -190,7 +192,7 @@ export async function POST(request: Request) {
       return Response.json({ profile }, { headers });
     }
     if (action === 'wishlist') {
-      const profile = await mutateDatabase((db) => saveCustomerWishlist(db, user, body.productIds));
+      const profile = await mutateDatabase((db) => saveCustomerWishlist(db, user, body.productIds, { ownerId: body.ownerId, expectedRevision: body.expectedRevision }));
       return Response.json({ profile }, { headers });
     }
     if (action === 'profile') {
@@ -207,7 +209,7 @@ export async function POST(request: Request) {
     const adminAction = ['saveProduct', 'orderStatus', 'announce', 'deleteAnnouncement', 'returnStatus', 'requestStatus'].includes(String(action));
     if (adminAction && user.role !== 'admin') throw new ApiError('Administrator access required.', 403);
     if (action === 'saveProduct') {
-      const product = await mutateDatabase((db) => {
+      const result = await mutateDatabase((db) => withNewNotifications(db, () => {
         const value = body.product;
         if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ApiError('Product details are required.');
         const input = value as Record<string, unknown>;
@@ -218,12 +220,14 @@ export async function POST(request: Request) {
         else db.products.push(product);
         processAvailability(db, product);
         return product;
-      });
-      return Response.json({ product }, { headers });
+      }));
+      if (result.notificationIds.length) after(() => deliverPush(result.notificationIds));
+      return Response.json({ product: result.value }, { headers });
     }
     if (action === 'returnStatus' || action === 'requestStatus') {
-      const result = await mutateDatabase(db => action === 'returnStatus' ? { returnRequest: updateReturnStatus(db, body.id, body.status, body.note) } : { request: updateServiceRequest(db, body.id, body.status, body.note) });
-      return Response.json(result, { headers });
+      const result = await mutateDatabase(db => withNewNotifications(db, () => action === 'returnStatus' ? { returnRequest: updateReturnStatus(db, body.id, body.status, body.note) } : { request: updateServiceRequest(db, body.id, body.status, body.note) }));
+      if (result.notificationIds.length) after(() => deliverPush(result.notificationIds));
+      return Response.json(result.value, { headers });
     }
     if (action === 'orderStatus' || action === 'announce') {
       const result = await mutateDatabase((db) => {

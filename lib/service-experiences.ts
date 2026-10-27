@@ -1,5 +1,6 @@
 import { shopRequest } from './api';
 import type { Localized, Locale } from './types';
+import { MAX_REQUEST_PHOTO_BYTES } from './experience-types';
 
 export type ExperienceKind = 'bespoke' | 'made-to-order' | 'on-time' | 'care' | 'consultation' | 'contact' | 'newsletter';
 export type ServiceReceipt = { id: string; status: 'received' | 'reviewing' | 'confirmed' | 'completed' | 'closed'; createdAt: string; details?: Record<string, string>; note?: string };
@@ -45,8 +46,9 @@ export async function prepareExperiencePhoto(file: File): Promise<ExperiencePhot
   const context = canvas.getContext('2d'); if (!context) throw new Error('photo'); context.drawImage(image, 0, 0, canvas.width, canvas.height);
   let dataUrl = canvas.toDataURL('image/webp', .8);
   if (dataUrl.length > 790000) dataUrl = canvas.toDataURL('image/webp', .55);
-  const size = Math.ceil((dataUrl.split(',')[1]?.length ?? 0) * .75);
-  if (size > 600 * 1024) throw new Error('photo');
+  const encoded = dataUrl.split(',')[1] ?? '';
+  const size = encoded.length * .75 - (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0);
+  if (size > MAX_REQUEST_PHOTO_BYTES) throw new Error('photo');
   const type = dataUrl.startsWith('data:image/webp') ? 'image/webp' : 'image/png';
   return { name: `${file.name.replace(/\.[^.]+$/, '').slice(0,90)}.${type === 'image/webp' ? 'webp' : 'png'}`, type, size, dataUrl };
 }

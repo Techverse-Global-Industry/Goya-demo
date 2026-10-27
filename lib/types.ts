@@ -65,6 +65,7 @@ export interface AccountProfile {
   personalization?: boolean;
   addresses: SavedAddress[];
   wishlist: string[];
+  wishlistRevision?: number;
 }
 export type CatalogSort = 'recommended' | 'priceAsc' | 'priceDesc';
 export interface CatalogFilters { sizes: string[]; colors: string[]; materials: string[]; styles: ShoeType[]; genders?: Category[]; constructions?: string[]; accessoryTypes?: string[] }

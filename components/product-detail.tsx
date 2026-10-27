@@ -20,6 +20,7 @@ import { ProductCard } from './collection';
 import { Icon } from './icon';
 import { GoyaWordmark } from './goya-wordmark';
 import { rememberFit, savedFit, savedFitIsRecommended } from './fit-guide';
+import { useCarousel } from './use-carousel';
 export { FitFinder, ProductSizeGuide } from './fit-guide';
 
 type GalleryView = { sources: string[]; campaign: boolean; label: string };
@@ -127,15 +128,19 @@ function ProductDetailContent({ product }: { product: Product }) {
     const element = gallery.current; if (!element) return;
     const vertical = matchMedia('(max-width:1023px)').matches;
     const extent = vertical ? element.clientHeight : element.clientWidth;
-    const offset = vertical ? element.scrollTop : element.scrollLeft;
+    const viewport = element.getBoundingClientRect();
+    const rtl = state.language === 'ar';
     const children = Array.from(element.children) as HTMLElement[];
-    const firstOffset = vertical ? children[0]?.offsetTop ?? 0 : children[0]?.offsetLeft ?? 0;
-    const visible = children.flatMap((child, index) => { const start = (vertical ? child.offsetTop : child.offsetLeft) - firstOffset; const size = vertical ? child.offsetHeight : child.offsetWidth; return Math.max(0, Math.min(start + size, offset + extent) - Math.max(start, offset)) / size >= .5 ? [index] : []; });
+    const positions = children.map(child => {
+      const rect = child.getBoundingClientRect();
+      return { start: vertical ? rect.top - viewport.top : rtl ? viewport.right - rect.right : rect.left - viewport.left, size: vertical ? rect.height : rect.width };
+    });
+    const visible = positions.flatMap(({ start, size }, index) => size > 0 && Math.max(0, Math.min(start + size, extent) - Math.max(start, 0)) / size >= .5 ? [index] : []);
     setVisiblePhotos(previous => previous.join() === visible.join() ? previous : visible);
-    const nearest = Math.max(0, Math.min(views.length - 1, Math.round(offset / (vertical ? children[0]?.offsetHeight || 1 : children[0]?.offsetWidth || 1))));
-    setPhoto(nearest);
-  }, [views.length]);
-  useEffect(() => { const element = gallery.current; if (!element) return; const observer = new ResizeObserver(updateGallery); observer.observe(element); updateGallery(); return () => observer.disconnect(); }, [updateGallery]);
+    const nearest = positions.reduce((closest, position, index) => Math.abs(position.start) < Math.abs(positions[closest].start) ? index : closest, 0);
+    setPhoto(Math.min(views.length - 1, nearest));
+  }, [views.length, state.language]);
+  useEffect(() => { const element = gallery.current; if (!element) return; const observer = new ResizeObserver(updateGallery); observer.observe(element); updateGallery(); const frame = requestAnimationFrame(updateGallery); return () => { observer.disconnect(); cancelAnimationFrame(frame); }; }, [updateGallery]);
   const movePhoto = (index: number) => {
     const element = gallery.current; if (!element) return;
     const child = element.children[index] as HTMLElement | undefined; const first = element.children[0] as HTMLElement | undefined;
@@ -165,7 +170,7 @@ function ProductDetailContent({ product }: { product: Product }) {
   return <main id="public-content" className="product-page" data-product-detail={product.id}>
     <div className="pdp-gallery-shell"><nav className="pdp-breadcrumbs" aria-label={text('Breadcrumb', 'Fil d’Ariane')}><Link href={product.category === 'women' ? '/women' : product.category === 'men' ? '/men' : '/accessories'}>{t(product.category)}</Link><span>/</span><Link href={'/' + product.category}>{product.kind === 'footwear' ? text('Shoes', 'Souliers') : t('accessories')}</Link><span>/</span><span aria-current="page">{styleLabel}</span></nav>
     <section className={'pdp-gallery' + (views.length === 1 ? ' pdp-gallery--single' : '')} aria-label={text('Product gallery', 'Galerie du produit')}>
-      <div ref={gallery} className="pdp-gallery-rail" onScroll={updateGallery} onPointerDown={event => { if (event.pointerType === 'mouse' && matchMedia('(min-width:1024px)').matches) drag.current = { x: event.clientX, left: event.currentTarget.scrollLeft, moved: false }; }} onPointerMove={event => { const current = drag.current; if (!current) return; const dx = event.clientX - current.x; if (Math.abs(dx) > 5) { current.moved = true; suppressClick.current = true; event.currentTarget.classList.add('is-dragging'); event.currentTarget.setPointerCapture(event.pointerId); } if (current.moved) event.currentTarget.scrollLeft = current.left - dx; }} onPointerUp={event => { drag.current = null; event.currentTarget.classList.remove('is-dragging'); if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); setTimeout(() => { suppressClick.current = false; }, 0); }} onPointerCancel={event => { drag.current = null; event.currentTarget.classList.remove('is-dragging'); }} onClickCapture={event => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); } }}>
+      <div ref={gallery} className="pdp-gallery-rail" onScroll={updateGallery} onPointerDown={event => { if (event.pointerType === 'mouse' && matchMedia('(min-width:1024px)').matches) drag.current = { x: event.clientX, left: event.currentTarget.scrollLeft, moved: false }; }} onPointerMove={event => { const current = drag.current; if (!current) return; const dx = event.clientX - current.x; if (Math.abs(dx) > 5) { current.moved = true; suppressClick.current = true; event.currentTarget.classList.add('is-dragging'); event.currentTarget.setPointerCapture(event.pointerId); } if (current.moved) event.currentTarget.scrollLeft = current.left - dx; }} onPointerUp={event => { drag.current = null; event.currentTarget.classList.remove('is-dragging'); if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); setTimeout(() => { suppressClick.current = false; }, 0); }} onPointerCancel={event => { drag.current = null; suppressClick.current = false; event.currentTarget.classList.remove('is-dragging'); if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }} onClickCapture={event => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); } }}>
         {views.map((view, index) => <div key={view.sources[0]} className={'pdp-gallery-slide' + (view.campaign ? ' pdp-gallery-slide--campaign' : '')}><button type="button" className="pdp-photo-trigger" aria-label={text('Enlarge', 'Agrandir') + ' ' + name + ' — ' + view.label} onDragStart={event => event.preventDefault()} onClick={() => openZoom(index)}><MaisonImage index={product.image} sources={view.sources} alt={name + ' — ' + view.label} sizes="(min-width:1024px) 42vw,100vw" preload={index === 0} className="pdp-media-photo" /></button></div>)}
       </div>
       <a className="pdp-similar-link" href="#pdp-recommendations">{text('See similar products', 'Voir des produits similaires')}</a>
@@ -194,17 +199,9 @@ function ProductDetailContent({ product }: { product: Product }) {
 
 function Recommendations({ product, products }: { product: Product; products: Product[] }) {
   const { state } = useShop();
-  const rail = useRef<HTMLDivElement>(null);
-  const [bounds, setBounds] = useState({ start: true, end: false });
   const recommendations = [...products].filter(item => item.id !== product.id && item.published !== false && (!product.colorGroup || item.colorGroup !== product.colorGroup)).sort((a, b) => Number(b.category === product.category) - Number(a.category === product.category)).slice(0, 8);
-  useEffect(() => {
-    const element = rail.current; if (!element) return;
-    const update = () => setBounds({ start: element.scrollLeft < 8, end: element.scrollLeft + element.clientWidth >= element.scrollWidth - 8 });
-    const observer = new ResizeObserver(update); observer.observe(element); element.addEventListener('scroll', update, { passive: true }); update();
-    return () => { observer.disconnect(); element.removeEventListener('scroll', update); };
-  }, []);
+  const { track: rail, bounds, move } = useCarousel(recommendations.length, state.language === 'ar');
   if (!recommendations.length) return null;
-  const move = (direction: number) => { const element = rail.current; if (element) element.scrollBy({ left: direction * element.clientWidth, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); };
   return <section id="pdp-recommendations" className="pdp-recommendations"><header><h2>{siteText(state.language, "You may also like", "Vous aimerez aussi")}</h2><div><button type="button" aria-label={siteText(state.language, "Previous creations", "Créations précédentes")} disabled={bounds.start} onClick={() => move(-1)}><Icon name="chevron-left" /></button><button type="button" aria-label={siteText(state.language, "Next creations", "Créations suivantes")} disabled={bounds.end} onClick={() => move(1)}><Icon name="chevron-right" /></button></div></header><div className="pdp-recommendation-rail" ref={rail}>{recommendations.map(item => <ProductCard key={item.id} product={item} index={products.indexOf(item)} />)}</div></section>;
 }
 

@@ -17,14 +17,14 @@ test('all seven languages translate the public interface while preserving the ch
   await page.goto('/faq');
   await expect(page.locator('.site-header:visible')).toHaveAttribute('data-ready', 'true');
   const wordmark = page.locator('.site-header:visible [data-goya-wordmark]').first();
-  const originalMark = await wordmark.evaluate(element => ({ contents: element.innerHTML, transform: getComputedStyle(element).transform }));
+  const originalMark = await wordmark.evaluate(element => ({ artwork: element.getAttribute('data-goya-source'), variant: element.getAttribute('data-goya-variant'), viewBox: element.getAttribute('viewBox'), transform: getComputedStyle(element).transform }));
   const languages: { name: Parameters<typeof changeLanguage>[1]; locale: SiteLocale }[] = [{ name: 'English', locale: 'en' }, { name: 'Italiano', locale: 'it' }, { name: 'Français', locale: 'fr' }, { name: 'Deutsch', locale: 'de' }, { name: 'Español', locale: 'es' }, { name: '日本語', locale: 'ja' }, { name: 'العربية', locale: 'ar' }];
   for (const language of languages) {
     await changeLanguage(page, language.name);
     await expect(page.locator('.site-header:visible a.wordmark')).toHaveAccessibleName('Goya');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(siteText(language.locale, 'Frequently asked questions', 'Questions fréquentes'));
     await expect(page.locator('html')).toHaveAttribute('dir', language.locale === 'ar' ? 'rtl' : 'ltr');
-    expect(await wordmark.evaluate(element => ({ contents: element.innerHTML, transform: getComputedStyle(element).transform }))).toEqual(originalMark);
+    expect(await wordmark.evaluate(element => ({ artwork: element.getAttribute('data-goya-source'), variant: element.getAttribute('data-goya-variant'), viewBox: element.getAttribute('viewBox'), transform: getComputedStyle(element).transform }))).toEqual(originalMark);
     await expect.poll(async () => (await preferences(page)).language).toBe(language.locale);
     const saved = await preferences(page);
     expect(saved.market).toBe('WW');

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { imageSources } from '@/lib/assets';
 import { useShop } from '@/context/shop-context';
+import { GoyaWordmark } from './goya-wordmark';
 
 interface MaisonImageProps {
   index: number;
@@ -22,7 +23,7 @@ export function MaisonImage({ index, alt, sizes, className = '', preload = false
   if (attempt >= sources.length) {
     return <div className={`image-archive image-archive--${index % 4} ${className}`} role="img" aria-label={alt}>
       <div className="archive-orbit" aria-hidden="true" />
-      <span className="archive-monogram" aria-hidden="true">MG</span>
+      <span className="archive-monogram" aria-hidden="true"><GoyaWordmark variant="emblem" /></span>
       <span className="archive-caption" aria-hidden="true">{t('imageUnavailable')} · {String(index).padStart(2, '0')}</span>
     </div>;
   }

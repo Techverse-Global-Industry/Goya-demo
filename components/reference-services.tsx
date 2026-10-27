@@ -10,6 +10,7 @@ import { exactFaqCopy } from '@/lib/exact-faq-copy';
 import { faqCopy, serviceCopy } from '@/lib/service-copy';
 import { prepareExperiencePhoto, saveExperience } from '@/lib/service-experiences';
 import type { ExperiencePhoto, ServiceReceipt } from '@/lib/service-experiences';
+import type { SiteLocale } from '@/lib/types';
 import { Icon } from './icon';
 
 function ServiceMain({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -54,6 +55,10 @@ export { SizeGuide } from './fit-guide';
 export function CustomerServicePage() {
   const { state, refresh } = useShop();
   const c = translatedCopy(serviceCopy[state.locale],state.language);
+  const [countryChoice, setCountryChoice] = useState<string | null>(null);
+  const [languageChoice, setLanguageChoice] = useState<SiteLocale | null>(null);
+  const country = countryChoice ?? (state.market === 'WW' ? '' : state.market);
+  const language = languageChoice ?? state.language;
   const [attachment, setAttachment] = useState<ExperiencePhoto | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [fileError, setFileError] = useState('');
@@ -79,7 +84,7 @@ export function CustomerServicePage() {
       <label className="reference-field-full">{c.title} *<select aria-label={c.title} name="title" required defaultValue=""><option value="" disabled>{c.select}</option><option value="man">{c.man}</option><option value="woman">{c.woman}</option><option value="unspecified">{c.preferNot}</option></select></label>
       <label>{c.firstName} *<input name="firstName" autoComplete="given-name" placeholder={c.firstName} required maxLength={100} /></label><label>{c.lastName} *<input name="lastName" autoComplete="family-name" placeholder={c.lastName} required maxLength={100} /></label>
       <label>{c.email} *<input type="email" name="email" autoComplete="email" placeholder={c.email} required maxLength={254} /></label><label>{c.phone} *<input type="tel" name="phone" autoComplete="tel" placeholder={c.phone} required maxLength={35} /></label>
-      <label>{c.country} *<select aria-label={c.country} name="country" defaultValue={state.market==='WW'?'':state.market} required><option value="" disabled>{c.select}</option>{CONTACT_COUNTRIES.map(country=><option key={country} value={country}>{marketName(country,state.language)}</option>)}</select></label><label>{c.language} *<select aria-label={c.language} name="language" defaultValue={state.language} required>{(['it','en','fr','de','es','ja','ar'] as const).map(language=><option key={language} value={language}>{languageName(language,state.language)}</option>)}</select></label>
+      <label>{c.country} *<select aria-label={c.country} name="country" value={country} onChange={event => setCountryChoice(event.target.value)} required><option value="" disabled>{c.select}</option>{CONTACT_COUNTRIES.map(country=><option key={country} value={country}>{marketName(country,state.language)}</option>)}</select></label><label>{c.language} *<select aria-label={c.language} name="language" value={language} onChange={event => setLanguageChoice(event.target.value as SiteLocale)} required>{(['it','en','fr','de','es','ja','ar'] as const).map(language=><option key={language} value={language}>{languageName(language,state.language)}</option>)}</select></label>
       <label className="reference-field-full">{c.subject} *<select aria-label={c.subject} name="subject" required defaultValue=""><option value="" disabled>{c.selectTopic}</option>{c.topics.map((topic, index) => <option key={index} value={index}>{topic}</option>)}</select></label><label className="reference-field-full">{c.message} *<textarea name="message" placeholder={c.writeHere} rows={5} required minLength={5} maxLength={3000} /></label>
       <div className="reference-field-full reference-attachment"><label htmlFor="reference-contact-attachment">{c.attachment}<span>{c.selectFile}<Icon name="plus" width={18} /></span><input id="reference-contact-attachment" type="file" ref={fileInput} accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={fileChange} /></label><small>{attachment?.name ?? c.fileLimit}</small>{attachment && <button type="button" className="reference-text-link" onClick={() => { setAttachment(null); setFileError(''); if (fileInput.current) fileInput.current.value = ''; }}>{c.remove}<Icon name="close" width={13} /></button>}{fileError && <p className="reference-form-error" role="alert">{fileError}</p>}</div>
       <div className="reference-field-full reference-checkbox"><input id="reference-contact-consent" type="checkbox" required /><label htmlFor="reference-contact-consent">{c.consent}</label><Link href="#privacy">{c.privacy}</Link></div><small className="reference-field-full reference-demo-note">{c.formDemo}</small>{requestError && <p className="reference-field-full reference-form-error" role="alert">{requestError}</p>}<button type="submit" className="reference-button reference-field-full" disabled={busy || photoBusy}>{busy ? (state.locale === 'fr' ? 'Enregistrement…' : 'Saving…') : c.send}<Icon name="arrow-right" width={17} /></button>

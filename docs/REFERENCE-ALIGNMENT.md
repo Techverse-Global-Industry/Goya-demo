@@ -6,7 +6,7 @@ The reference was inspected in Edge at 1440 × 1000 desktop and 393 × 851 mobil
 
 ## Shared shell and brand
 
-The storefront uses one shared Goya vector wordmark across navigation, account/admin surfaces, loading states, country selection and PWA branding. The wordmark is separate from interface typography. Desktop opening header geometry is a 42px promotion strip plus a 61px navigation row; the measured phone layout uses 42px plus 51px. The home header overlays campaign media, then changes on scroll. Seven main menus expose grouped desktop navigation and a three-level mobile menu, with dedicated search, wishlist, account and bag actions.
+The storefront uses one shared rendering of the owner-supplied Goya artwork across navigation, account/admin surfaces, loading states, country selection and PWA branding. The wordmark is separate from interface typography. Desktop opening header geometry is a 42px promotion strip plus a 61px navigation row; the measured phone layout uses 42px plus 51px. The home header overlays campaign media, then changes on scroll. Seven main menus expose grouped desktop navigation and a three-level mobile menu, with dedicated search, wishlist, account and bag actions.
 
 The footer follows the reference hierarchy: newsletter, customer care, brand/editorial links, legal/company links, social destinations, language, country and legal text. Desktop uses columns with 40px vertical padding; mobile presents the newsletter first, collapsible link sections and full-width 48px language/country rows. Goya supplies its own content and policies. Cookie preferences and the optional newsletter invitation use the measured banner/panel structures while describing the actual demo behavior.
 
@@ -88,7 +88,7 @@ Verified locally on 24 October 2026:
 - All 118 backend, commerce, translation and privacy regression tests passed, including server-owned promotion quotes, JPY/KWD rounding, immutable paid prices and bounded refunds.
 - The main browser run and corrected focused reruns exercised all 57 distinct active desktop/mobile journeys successfully. One duplicate mobile run of the desktop-only animation scenario was intentionally skipped. This is an aggregate across runs, not a claim of one uninterrupted green full-suite run.
 - The public page audit passed 138 page/language/viewport checks with no detected runtime errors or horizontal overflow. After the final discount changes, all 16 focused desktop/mobile journeys passed, followed by both complete GOYA10 express-order/invoice journeys.
-- Final PWA checks passed: the country logo fits its header, shared wordmark paths match, Arabic/Japanese menus retain brand names, the offline Japanese screen works, and Cache Storage contains no private account/API pages.
+- Final PWA checks passed: the country logo fits its header, shared logo artwork is consistent, Arabic/Japanese menus retain brand names, the offline Japanese screen works, and Cache Storage contains no private account/API pages.
 
 Browser writes used fresh local demo data, never the hosted inventory. Physical-device installation and real push delivery are separate device checks. The exact Avus Pro interface font still requires the publisher-issued webfont licence and kit described in [font licensing](FONT-LICENSING.md).
 
@@ -98,3 +98,10 @@ Browser writes used fresh local demo data, never the hosted inventory. Physical-
 The final production build generates 117 pages and passes strict TypeScript. All 119 core tests pass. Full lint passed for 190 files; the five subsequently adjusted form and browser files also pass targeted lint. Twelve focused desktop/mobile journeys passed in the main browser run. Both complete account journeys then passed after correcting a stale read-only-email test locator, waiting for the wishlist save acknowledgement, and adding the product wishlist loading guard. This is an aggregate across runs, rather than a claim of one uninterrupted green run. Browser writes used isolated local demo data.
 
 The follow-up public layout matrix also passes 24 desktop/mobile views in English, French and Arabic, including registration clearance below the fixed header, the full-width title field, day/month/year order, vertical Culture navigation and centred catalogue text panels. No detected runtime errors or horizontal overflow.
+
+
+## Official Goya logo update - 27 October 2026
+
+The owner supplied three transparent PNG originals: the spaced serif wordmark, the Paris - Cotonou - Dakar signature, and the shoe emblem lockup. The originals are preserved under `public/brand/official/`; web copies remove only fully transparent outer margins. SVG alpha masks display those exact pixels in the current foreground colour, so the logo remains correct over both campaign films and white pages without recreating the lettering with a font. Navigation, country selection, account/admin/loading/error states, image fallbacks, the footer, installation UI, offline screen, favicon and app icons use the appropriate official variant.
+
+Run `npm run brand:generate` to regenerate web artwork, metadata, icons, offline branding and the service-worker cache version from the three originals. Manifest and Apple icon URLs include the artwork version to refresh existing caches.

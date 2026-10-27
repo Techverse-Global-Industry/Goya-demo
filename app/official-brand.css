@@ -1,0 +1,35 @@
+/* Size the owner's original logo artwork without changing its lettering. */
+.reference-header.site-header .wordmark > .goya-wordmark {
+  width: 152px;
+  height: auto;
+  max-height: 48px;
+}
+.exact-mobile-menu-header .goya-wordmark { width: 120px; height: auto; max-height: 42px; }
+.exact-country-brand .goya-wordmark { width: 140px; height: auto; max-height: 44px; }
+.exact-cookie-header > .goya-wordmark { width: 120px; height: auto; max-height: 40px; }
+.account-loading-mark > .goya-wordmark,
+.pdp-loading-mark > .goya-wordmark { width: 152px; height: auto; }
+.status-page > .goya-wordmark { width: min(180px, 100%); height: auto; }
+.status-page .loading-monogram { display: block; width: min(180px, 100%); padding: 0; font-size: 0; letter-spacing: normal; color: inherit; }
+.loading-monogram > .goya-wordmark { width: 100%; height: auto; }
+.image-archive .archive-monogram { display: block; width: 46%; max-width: 240px; padding: 0; font-size: 0; letter-spacing: normal; color: #fff; opacity: .72; }
+.archive-monogram > .goya-wordmark { width: 100%; height: auto; }
+.install-panel { grid-template-columns: 72px minmax(0, 1fr) auto; }
+.install-panel .install-mark { width: 72px; height: 72px; padding: 10px; background: #f8f6f4; color: #111; border: 1px solid #ded9d2; border-radius: 14px; box-shadow: none; }
+.install-panel .install-mark::after { content: none; }
+.install-mark > .goya-wordmark { width: 36px; height: 52px; max-width: 100%; max-height: 100%; }
+.fashion-care-monogram { display: block; width: 44px; padding: 0; font-size: 0; letter-spacing: normal; }
+.fashion-care-monogram > .goya-wordmark { width: 100%; height: auto; }
+.exact-footer .official-footer-brand { display: block; width: 208px; max-width: calc(100% - 48px); margin: 0 24px 24px; color: #111; }
+.official-footer-brand > .goya-wordmark { width: 100%; height: auto; max-height: none; }
+@media (max-width: 1023px) {
+  .exact-footer .official-footer-brand { width: 200px; max-width: 100%; margin: 0 0 28px; }
+}
+@media (max-width: 699px) {
+  .reference-header.site-header .wordmark > .goya-wordmark { width: 120px; max-height: 38px; }
+  .exact-country-brand .goya-wordmark { width: 128px; max-height: 38px; }
+  .fashion-care-monogram { display: none; }
+  .install-panel { grid-template-columns: 60px minmax(0, 1fr); }
+  .install-panel .install-mark { width: 60px; height: 60px; padding: 8px; border-radius: 12px; }
+  .install-mark > .goya-wordmark { width: 28px; height: 44px; }
+}

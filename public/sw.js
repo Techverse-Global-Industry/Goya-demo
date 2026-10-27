@@ -1,5 +1,5 @@
 /* No account pages, API responses, or checkout data are stored in the cache. */
-const VERSION = 'maison-goya-v6';
+const VERSION = 'maison-goya-official-0782d2307edc';
 const OFFLINE = '/offline.html';
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll([OFFLINE, '/icons/icon-192.png'])).then(() => self.skipWaiting()));

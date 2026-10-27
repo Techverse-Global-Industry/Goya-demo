@@ -1,5 +1,7 @@
 import type { Currency, Locale } from './types';
 
+export const MAX_REQUEST_PHOTO_BYTES = 600_000;
+
 export type ReturnStatus = 'requested' | 'approved' | 'received' | 'refunded' | 'rejected';
 export type ReturnReason = 'size' | 'style' | 'damaged' | 'wrong-item' | 'other';
 export interface ReturnLine { productId: string; size: string; quantity: number; reason: ReturnReason }

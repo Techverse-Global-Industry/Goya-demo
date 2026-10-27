@@ -4,7 +4,8 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { mutateDatabase, readDatabase, reconcileDemoCatalog, seedDatabase } from '../lib/server/database';
-import { accessibleOrder, changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, customerProfile, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, quoteShopCart, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct } from '../lib/server/shop';
+import { accessibleOrder, changeOrderStatus, createAnnouncement, createBooking, createServiceRequest, customerProfile, deleteCustomerAddress, lookupCustomerOrder, ownServiceRequest, placeOrder, processAvailability, quoteShopCart, requestCustomerReturn, saveCustomerAddress, saveCustomerProfile, saveCustomerWishlist, snapshot, updateReturnStatus, updateServiceRequest, validateProduct, withNewNotifications } from '../lib/server/shop';
+import { MAX_REQUEST_PHOTO_BYTES } from '../lib/experience-types';
 import { beginDemoRecovery, checkPassword, finishDemoRecovery, guestIdentityForToken, hashPassword, issueRecoveryCode, prepareGuestCheckout, provisionAdministrator, updateCredentials, userForToken, tokenHash } from '../lib/server/security';
 import { matchesProduct } from '../lib/commerce';
 import type { DemoUser } from '../lib/types';
@@ -677,4 +678,71 @@ test('guest appointments expose only their own details and public occupied-slot 
   db.sessions.find((session) => session.userId === guest.identity)!.expiresAt = 0;
   assert.deepEqual(snapshot(db, 1, null, false, guest.identity).bookings, []);
   assert.throws(() => createBooking(db, null, { ...details, time: '11:00' }, guest.identity), /valid appointment session/);
+});
+
+
+test('footwear and belts reject one-size stock while genuine one-size accessories remain valid', () => {
+  const product = structuredClone(seedDatabase().products[0]);
+  assert.throws(() => validateProduct({ ...product, kind: 'footwear', stock: { OS: 1 } }), /Footwear sizes/);
+  assert.throws(() => validateProduct({ ...product, kind: 'belt', category: 'accessories', stock: { OS: 1 } }), /Belt sizes/);
+  assert.deepEqual(validateProduct({ ...product, kind: 'bag', category: 'accessories', stock: { OS: 1 } }).stock, { OS: 1 });
+  assert.deepEqual(validateProduct({ ...product, kind: 'footwear', stock: { '42.5': 1 } }).stock, { '42.5': 1 });
+});
+
+test('wishlist revisions reject stale pages and account switches without changing private data', () => {
+  const db = seedDatabase(); db.users.push({ ...user, passwordHash: 'unused' }, { ...other, passwordHash: 'unused' });
+  const first = saveCustomerWishlist(db, user, ['francesco'], { ownerId: user.id, expectedRevision: 0 });
+  assert.equal(first.wishlistRevision, 1);
+  const latest = saveCustomerWishlist(db, user, [], { ownerId: user.id, expectedRevision: 1 });
+  assert.equal(latest.wishlistRevision, 2);
+  const before = structuredClone(db);
+  assert.throws(() => saveCustomerWishlist(db, user, ['francesco'], { ownerId: user.id, expectedRevision: 0 }), error => (error as { code: string }).code === 'wishlistConflict');
+  assert.throws(() => saveCustomerWishlist(db, other, ['francesco'], { ownerId: user.id, expectedRevision: 0 }), error => (error as { code: string }).code === 'staleAccount');
+  assert.deepEqual(db, before);
+  assert.deepEqual(customerProfile(db, user)?.wishlist, []);
+  assert.deepEqual(customerProfile(db, other)?.wishlist, []);
+  assert.deepEqual(saveCustomerWishlist(db, user, ['francesco']).wishlist, ['francesco'], 'legacy callers remain supported');
+});
+
+test('a closed consultation cannot reclaim a slot booked by another request or booking', () => {
+  const db = seedDatabase();
+  const appointment = new Date(); appointment.setUTCDate(appointment.getUTCDate() + 2); if (appointment.getUTCDay() === 0) appointment.setUTCDate(appointment.getUTCDate() + 1);
+  const date = appointment.toISOString().slice(0, 10);
+  const payload = { kind: 'consultation', name: user.name, email: user.email, locale: 'en', details: { location: 'cotonou', date, time: '10:00' } };
+  const first = createServiceRequest(db, user, null, payload);
+  updateServiceRequest(db, first.id, 'closed');
+  const second = createServiceRequest(db, other, null, { ...payload, name: other.name, email: other.email });
+  assert.throws(() => updateServiceRequest(db, first.id, 'confirmed'), error => (error as { code: string }).code === 'slotTaken');
+  assert.equal(first.status, 'closed');
+  updateServiceRequest(db, second.id, 'closed');
+  updateServiceRequest(db, first.id, 'confirmed');
+  assert.equal(first.status, 'confirmed');
+  updateServiceRequest(db, first.id, 'closed');
+  createBooking(db, other, { name: other.name, email: other.email, date, time: '10:00', location: 'cotonou', service: 'polish' });
+  assert.throws(() => updateServiceRequest(db, first.id, 'reviewing'), /unavailable/);
+  assert.equal(first.status, 'closed');
+});
+
+test('an availability request submitted after restocking resolves immediately and exposes only new push candidates', () => {
+  const db = seedDatabase(); const product = db.products[0]; product.stock = { ...product.stock, '42': 1 };
+  db.users.push({ ...user, passwordHash: 'unused' });
+  createAnnouncement(db, { title: { en: 'Earlier', fr: 'Avant' }, body: { en: 'An earlier notice', fr: 'Un avis precedent' } });
+  const earlierIds = db.notifications.map(notice => notice.id);
+  assert.equal(earlierIds.length, 1);
+  const result = withNewNotifications(db, () => createServiceRequest(db, user, null, { kind: 'availability', name: user.name, email: user.email, locale: 'en', productId: product.id, details: { size: '42' } }));
+  assert.equal(result.value.status, 'confirmed');
+  assert.equal(result.notificationIds.length, 1);
+  assert.equal(db.notifications.find(notice => notice.id === result.notificationIds[0])?.userId, user.id);
+  assert.ok(result.notificationIds.every(id => !earlierIds.includes(id)));
+  const noChange = withNewNotifications(db, () => processAvailability(db, product));
+  assert.deepEqual(noChange.notificationIds, [], 'already confirmed requests are never notified twice');
+});
+
+test('service photo requests use the same exact byte limit as browser preparation', () => {
+  const db = seedDatabase();
+  const photo = Buffer.alloc(MAX_REQUEST_PHOTO_BYTES + 1); Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(photo);
+  const request = { kind: 'care', name: user.name, email: user.email, details: {}, attachments: [{ name: 'large.png', type: 'image/png', dataUrl: `data:image/png;base64,${photo.toString('base64')}` }] };
+  assert.throws(() => createServiceRequest(db, user, null, request), /smaller than 600 KB/);
+  const accepted = { ...request, attachments: [{ ...request.attachments[0], dataUrl: `data:image/png;base64,${photo.subarray(0, MAX_REQUEST_PHOTO_BYTES).toString('base64')}` }] };
+  assert.equal(createServiceRequest(db, user, null, accepted).attachments?.[0].size, MAX_REQUEST_PHOTO_BYTES);
 });
