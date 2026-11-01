@@ -1,49 +1,582 @@
-'use client';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { useShop } from '@/context/shop-context';
-import { storefrontCopy } from '@/lib/storefront';
-import { navigationGroups } from '@/lib/navigation';
-import type { MainMenu } from '@/lib/navigation';
-import { LANGUAGE_NAMES, marketName, translatedCopy } from '@/lib/international';
-import { shellCopy } from '@/lib/shell-copy';
-import { GoyaWordmark } from './goya-wordmark';
-import { Icon } from './icon';
+"use client";
+import Link from "next/link";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useShop } from "@/context/shop-context";
+import { storefrontCopy } from "@/lib/storefront";
+import { navigationGroups } from "@/lib/navigation";
+import type { MainMenu } from "@/lib/navigation";
+import {
+  LANGUAGE_NAMES,
+  marketName,
+  translatedCopy,
+} from "@/lib/international";
+import { shellCopy } from "@/lib/shell-copy";
+import { GoyaWordmark } from "./goya-wordmark";
+import { Icon } from "./icon";
 
-const menus: { id:MainMenu; key:'newArrivals'|'man'|'woman'|'accessories'|'gifts'|'personalization'|'culture'; href:string }[] = [
- {id:'new',key:'newArrivals',href:'/new-arrivals'},{id:'men',key:'man',href:'/men'},{id:'women',key:'woman',href:'/women'},{id:'accessories',key:'accessories',href:'/accessories'},{id:'gifts',key:'gifts',href:'/gifts'},{id:'personalization',key:'personalization',href:'/personalization'},{id:'culture',key:'culture',href:'/maison'},
+const menus: {
+  id: MainMenu;
+  key:
+    | "newArrivals"
+    | "man"
+    | "woman"
+    | "accessories"
+    | "gifts"
+    | "personalization"
+    | "culture";
+  href: string;
+}[] = [
+  { id: "new", key: "newArrivals", href: "/new-arrivals" },
+  { id: "men", key: "man", href: "/men" },
+  { id: "women", key: "woman", href: "/women" },
+  { id: "accessories", key: "accessories", href: "/accessories" },
+  { id: "gifts", key: "gifts", href: "/gifts" },
+  { id: "personalization", key: "personalization", href: "/personalization" },
+  { id: "culture", key: "culture", href: "/maison" },
 ];
-export function Header({workspace=false}:{workspace?:boolean}) {
- const {state,dispatch,t,itemCount}=useShop();const pathname=usePathname();const c=translatedCopy(storefrontCopy[state.locale],state.language);const s=translatedCopy(shellCopy[state.locale],state.language);
- const home=pathname==='/';const header=useRef<HTMLElement>(null);const lastScroll=useRef(0);const[scrolled,setScrolled]=useState(false);const[hidden,setHidden]=useState(false);const[menu,setMenu]=useState<MainMenu|null>(null);const[hint,setHint]=useState(0);const[accountTip,setAccountTip]=useState(false);
- const suggestions=[c.editMen,c.editWomen,c.editSneakers];
- useEffect(()=>{const update=()=>{const y=window.scrollY;setScrolled(y>40);if(y<100)setHidden(false);else if(Math.abs(y-lastScroll.current)>8)setHidden(y>lastScroll.current);lastScroll.current=y;};update();window.addEventListener('scroll',update,{passive:true});const timer=window.setInterval(()=>setHint(value=>(value+1)%3),4500);return()=>{window.removeEventListener('scroll',update);window.clearInterval(timer);};},[]);
- useEffect(()=>{if(!state.ready||state.user)return;try{if(sessionStorage.getItem('goya-account-tooltip'))return;sessionStorage.setItem('goya-account-tooltip','seen');}catch{return;}const show=window.setTimeout(()=>setAccountTip(true),700);const hide=window.setTimeout(()=>setAccountTip(false),7700);return()=>{clearTimeout(show);clearTimeout(hide);};},[state.ready,state.user]);
- const close=()=>{setMenu(null);setAccountTip(false);dispatch({type:'close'});};
- const open=(kind:'search'|'cart'|'menu')=>{setMenu(null);setAccountTip(false);setHidden(false);if(state.overlay?.kind===kind)dispatch({type:'close'});else dispatch({type:'open',overlay:{kind}});};
- return <><a className="skip-link" href={workspace||pathname==='/login'?'#account-content':'#public-content'}>{t('skip')}</a><a className="skip-link skip-link-footer" href="#footer">{state.locale==='fr'?'Passer au pied de page':'Skip to footer'}</a>
-  <header ref={header} className={`site-header reference-header exact-header ${scrolled?'reference-header--compact':''} ${hidden&&!menu&&!state.overlay?'exact-header--hidden':''} ${home&&!scrolled&&!menu?'reference-header--over-film':''} ${home&&!scrolled?'reference-header--searchbar':''}`} data-ready={state.ready} data-signed-in={!!state.user} data-menu-open={!!menu} onMouseLeave={()=>setMenu(null)} onFocusCapture={()=>setHidden(false)} onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget))setMenu(null);}} onKeyDown={event=>{if(event.key==='Escape'){header.current?.querySelector<HTMLElement>('[aria-expanded="true"]')?.focus();setMenu(null);setAccountTip(false);}}}>
-   {!scrolled&&!state.user&&<Link href={state.user?'/app':'/login'} className="reference-promotion">{s.promo}</Link>}
-   <div className="reference-navigation"><Link className="wordmark" href="/" aria-label="Goya" onClick={close}><GoyaWordmark/></Link><nav className="reference-desktop-nav" aria-label={s.menu}>{menus.map(item=><div className="reference-nav-item" key={item.id} onMouseEnter={()=>setMenu(item.id)}><Link href={item.href} aria-current={pathname===item.href?'page':undefined} onClick={()=>setMenu(null)}>{c[item.key]}</Link><button type="button" aria-label={`${s.all} — ${c[item.key]}`} aria-expanded={menu===item.id} aria-controls="reference-mega-menu" onClick={()=>setMenu(value=>value===item.id?null:item.id)}><Icon name="chevron" width={9}/></button></div>)}</nav>
-    <div className="header-actions"><button className="icon-button reference-search-trigger" type="button" aria-label={t('search')} onClick={()=>open('search')}><Icon name="search-spark"/><span className="reference-search-label">{t('search')}</span></button><Link className="icon-button reference-wishlist-trigger" href="/wishlist" aria-label={`${c.wishlist}${state.wishlist.length?` (${state.wishlist.length})`:''}`} onClick={close}><Icon name="heart"/>{state.wishlist.length>0&&<span className="reference-action-count">{state.wishlist.length}</span>}</Link><div className="reference-account-action" onMouseEnter={()=>setAccountTip(true)} onMouseLeave={()=>setAccountTip(false)} onFocus={()=>setAccountTip(true)} onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget))setAccountTip(false);}}><Link className="icon-button profile-button" href={state.user?'/app':'/login'} aria-label={t('account')} onClick={close}><Icon name={state.user?'user-filled':'user'}/></Link>{accountTip&&!state.user&&<div className="reference-account-tooltip"><span><Link href="/login">{s.login}</Link> {s.or} <Link href="/login?mode=register">{s.signup}</Link> {s.personalized}</span><button type="button" aria-label={s.close} onClick={()=>setAccountTip(false)}><Icon name="close" width={13}/></button></div>}</div><button type="button" className="icon-button cart-trigger" data-cart-trigger aria-label={`${t('cart')} (${itemCount})`} onClick={()=>open('cart')}><Icon name="bag"/>{itemCount>0&&<span className="reference-action-count">{itemCount}</span>}</button><button type="button" className="icon-button mobile-menu-trigger" aria-label={s.menu} onClick={()=>open('menu')}><Icon name="menu"/></button></div>
-   </div>{home&&!scrolled&&<button type="button" className="reference-inline-search" aria-label={t('search')} onClick={()=>open('search')}><Icon name="search-spark" width={25}/><span key={`${state.language}-${hint}`}>{suggestions[hint]}<i aria-hidden="true"/></span></button>}
-   {menu&&<div id="reference-mega-menu" className="reference-mega-menu"><MegaMenu menu={menu} close={()=>setMenu(null)}/></div>}
-  </header>{menu&&<button className="exact-menu-backdrop" aria-label={s.close} type="button" onClick={()=>setMenu(null)}/>}
- </>;
+export function Header({ workspace = false }: { workspace?: boolean }) {
+  const { state, dispatch, t, itemCount } = useShop();
+  const pathname = usePathname();
+  const c = translatedCopy(storefrontCopy[state.locale], state.language);
+  const s = translatedCopy(shellCopy[state.locale], state.language);
+  const home = pathname === "/";
+  const header = useRef<HTMLElement>(null);
+  const lastScroll = useRef(0);
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [menu, setMenu] = useState<MainMenu | null>(null);
+  const [hint, setHint] = useState(0);
+  const [accountTip, setAccountTip] = useState(false);
+  const suggestions = [c.editMen, c.editWomen, c.editSneakers];
+  useEffect(() => {
+    const update = () => {
+      const y = window.scrollY;
+      setScrolled(y > 40);
+      if (y < 100) setHidden(false);
+      else if (Math.abs(y - lastScroll.current) > 8)
+        setHidden(y > lastScroll.current);
+      lastScroll.current = y;
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    const timer = window.setInterval(
+      () => setHint((value) => (value + 1) % 3),
+      4500,
+    );
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.clearInterval(timer);
+    };
+  }, []);
+  useEffect(() => {
+    if (!state.ready || state.user) return;
+    try {
+      if (sessionStorage.getItem("goya-account-tooltip")) return;
+      sessionStorage.setItem("goya-account-tooltip", "seen");
+    } catch {
+      return;
+    }
+    const show = window.setTimeout(() => setAccountTip(true), 700);
+    const hide = window.setTimeout(() => setAccountTip(false), 7700);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+    };
+  }, [state.ready, state.user]);
+  const close = () => {
+    setMenu(null);
+    setAccountTip(false);
+    dispatch({ type: "close" });
+  };
+  const open = (kind: "search" | "cart" | "menu") => {
+    setMenu(null);
+    setAccountTip(false);
+    setHidden(false);
+    if (state.overlay?.kind === kind) dispatch({ type: "close" });
+    else dispatch({ type: "open", overlay: { kind } });
+  };
+  return (
+    <>
+      <a
+        className="skip-link"
+        href={
+          workspace || pathname === "/login"
+            ? "#account-content"
+            : "#public-content"
+        }
+      >
+        {t("skip")}
+      </a>
+      <a className="skip-link skip-link-footer" href="#footer">
+        {state.locale === "fr" ? "Passer au pied de page" : "Skip to footer"}
+      </a>
+      <header
+        ref={header}
+        className={`site-header reference-header exact-header ${scrolled ? "reference-header--compact" : ""} ${hidden && !menu && !state.overlay ? "exact-header--hidden" : ""} ${home && !scrolled && !menu ? "reference-header--over-film" : ""} ${home && !scrolled ? "reference-header--searchbar" : ""}`}
+        data-ready={state.ready}
+        data-signed-in={!!state.user}
+        data-menu-open={!!menu}
+        onMouseLeave={() => setMenu(null)}
+        onFocusCapture={() => setHidden(false)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setMenu(null);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            header.current
+              ?.querySelector<HTMLElement>('[aria-expanded="true"]')
+              ?.focus();
+            setMenu(null);
+            setAccountTip(false);
+          }
+        }}
+      >
+        {!scrolled && !state.user && (
+          <Link
+            href={state.user ? "/app" : "/login"}
+            className="reference-promotion"
+          >
+            {s.promo}
+          </Link>
+        )}
+        <div className="reference-navigation">
+          <Link className="wordmark" href="/" aria-label="Goya" onClick={close}>
+            <GoyaWordmark />
+          </Link>
+          <nav className="reference-desktop-nav" aria-label={s.menu}>
+            {menus.map((item) => (
+              <div
+                className="reference-nav-item"
+                key={item.id}
+                onMouseEnter={() => setMenu(item.id)}
+              >
+                <Link
+                  href={item.href}
+                  aria-current={pathname === item.href ? "page" : undefined}
+                  onClick={() => setMenu(null)}
+                >
+                  {c[item.key]}
+                </Link>
+                <button
+                  type="button"
+                  aria-label={`${s.all} — ${c[item.key]}`}
+                  aria-expanded={menu === item.id}
+                  aria-controls="reference-mega-menu"
+                  onClick={() =>
+                    setMenu((value) => (value === item.id ? null : item.id))
+                  }
+                >
+                  <Icon name="chevron" width={9} />
+                </button>
+              </div>
+            ))}
+          </nav>
+          <div className="header-actions">
+            <button
+              className="icon-button reference-search-trigger"
+              type="button"
+              aria-label={t("search")}
+              onClick={() => open("search")}
+            >
+              <Icon name="search-spark" />
+              <span className="reference-search-label">{t("search")}</span>
+            </button>
+            <Link
+              className="icon-button reference-wishlist-trigger"
+              href="/wishlist"
+              aria-label={`${c.wishlist}${state.wishlist.length ? ` (${state.wishlist.length})` : ""}`}
+              onClick={close}
+            >
+              <Icon name="heart" />
+              {state.wishlist.length > 0 && (
+                <span className="reference-action-count">
+                  {state.wishlist.length}
+                </span>
+              )}
+            </Link>
+            <div
+              className="reference-account-action"
+              onMouseEnter={() => setAccountTip(true)}
+              onMouseLeave={() => setAccountTip(false)}
+              onFocus={() => setAccountTip(true)}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget))
+                  setAccountTip(false);
+              }}
+            >
+              <Link
+                className="icon-button profile-button"
+                href={state.user ? "/app" : "/login"}
+                aria-label={t("account")}
+                onClick={close}
+              >
+                <Icon name={state.user ? "user-filled" : "user"} />
+              </Link>
+              {accountTip && !state.user && (
+                <div className="reference-account-tooltip">
+                  <span>
+                    <Link href="/login">{s.login}</Link> {s.or}{" "}
+                    <Link href="/login?mode=register">{s.signup}</Link>{" "}
+                    {s.personalized}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={s.close}
+                    onClick={() => setAccountTip(false)}
+                  >
+                    <Icon name="close" width={13} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              className="icon-button cart-trigger"
+              data-cart-trigger
+              aria-label={`${t("cart")} (${itemCount})`}
+              onClick={() => open("cart")}
+            >
+              <Icon name="bag" />
+              {itemCount > 0 && (
+                <span className="reference-action-count">{itemCount}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              className="icon-button mobile-menu-trigger"
+              aria-label={s.menu}
+              onClick={() => open("menu")}
+            >
+              <Icon name="menu" />
+            </button>
+          </div>
+        </div>
+        {home && !scrolled && (
+          <button
+            type="button"
+            className="reference-inline-search"
+            aria-label={t("search")}
+            onClick={() => open("search")}
+          >
+            <Icon name="search-spark" width={25} />
+            <span key={`${state.language}-${hint}`}>
+              {suggestions[hint]}
+              <i aria-hidden="true" />
+            </span>
+          </button>
+        )}
+        {menu && (
+          <div id="reference-mega-menu" className="reference-mega-menu">
+            <MegaMenu menu={menu} close={() => setMenu(null)} />
+          </div>
+        )}
+      </header>
+      {menu && (
+        <button
+          className="exact-menu-backdrop"
+          aria-label={s.close}
+          type="button"
+          onClick={() => setMenu(null)}
+        />
+      )}
+    </>
+  );
 }
 
-function MegaMenu({menu,close}:{menu:MainMenu;close:()=>void}) {
- const{state}=useShop();const c=translatedCopy(storefrontCopy[state.locale],state.language);const groups=translatedCopy({groups:navigationGroups(menu,state.locale)},state.language).groups;
- const flat=menu==='new'||menu==='gifts'||menu==='personalization'||menu==='culture';
- const campaigns=menu==='men'?[{src:'/images/archive/goya-18.jpg',label:c.loafers,href:'/men/loafers'},{src:'/images/campaign/goya-sneakers.webp',label:c.sneakers,href:'/men/sneakers'}]:menu==='women'?[{src:'/images/campaign/goya-boots.webp',label:c.boots,href:'/women/boots'},{src:'/images/archive/goya-11.jpg',label:c.pumps,href:'/women/pumps'}]:menu==='accessories'?[{src:'/images/archive/goya-20.jpg',label:c.man,href:'/accessories?audience=men'},{src:'/images/archive/goya-08.jpg',label:c.woman,href:'/accessories?audience=women'}]:menu==='personalization'?[{src:'/images/archive/goya-20.jpg',label:c.personalization,href:'/personalization/on-time'}]:[{src:'/images/archive/goya-18.jpg',label:menu==='gifts'?c.forHim:c.loafers,href:menu==='gifts'?'/gifts/men':'/men/loafers'},{src:'/images/archive/goya-11.jpg',label:menu==='gifts'?c.forHer:c.pumps,href:menu==='gifts'?'/gifts/women':'/women/pumps'}];
- return <div className={`reference-mega-inner ${flat?'exact-mega-flat':''} ${menu==='culture'?'exact-mega-culture':''}`}><div className="reference-mega-columns">{flat?groups.flatMap(group=>group.items).map(item=><Link className="reference-mega-title" key={item.href} href={item.href} onClick={close}>{item.label}</Link>):groups.map(group=><div key={group.title}><Link href={group.href} className="reference-mega-title" onClick={close}>{group.title}</Link>{group.items.map(item=><Link key={`${item.href}-${item.label}`} href={item.href} onClick={close}>{item.label}</Link>)}</div>)}</div>{menu!=='culture'&&<div className="reference-mega-images">{campaigns.map(image=><Link key={image.label} href={image.href} onClick={close}><div><Image src={image.src} alt={image.label} fill sizes="25vw" className="object-cover"/></div><span>{image.label}</span></Link>)}</div>}</div>;
+function MegaMenu({ menu, close }: { menu: MainMenu; close: () => void }) {
+  const { state } = useShop();
+  const c = translatedCopy(storefrontCopy[state.locale], state.language);
+  const groups = translatedCopy(
+    { groups: navigationGroups(menu, state.locale) },
+    state.language,
+  ).groups;
+  const flat =
+    menu === "new" ||
+    menu === "gifts" ||
+    menu === "personalization" ||
+    menu === "culture";
+  const campaigns =
+    menu === "men"
+      ? [
+          {
+            src: "/images/archive/goya-18.jpg",
+            label: c.loafers,
+            href: "/men/loafers",
+          },
+          {
+            src: "/images/campaign/goya-sneakers.webp",
+            label: c.sneakers,
+            href: "/men/sneakers",
+          },
+        ]
+      : menu === "women"
+        ? [
+            {
+              src: "/images/campaign/goya-boots.webp",
+              label: c.boots,
+              href: "/women/boots",
+            },
+            {
+              src: "/images/archive/goya-11.jpg",
+              label: c.pumps,
+              href: "/women/pumps",
+            },
+          ]
+        : menu === "accessories"
+          ? [
+              {
+                src: "/images/archive/goya-20.jpg",
+                label: c.man,
+                href: "/accessories?audience=men",
+              },
+              {
+                src: "/images/archive/goya-08.jpg",
+                label: c.woman,
+                href: "/accessories?audience=women",
+              },
+            ]
+          : menu === "personalization"
+            ? [
+                {
+                  src: "/images/archive/goya-20.jpg",
+                  label: c.personalization,
+                  href: "/personalization/on-time",
+                },
+              ]
+            : [
+                {
+                  src: "/images/archive/goya-18.jpg",
+                  label: menu === "gifts" ? c.forHim : c.loafers,
+                  href: menu === "gifts" ? "/gifts/men" : "/men/loafers",
+                },
+                {
+                  src: "/images/archive/goya-11.jpg",
+                  label: menu === "gifts" ? c.forHer : c.pumps,
+                  href: menu === "gifts" ? "/gifts/women" : "/women/pumps",
+                },
+              ];
+  return (
+    <div
+      className={`reference-mega-inner ${flat ? "exact-mega-flat" : ""} ${menu === "culture" ? "exact-mega-culture" : ""}`}
+    >
+      <div className="reference-mega-columns">
+        {flat
+          ? groups
+              .flatMap((group) => group.items)
+              .map((item) => (
+                <Link
+                  className="reference-mega-title"
+                  key={item.href}
+                  href={item.href}
+                  onClick={close}
+                >
+                  {item.label}
+                </Link>
+              ))
+          : groups.map((group) => (
+              <div key={group.title}>
+                <Link
+                  href={group.href}
+                  className="reference-mega-title"
+                  onClick={close}
+                >
+                  {group.title}
+                </Link>
+                {group.items.map((item) => (
+                  <Link
+                    key={`${item.href}-${item.label}`}
+                    href={item.href}
+                    onClick={close}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+      </div>
+      {menu !== "culture" && (
+        <div className="reference-mega-images">
+          {campaigns.map((image) => (
+            <Link key={image.label} href={image.href} onClick={close}>
+              <div>
+                <Image
+                  src={image.src}
+                  alt={image.label}
+                  fill
+                  sizes="25vw"
+                  className="object-cover"
+                />
+              </div>
+              <span>{image.label}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function MobileMenu() {
- const{state,dispatch,t,itemCount}=useShop();const c=translatedCopy(storefrontCopy[state.locale],state.language);const s=translatedCopy(shellCopy[state.locale],state.language);const[active,setActive]=useState<MainMenu|null>(null);const[groupIndex,setGroupIndex]=useState<number|null>(null);const close=()=>dispatch({type:'close'});const groups=active?translatedCopy({groups:navigationGroups(active,state.locale)},state.language).groups:[];const selected=groupIndex===null?null:groups[groupIndex];
- return <div className="reference-mobile-menu exact-mobile-menu"><header className="exact-mobile-menu-header"><Link href="/" aria-label="Goya" onClick={close}><GoyaWordmark/></Link><div><Link href={state.user?'/app':'/login'} aria-label={t('account')} onClick={close}><Icon name={state.user?'user-filled':'user'}/></Link><button type="button" aria-label={`${t('cart')} (${itemCount})`} onClick={()=>dispatch({type:'open',overlay:{kind:'cart'}})}><Icon name="bag"/></button><button type="button" aria-label={s.close} onClick={close} data-close-modal><Icon name="close"/></button></div></header><div className="exact-mobile-menu-content">
- {active?<><button type="button" className="reference-mobile-back" onClick={()=>{if(groupIndex!==null&&groups.length>1)setGroupIndex(null);else{setActive(null);setGroupIndex(null);}}}><Icon name="arrow-left"/>{selected?.title??c[menus.find(item=>item.id===active)!.key]}</button><nav aria-label={s.menu}>{selected?<>{selected.items.map(item=><div key={`${item.href}-${item.label}`}><Link href={item.href} onClick={close}>{item.label}</Link></div>)}</>:groups.map((group,index)=><div key={group.title}><Link href={group.href} onClick={close}>{group.title}</Link><button type="button" aria-label={`${s.all} — ${group.title}`} onClick={()=>setGroupIndex(index)}><Icon name="chevron-right"/></button></div>)}</nav></>:<><nav aria-label={s.menu}>{menus.map(item=><div key={item.id}><Link href={item.href} onClick={close}>{c[item.key]}</Link><button type="button" aria-label={`${s.all} — ${c[item.key]}`} onClick={()=>{setActive(item.id);setGroupIndex(navigationGroups(item.id,state.locale).length===1?0:null);}}><Icon name="chevron-right"/></button></div>)}</nav><div className="reference-mobile-utilities"><Link href={state.user?'/app':'/login'} onClick={close}><Icon name={state.user?'user-filled':'user'}/>{state.user?c.account:s.login}</Link><Link href="/wishlist" onClick={close}><Icon name="heart"/>{c.wishlist}</Link><Link href="/book-an-appointment" onClick={close}><Icon name="calendar"/>{s.appointment}</Link><Link href="/stores" onClick={close}><Icon name="pin"/>{s.stores}</Link><Link href="/customer-service" onClick={close}><Icon name="phone"/>{s.help}</Link><button type="button" onClick={()=>dispatch({type:'open',overlay:{kind:'language'}})}>{s.language}: <span translate="no">{LANGUAGE_NAMES[state.language]}</span><Icon name="chevron-right"/></button><Link href="/countries" onClick={close}>{s.country}: {marketName(state.market,state.language)}<Icon name="chevron-right"/></Link></div></>}
- </div></div>;
+  const { state, dispatch, t, itemCount } = useShop();
+  const c = translatedCopy(storefrontCopy[state.locale], state.language);
+  const s = translatedCopy(shellCopy[state.locale], state.language);
+  const [active, setActive] = useState<MainMenu | null>(null);
+  const [groupIndex, setGroupIndex] = useState<number | null>(null);
+  const close = () => dispatch({ type: "close" });
+  const groups = active
+    ? translatedCopy(
+        { groups: navigationGroups(active, state.locale) },
+        state.language,
+      ).groups
+    : [];
+  const selected = groupIndex === null ? null : groups[groupIndex];
+  return (
+    <div className="reference-mobile-menu exact-mobile-menu">
+      <header className="exact-mobile-menu-header">
+        <Link href="/" aria-label="Goya" onClick={close}>
+          <GoyaWordmark />
+        </Link>
+        <div>
+          <Link
+            href={state.user ? "/app" : "/login"}
+            aria-label={t("account")}
+            onClick={close}
+          >
+            <Icon name={state.user ? "user-filled" : "user"} />
+          </Link>
+          <button
+            type="button"
+            aria-label={`${t("cart")} (${itemCount})`}
+            onClick={() =>
+              dispatch({ type: "open", overlay: { kind: "cart" } })
+            }
+          >
+            <Icon name="bag" />
+          </button>
+          <button
+            type="button"
+            aria-label={s.close}
+            onClick={close}
+            data-close-modal
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+      </header>
+      <div className="exact-mobile-menu-content">
+        {active ? (
+          <>
+            <button
+              type="button"
+              className="reference-mobile-back"
+              onClick={() => {
+                if (groupIndex !== null && groups.length > 1)
+                  setGroupIndex(null);
+                else {
+                  setActive(null);
+                  setGroupIndex(null);
+                }
+              }}
+            >
+              <Icon name="arrow-left" />
+              {selected?.title ??
+                c[menus.find((item) => item.id === active)!.key]}
+            </button>
+            <nav aria-label={s.menu}>
+              {selected ? (
+                <>
+                  {selected.items.map((item) => (
+                    <div key={`${item.href}-${item.label}`}>
+                      <Link href={item.href} onClick={close}>
+                        {item.label}
+                      </Link>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                groups.map((group, index) => (
+                  <div key={group.title}>
+                    <Link href={group.href} onClick={close}>
+                      {group.title}
+                    </Link>
+                    <button
+                      type="button"
+                      aria-label={`${s.all} — ${group.title}`}
+                      onClick={() => setGroupIndex(index)}
+                    >
+                      <Icon name="chevron-right" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </nav>
+          </>
+        ) : (
+          <>
+            <nav aria-label={s.menu}>
+              {menus.map((item) => (
+                <div key={item.id}>
+                  <Link href={item.href} onClick={close}>
+                    {c[item.key]}
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label={`${s.all} — ${c[item.key]}`}
+                    onClick={() => {
+                      setActive(item.id);
+                      setGroupIndex(
+                        navigationGroups(item.id, state.locale).length === 1
+                          ? 0
+                          : null,
+                      );
+                    }}
+                  >
+                    <Icon name="chevron-right" />
+                  </button>
+                </div>
+              ))}
+            </nav>
+            <div className="reference-mobile-utilities">
+              <Link href={state.user ? "/app" : "/login"} onClick={close}>
+                <Icon name={state.user ? "user-filled" : "user"} />
+                {state.user ? c.account : s.login}
+              </Link>
+              <Link href="/wishlist" onClick={close}>
+                <Icon name="heart" />
+                {c.wishlist}
+              </Link>
+              <Link href="/book-an-appointment" onClick={close}>
+                <Icon name="calendar" />
+                {s.appointment}
+              </Link>
+              <Link href="/stores" onClick={close}>
+                <Icon name="pin" />
+                {s.stores}
+              </Link>
+              <Link href="/customer-service" onClick={close}>
+                <Icon name="phone" />
+                {s.help}
+              </Link>
+              <button
+                type="button"
+                onClick={() =>
+                  dispatch({ type: "open", overlay: { kind: "language" } })
+                }
+              >
+                {s.language}:{" "}
+                <span translate="no">{LANGUAGE_NAMES[state.language]}</span>
+                <Icon name="chevron-right" />
+              </button>
+              <Link href="/countries" onClick={close}>
+                {s.country}: {marketName(state.market, state.language)}
+                <Icon name="chevron-right" />
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
